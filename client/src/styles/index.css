@@ -1,0 +1,78 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* RTL Support for Farsi */
+html[dir="rtl"] {
+  direction: rtl;
+}
+
+/* Farsi Font Configuration */
+@layer base {
+  html {
+    font-family: 'Vazirmatn', 'Tahoma', 'Arial', sans-serif;
+  }
+  
+  /* RTL specific adjustments */
+  html[dir="rtl"] {
+    text-align: right;
+  }
+  
+  html[dir="rtl"] .ltr {
+    direction: ltr;
+    text-align: left;
+  }
+  
+  /* Number formatting for Farsi */
+  html[dir="rtl"] .persian-numbers {
+    font-feature-settings: "ss01";
+  }
+}
+
+/* Custom scrollbar for RTL */
+html[dir="rtl"] ::-webkit-scrollbar {
+  width: 8px;
+}
+
+html[dir="rtl"] ::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+html[dir="rtl"] ::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+html[dir="rtl"] ::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Custom scrollbar for dashboard */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.3);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.5);
+}
+
+/* Hide scrollbar for mobile */
+@media (max-width: 768px) {
+  .custom-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}

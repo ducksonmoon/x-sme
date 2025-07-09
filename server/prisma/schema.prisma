@@ -1,0 +1,411 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String    @id @default(cuid())
+  email       String    @unique
+  password    String
+  firstName   String?
+  lastName    String?
+  phone       String?
+  role        UserRole  @default(BUSINESS_OWNER)
+  businessId  String?
+  isActive    Boolean   @default(true)
+  lastLoginAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  business    Business? @relation(fields: [businessId], references: [id])
+
+  // Add subscription relation
+  subscriptions Subscription[]
+
+  @@map("users")
+}
+
+model Business {
+  id           String            @id @default(cuid())
+  name         String
+  description  String?
+  phone        String
+  email        String
+  address      String?
+  website      String?
+  logo         String?
+  theme        String            @default("light")
+  timezone     String            @default("Asia/Tehran")
+  isActive     Boolean           @default(true)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  bookings     Booking[]
+  settings     BusinessSettings?
+  holidays     Holiday[]
+  services     Service[]
+  users        User[]
+  workingHours WorkingHour[]
+
+  // Add subscription and usage tracking
+  subscription   Subscription?
+  usageStats     UsageStats[]
+  billingInfo    BillingInfo?
+
+  @@map("businesses")
+}
+
+model BusinessSettings {
+  id                   String   @id @default(cuid())
+  businessId           String   @unique
+  depositRequired      Boolean  @default(false)
+  depositPercentage    Int      @default(0)
+  paymentRequired      Boolean  @default(false)
+  paymentGateways      Json?
+  currency             String   @default("toman")
+  cancellationPolicy   String   @default("24h")
+  reminderTime         Int      @default(60)
+  smsEnabled           Boolean  @default(true)
+  telegramEnabled      Boolean  @default(false)
+  telegramBotToken     String?
+  telegramChatId       String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  advanceBookingDays   Int      @default(30)
+  bufferBetweenSlots   Int      @default(15)
+  includeLunchBreak    Boolean  @default(true)
+  lunchBreakEnd        String   @default("13:00")
+  lunchBreakStart      String   @default("12:00")
+  maxBookingsPerSlot   Int      @default(1)
+  maxSlotsPerDay       Int      @default(20)
+  optimizeForPeakHours Boolean  @default(true)
+  peakHoursEnd         String   @default("16:00")
+  peakHoursStart       String   @default("10:00")
+  respectWorkingHours  Boolean  @default(true)
+  sameDayBooking       Boolean  @default(true)
+  useServiceDuration   Boolean  @default(true)
+  business             Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@map("business_settings")
+}
+
+model Service {
+  id          String     @id @default(cuid())
+  businessId  String
+  name        String
+  description String?
+  duration    Int
+  price       Decimal    @db.Decimal(10, 2)
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  TimeSlot    TimeSlot[]
+  bookings    Booking[]
+  business    Business   @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@map("services")
+}
+
+model WorkingHour {
+  id         String   @id @default(cuid())
+  businessId String
+  dayOfWeek  Int
+  startTime  String
+  endTime    String
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([businessId, dayOfWeek])
+  @@map("working_hours")
+}
+
+model Holiday {
+  id         String   @id @default(cuid())
+  businessId String
+  date       DateTime @db.Date
+  reason     String?
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([businessId, date])
+  @@map("holidays")
+}
+
+model Booking {
+  id            String        @id @default(cuid())
+  businessId    String
+  serviceId     String
+  customerName  String
+  customerPhone String
+  customerEmail String?
+  date          DateTime      @db.Date
+  startTime     String
+  endTime       String
+  status        BookingStatus @default(PENDING)
+  totalAmount   Decimal       @db.Decimal(10, 2)
+  depositAmount Decimal?      @db.Decimal(10, 2)
+  notes         String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  business      Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  service       Service       @relation(fields: [serviceId], references: [id])
+  payments      Payment[]
+  reminders     Reminder[]
+
+  @@map("bookings")
+}
+
+model Payment {
+  id            String         @id @default(cuid())
+  bookingId     String
+  amount        Decimal        @db.Decimal(10, 2)
+  gateway       PaymentGateway
+  gatewayRef    String?
+  status        PaymentStatus  @default(PENDING)
+  transactionId String?
+  metadata      Json?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  booking       Booking        @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+model Reminder {
+  id          String          @id @default(cuid())
+  bookingId   String
+  type        ReminderType
+  channel     ReminderChannel
+  status      ReminderStatus  @default(PENDING)
+  scheduledAt DateTime
+  sentAt      DateTime?
+  error       String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  booking     Booking         @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@map("reminders")
+}
+
+model TimeSlot {
+  id        String   @id @default(cuid())
+  serviceId String
+  date      DateTime
+  startTime String
+  endTime   String
+  isBooked  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  services  Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@index([date, isBooked])
+  @@index([serviceId, date])
+  @@index([serviceId, date, startTime])
+  @@index([serviceId, isBooked])
+}
+
+enum UserRole {
+  ADMIN
+  BUSINESS_OWNER
+  STAFF
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentGateway {
+  PASARGAD
+  SAMAN
+  ZARINPAL
+}
+
+enum ReminderType {
+  CONFIRMATION
+  REMINDER
+  CANCELLATION
+}
+
+enum ReminderChannel {
+  SMS
+  TELEGRAM
+  EMAIL
+}
+
+enum ReminderStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+// New models for subscription management
+
+model Plan {
+  id                String   @id @default(cuid())
+  name              String   @unique
+  nameEn            String?
+  description       String
+  setupFee          Decimal  @db.Decimal(10, 2)
+  monthlyFee        Decimal  @db.Decimal(10, 2)
+  yearlyFee         Decimal? @db.Decimal(10, 2)
+  commissionRate    Float    @default(0)
+  bookingsLimit     Int?     // null = unlimited
+  servicesLimit     Int?
+  smsLimit          Int?
+  features          Json     // Array of feature codes
+  isActive          Boolean  @default(true)
+  sortOrder         Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  subscriptions     Subscription[]
+
+  @@map("plans")
+}
+
+model Subscription {
+  id                String             @id @default(cuid())
+  businessId        String             @unique
+  userId            String
+  planId            String
+  status            SubscriptionStatus @default(TRIAL)
+  billingCycle      BillingCycle       @default(MONTHLY)
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  trialStart        DateTime?
+  trialEnd          DateTime?
+  cancelledAt       DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id])
+  plan     Plan     @relation(fields: [planId], references: [id])
+  invoices Invoice[]
+  usageStats UsageStats[]
+
+  @@map("subscriptions")
+}
+
+model Invoice {
+  id             String        @id @default(cuid())
+  subscriptionId String
+  number         String        @unique // INV-2024-001
+  amount         Decimal       @db.Decimal(10, 2)
+  setupFee       Decimal?      @db.Decimal(10, 2)
+  monthlyFee     Decimal?      @db.Decimal(10, 2)
+  commissionFee  Decimal?      @db.Decimal(10, 2)
+  discountAmount Decimal?      @db.Decimal(10, 2)
+  taxAmount      Decimal?      @db.Decimal(10, 2)
+  totalAmount    Decimal       @db.Decimal(10, 2)
+  currency       String        @default("IRR")
+  status         InvoiceStatus @default(PENDING)
+  dueDate        DateTime
+  paidAt         DateTime?
+  description    String?
+  metadata       Json?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  payments     InvoicePayment[]
+
+  @@map("invoices")
+}
+
+model InvoicePayment {
+  id            String         @id @default(cuid())
+  invoiceId     String
+  amount        Decimal        @db.Decimal(10, 2)
+  gateway       PaymentGateway
+  gatewayRef    String?
+  status        PaymentStatus  @default(PENDING)
+  transactionId String?
+  metadata      Json?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@map("invoice_payments")
+}
+
+model UsageStats {
+  id             String   @id @default(cuid())
+  businessId     String
+  subscriptionId String
+  month          Int      // 1-12
+  year           Int      // 2024
+  bookingsCount  Int      @default(0)
+  smsCount       Int      @default(0)
+  revenueAmount  Decimal  @default(0) @db.Decimal(10, 2)
+  commissionOwed Decimal  @default(0) @db.Decimal(10, 2)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  business     Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@unique([businessId, subscriptionId, month, year])
+  @@map("usage_stats")
+}
+
+model BillingInfo {
+  id             String   @id @default(cuid())
+  businessId     String   @unique
+  companyName    String?
+  taxId          String?
+  address        String?
+  city           String?
+  postalCode     String?
+  phone          String?
+  email          String?
+  bankAccount    String?
+  bankName       String?
+  accountHolder  String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@map("billing_info")
+}
+
+// Updated enums
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  SUSPENDED
+}
+
+enum BillingCycle {
+  MONTHLY
+  YEARLY
+}
+
+enum InvoiceStatus {
+  PENDING
+  PAID
+  OVERDUE
+  CANCELLED
+  REFUNDED
+}
