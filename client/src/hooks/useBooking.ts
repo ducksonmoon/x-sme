@@ -3,7 +3,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { Service, CustomerInfo } from "../types";
 import { ERROR_MESSAGES, SUCCESS_MESSAGES } from "../constants";
 import toast from "react-hot-toast";
-import { bookingApi } from "@/services/api";
+import { bookingApi, api } from "@/services/api";
 
 interface UseBookingProps {
   businessId: string;
@@ -12,6 +12,7 @@ interface UseBookingProps {
 
 export const useBooking = ({ businessId, lastRefresh }: UseBookingProps) => {
   const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [selectedStaff, setSelectedStaff] = useState<any>(null);
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>("");
 
@@ -35,21 +36,46 @@ export const useBooking = ({ businessId, lastRefresh }: UseBookingProps) => {
     enabled: !!businessId,
   });
 
-  // Get available time slots
+  // Get staff for the selected service
+  const { data: serviceStaff, isLoading: staffLoading } = useQuery({
+    queryKey: ["staff", businessId, selectedService?.id, selectedDate],
+    queryFn: async () => {
+      if (!selectedService?.id) return [];
+
+      // Use new staff options endpoint that filters by service
+      const dateParam = selectedDate ? `?date=${selectedDate}` : "";
+      const response = await api.get(
+        `/availability/staff-options/${selectedService.id}${dateParam}`
+      );
+
+      return response.data.success ? response.data.data : [];
+    },
+    enabled: !!businessId && !!selectedService?.id,
+  });
+
+  // Get available time slots using staff-aware endpoint
   const { data: timeSlots, isLoading: slotsLoading } = useQuery({
     queryKey: [
       "timeSlots",
       businessId,
       selectedService?.id,
+      selectedStaff?.id,
       selectedDate,
       lastRefresh,
     ],
-    queryFn: () =>
-      bookingApi.getAvailableSlots(
-        businessId,
-        selectedService!.id,
-        selectedDate
-      ),
+    queryFn: async () => {
+      // Use new staff-aware availability endpoint
+      const staffParam = selectedStaff ? `?staffId=${selectedStaff.id}` : "";
+      const response = await api.get(
+        `/availability/staff/${businessId}/${selectedService!.id}/${selectedDate}${staffParam}`
+      );
+
+      if (!response.data.success) {
+        throw new Error(response.data.error || "Failed to fetch availability");
+      }
+
+      return response.data.data;
+    },
     enabled: !!businessId && !!selectedService?.id && !!selectedDate,
   });
 
@@ -112,6 +138,7 @@ export const useBooking = ({ businessId, lastRefresh }: UseBookingProps) => {
     const bookingData = {
       businessId,
       serviceId: selectedService.id,
+      ...(selectedStaff && { staffId: selectedStaff.id }),
       customerName: customerInfo.name,
       customerPhone: customerInfo.phone,
       ...(customerInfo.email && { customerEmail: customerInfo.email }),
@@ -145,20 +172,24 @@ export const useBooking = ({ businessId, lastRefresh }: UseBookingProps) => {
     // Data
     business: business?.data,
     services: services?.data || [],
-    timeSlots: timeSlots?.data?.availableSlots || [],
+    serviceStaff: serviceStaff || [],
+    timeSlots: timeSlots?.slots || [],
     selectedService,
+    selectedStaff,
     selectedDate,
     selectedTimeSlot,
 
     // Loading states
     businessLoading,
     servicesLoading,
+    staffLoading,
     slotsLoading,
     isCreatingBooking: createBookingMutation.isPending,
     isProcessingPayment: processPaymentMutation.isPending,
 
     // Actions
     setSelectedService,
+    setSelectedStaff,
     setSelectedDate,
     setSelectedTimeSlot,
     createBooking,

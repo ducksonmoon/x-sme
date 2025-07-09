@@ -130,6 +130,7 @@ router.post('/', validateBooking, async (req, res, next) => {
     const {
       businessId,
       serviceId,
+      staffId, // Add staff ID support
       customerName,
       customerPhone,
       customerEmail,
@@ -167,14 +168,21 @@ router.post('/', validateBooking, async (req, res, next) => {
 
     console.log(`[Booking Request] Customer: ${customerName}, Selected Time: ${startTime} - ${endTime}, Date: ${date}, Service: ${serviceId}`);
 
-    // Check if business and service exist
+    // Check if business, service, and staff (if provided) exist
     const [business, service] = await Promise.all([
       prisma.business.findUnique({
         where: { id: businessId },
         include: { settings: true }
       }),
       prisma.service.findUnique({
-        where: { id: serviceId }
+        where: { id: serviceId },
+        include: {
+          staff: {
+            include: {
+              staff: true
+            }
+          }
+        }
       })
     ]);
 
@@ -190,6 +198,48 @@ router.post('/', validateBooking, async (req, res, next) => {
         success: false,
         error: 'Service does not belong to this business'
       });
+    }
+
+    // Validate staff if provided
+    let assignedStaff = null;
+    if (staffId) {
+      assignedStaff = await prisma.staff.findUnique({
+        where: { id: staffId },
+        include: {
+          services: {
+            where: { serviceId }
+          }
+        }
+      });
+
+      if (!assignedStaff) {
+        return res.status(404).json({
+          success: false,
+          error: 'Staff member not found'
+        });
+      }
+
+      if (assignedStaff.businessId !== businessId) {
+        return res.status(400).json({
+          success: false,
+          error: 'Staff member does not belong to this business'
+        });
+      }
+
+      // Check if staff is assigned to this service
+      if (assignedStaff.services.length === 0) {
+        return res.status(400).json({
+          success: false,
+          error: 'Staff member is not assigned to this service'
+        });
+      }
+
+      if (!assignedStaff.isActive) {
+        return res.status(400).json({
+          success: false,
+          error: 'Staff member is not active'
+        });
+      }
     }
 
     // **BUSINESS LOGIC: Check booking limits based on subscription plan**
@@ -224,25 +274,29 @@ router.post('/', validateBooking, async (req, res, next) => {
       });
     }
 
-    // If no time slot exists, create one for consistency
-    let timeSlot = availabilityCheck.timeSlot;
-    if (!timeSlot) {
-      try {
-        timeSlot = await prisma.timeSlot.create({
-          data: {
-            serviceId,
-            date: new Date(date),
-            startTime,
-            endTime,
-            isBooked: true, // Mark as booked immediately
-          }
-        });
-        console.log(`[Time Slot Created] New slot ${startTime}-${endTime} created for ${date}`);
-      } catch (error) {
-        // If time slot creation fails, we can still proceed with the booking
-        console.warn('Failed to create time slot:', error);
+          // If no time slot exists, create one for consistency
+      let timeSlot = availabilityCheck.timeSlot;
+      if (!timeSlot) {
+        try {
+          timeSlot = await prisma.timeSlot.create({
+            data: {
+              serviceId,
+              date: new Date(date),
+              startTime,
+              endTime,
+              isBooked: true, // Mark as booked immediately
+              capacity: 1, // One booking taken
+              maxCapacity: 1, // Default capacity
+              isPeakHour: false,
+              notes: null,
+            }
+          });
+          console.log(`[Time Slot Created] New slot ${startTime}-${endTime} created for ${date}`);
+        } catch (error) {
+          // If time slot creation fails, we can still proceed with the booking
+          console.warn('Failed to create time slot:', error);
+        }
       }
-    }
 
     // Calculate amounts
     const totalAmount = service.price;
@@ -255,6 +309,7 @@ router.post('/', validateBooking, async (req, res, next) => {
       data: {
         businessId,
         serviceId,
+        staffId, // Include staff assignment
         customerName,
         customerPhone,
         customerEmail,
@@ -272,32 +327,50 @@ router.post('/', validateBooking, async (req, res, next) => {
         },
         service: {
           select: { name: true, price: true, duration: true }
+        },
+        staff: {
+          select: { id: true, firstName: true, lastName: true }
         }
       }
     });
 
     console.log(`[Booking Created] ID: ${booking.id}, Customer: ${customerName}, Time: ${startTime}-${endTime} (Selected: ${startTime}-${endTime}), Date: ${date}`);
 
-    // **ENHANCED BUSINESS LOGIC: Mark the time slot as booked**
+    // **ENHANCED BUSINESS LOGIC: Mark the time slot as booked and update capacity**
     if (timeSlot) {
       try {
-        const updatedTimeSlot = await prisma.timeSlot.update({
-          where: { id: timeSlot.id },
-          data: { isBooked: true }
-        });
-        console.log(`[Time Slot Booked] Slot ${timeSlot.id} marked as booked for booking ${booking.id}. Updated slot isBooked: ${updatedTimeSlot.isBooked}`);
-        
-        // Verify the update was successful
-        const verifySlot = await prisma.timeSlot.findUnique({
+        // Check current capacity
+        const currentSlot = await prisma.timeSlot.findUnique({
           where: { id: timeSlot.id }
         });
-        console.log(`[Time Slot Verification] Slot ${timeSlot.id} verification - isBooked: ${verifySlot?.isBooked}`);
         
-        if (!verifySlot?.isBooked) {
-          console.error(`[Time Slot Error] Failed to mark slot ${timeSlot.id} as booked - verification failed`);
+        if (currentSlot) {
+          // Update capacity and mark as booked if at max capacity
+          const newCapacity = currentSlot.capacity + 1;
+          const isFullyBooked = newCapacity >= currentSlot.maxCapacity;
+          
+          const updatedTimeSlot = await prisma.timeSlot.update({
+            where: { id: timeSlot.id },
+            data: { 
+              isBooked: isFullyBooked,
+              capacity: newCapacity
+            }
+          });
+          
+          console.log(`[Time Slot Booked] Slot ${timeSlot.id} updated - Capacity: ${newCapacity}/${currentSlot.maxCapacity}, isBooked: ${updatedTimeSlot.isBooked}`);
+          
+          // Verify the update was successful
+          const verifySlot = await prisma.timeSlot.findUnique({
+            where: { id: timeSlot.id }
+          });
+          console.log(`[Time Slot Verification] Slot ${timeSlot.id} verification - capacity: ${verifySlot?.capacity}/${verifySlot?.maxCapacity}, isBooked: ${verifySlot?.isBooked}`);
+          
+          if (verifySlot?.capacity !== newCapacity) {
+            console.error(`[Time Slot Error] Failed to update capacity for slot ${timeSlot.id} - verification failed`);
+          }
         }
       } catch (error) {
-        console.error('Failed to update time slot booking status:', error);
+        console.error('Failed to update time slot booking status and capacity:', error);
       }
     } else {
       console.warn(`[Time Slot Warning] No time slot found to mark as booked for booking ${booking.id}`);
@@ -589,12 +662,28 @@ router.put('/:id/cancel', async (req, res, next) => {
 router.get('/business/:businessId', async (req, res, next) => {
   try {
     const { businessId } = req.params;
-    const { page = 1, limit = 10, status, date } = req.query;
+    const { page = 1, limit = 10, status, date, serviceId } = req.query;
     const skip = (page - 1) * limit;
 
     const where = { businessId };
     
-    if (status) where.status = status;
+    // Handle status parameter - can be single value or comma-separated values
+    if (status) {
+      if (status.includes(',')) {
+        // Parse comma-separated values into array
+        const statusArray = status.split(',').map(s => s.trim()).filter(s => s);
+        where.status = { in: statusArray };
+      } else {
+        // Single status value
+        where.status = status.trim();
+      }
+    }
+    
+    // Handle optional serviceId filter
+    if (serviceId) {
+      where.serviceId = serviceId;
+    }
+    
     if (date) where.date = new Date(date);
 
     const [bookings, total] = await Promise.all([
@@ -798,16 +887,29 @@ async function validateTimeSlotAvailability(businessId, serviceId, date, startTi
       }
     });
 
+    // Check capacity if time slot exists
+    let canBook = !conflictingBooking;
+    let message = 'Time slot is available';
+    
+    if (conflictingBooking) {
+      canBook = false;
+      message = 'Time slot conflicts with existing booking';
+    } else if (timeSlot) {
+      if (timeSlot.isBooked) {
+        canBook = false;
+        message = 'Time slot is already fully booked';
+      } else if (timeSlot.capacity >= timeSlot.maxCapacity) {
+        canBook = false;
+        message = 'Time slot has reached maximum capacity';
+      }
+    }
+    
     return {
       isValid: true,
       timeSlot,
       conflictingBooking,
-      canBook: !conflictingBooking && (!timeSlot || !timeSlot.isBooked),
-      message: conflictingBooking 
-        ? 'Time slot conflicts with existing booking'
-        : (timeSlot && timeSlot.isBooked)
-        ? 'Time slot is already marked as booked'
-        : 'Time slot is available'
+      canBook,
+      message
     };
   } catch (error) {
     console.error('Error validating time slot availability:', error);
@@ -840,22 +942,31 @@ async function updateTimeSlotAvailability(booking, status) {
     });
 
     if (timeSlot) {
+      // Get current capacity and determine new capacity based on status change
+      const currentCapacity = timeSlot.capacity;
+      let newCapacity = currentCapacity;
       let shouldBeBooked = true;
       
-      // Determine if time slot should be marked as booked based on status
+      // Determine capacity change based on status
       if (status === 'CANCELLED' || status === 'NO_SHOW') {
-        shouldBeBooked = false;
+        // Decrease capacity when booking is cancelled
+        newCapacity = Math.max(0, currentCapacity - 1);
+        shouldBeBooked = newCapacity >= timeSlot.maxCapacity;
       } else if (status === 'CONFIRMED' || status === 'PENDING') {
-        shouldBeBooked = true;
+        // Keep current capacity for active bookings
+        shouldBeBooked = newCapacity >= timeSlot.maxCapacity;
       }
-      // For 'COMPLETED' status, keep it booked for historical purposes
+      // For 'COMPLETED' status, keep current capacity for historical purposes
       
       await prisma.timeSlot.update({
         where: { id: timeSlot.id },
-        data: { isBooked: shouldBeBooked }
+        data: { 
+          isBooked: shouldBeBooked,
+          capacity: newCapacity
+        }
       });
       
-      console.log(`[Time Slot Update] Slot ${booking.startTime}-${booking.endTime} for ${booking.date.toISOString().split('T')[0]} set to ${shouldBeBooked ? 'booked' : 'available'} due to booking status: ${status}`);
+      console.log(`[Time Slot Update] Slot ${booking.startTime}-${booking.endTime} for ${booking.date.toISOString().split('T')[0]} - Capacity: ${newCapacity}/${timeSlot.maxCapacity}, isBooked: ${shouldBeBooked} due to booking status: ${status}`);
     } else {
       console.warn(`[Time Slot Warning] No time slot found for booking ${booking.id} at ${booking.startTime}-${booking.endTime} on ${booking.date.toISOString().split('T')[0]}`);
     }

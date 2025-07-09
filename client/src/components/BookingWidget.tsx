@@ -20,6 +20,7 @@ import {
   Clock4,
   Percent,
   AlertCircle,
+  AlertTriangle,
   Wifi,
   WifiOff,
   RefreshCw,
@@ -75,10 +76,18 @@ interface BookingWidgetProps {
   theme?: "light" | "dark" | "auto";
   showLogo?: boolean;
   accentColor?: string;
+  customLogo?: string; // New: Custom logo URL
+  primaryColor?: string; // New: Primary color for theming
+  secondaryColor?: string; // New: Secondary color for theming
+  allowNotes?: boolean; // New: Allow customer notes
+  requireEmail?: boolean; // New: Require email field
+  maxAdvanceBooking?: number; // New: Max days in advance
+  minAdvanceBooking?: number; // New: Min hours in advance
+  borderRadius?: number; // New: Border radius for styling
   onBookingComplete?: (booking: any) => void;
 }
 
-type Step = 0 | 1 | 2 | 3 | 4;
+type Step = 0 | 1 | 2 | 3 | 4 | 5;
 
 interface PaymentOption {
   id: string;
@@ -96,14 +105,44 @@ interface DepositOption {
   description: string;
 }
 
-const customerSchema = z.object({
-  name: z.string().min(2, "نام حداقل ۲ کاراکتر باشد"),
-  phone: z.string().regex(/^(\+98|0)?9\d{9}$/, "شماره موبایل معتبر وارد کنید"),
-  email: z.string().email("ایمیل معتبر وارد کنید").optional().or(z.literal("")),
-  notes: z.string().optional(),
-});
+interface ConflictError {
+  type: "conflict" | "capacity" | "general";
+  message: string;
+  details?: {
+    hasConflictingBooking?: boolean;
+    timeSlotExists?: boolean;
+    timeSlotBooked?: boolean;
+  };
+  suggestions?: string[];
+}
 
-type CustomerForm = z.infer<typeof customerSchema>;
+// Base customer schema - will be extended based on props
+const createCustomerSchema = (requireEmail: boolean, allowNotes: boolean) => {
+  const schemaFields: any = {
+    name: z.string().min(2, "نام حداقل ۲ کاراکتر باشد"),
+    phone: z
+      .string()
+      .regex(/^(\+98|0)?9\d{9}$/, "شماره موبایل معتبر وارد کنید"),
+  };
+
+  if (requireEmail) {
+    schemaFields.email = z.string().email("ایمیل معتبر وارد کنید");
+  } else {
+    schemaFields.email = z
+      .string()
+      .email("ایمیل معتبر وارد کنید")
+      .optional()
+      .or(z.literal(""));
+  }
+
+  if (allowNotes) {
+    schemaFields.notes = z.string().optional();
+  }
+
+  return z.object(schemaFields);
+};
+
+type CustomerForm = z.infer<ReturnType<typeof createCustomerSchema>>;
 
 const BookingWidget: React.FC<BookingWidgetProps> = ({
   businessId,
@@ -111,6 +150,14 @@ const BookingWidget: React.FC<BookingWidgetProps> = ({
   theme = "auto",
   showLogo = true,
   accentColor,
+  customLogo, // New: Custom logo URL
+  primaryColor, // New: Primary color for theming
+  secondaryColor, // New: Secondary color for theming
+  allowNotes = true, // New: Allow customer notes
+  requireEmail = false, // New: Require email field
+  maxAdvanceBooking = 30, // New: Max days in advance
+  minAdvanceBooking = 2, // New: Min hours in advance
+  borderRadius = 8, // New: Border radius for styling
   onBookingComplete,
 }) => {
   const { t } = useLanguage();
@@ -128,6 +175,10 @@ const BookingWidget: React.FC<BookingWidgetProps> = ({
   const [currentBookingId, setCurrentBookingId] = useState<string>("");
   const [paymentError, setPaymentError] = useState<string>("");
   const [bookingError, setBookingError] = useState<string>("");
+  const [conflictError, setConflictError] = useState<ConflictError | null>(
+    null
+  );
+  const [showConflictHelp, setShowConflictHelp] = useState(false);
   const [showCalendarModal, setShowCalendarModal] = useState(false);
 
   // Handle modal keyboard navigation
@@ -156,17 +207,21 @@ const BookingWidget: React.FC<BookingWidgetProps> = ({
   const {
     business,
     services,
+    serviceStaff,
     timeSlots,
     selectedService,
+    selectedStaff,
     selectedDate,
     selectedTimeSlot,
     businessLoading,
     servicesLoading,
+    staffLoading,
     slotsLoading,
     isCreatingBooking,
     isProcessingPayment,
     servicesError,
     setSelectedService,
+    setSelectedStaff,
     setSelectedDate,
     setSelectedTimeSlot,
     createBooking,
@@ -421,6 +476,9 @@ const BookingWidget: React.FC<BookingWidgetProps> = ({
 
   const paymentOptions = getPaymentOptions();
 
+  // Create dynamic schema based on props
+  const customerSchema = createCustomerSchema(requireEmail, allowNotes);
+
   const {
     register,
     handleSubmit,
@@ -447,18 +505,37 @@ const BookingWidget: React.FC<BookingWidgetProps> = ({
 
   const handleServiceSelect = (service: Service) => {
     setSelectedService(service);
-    setStep(1);
-
+    setSelectedStaff(null); // Reset staff selection
     setSelectedDate("");
     setSelectedTimeSlot("");
 
     setLastRefresh(Date.now());
+
+    // Navigate to staff selection if staff available, otherwise go to time selection
+    if (shouldShowStaffSelection) {
+      setStep(1); // Staff selection step
+    } else {
+      setStep(1); // Time selection step (no staff selection needed)
+    }
 
     triggerWidgetEvent("SERVICE_SELECTED", {
       serviceId: service.id,
       serviceName: service.name,
       price: service.price,
       duration: service.duration,
+    });
+  };
+
+  const handleStaffSelect = (staff: any) => {
+    setSelectedStaff(staff);
+    setSelectedDate("");
+    setSelectedTimeSlot("");
+    setStep(2); // Time selection step
+
+    triggerWidgetEvent("STAFF_SELECTED", {
+      staffId: staff.id,
+      staffName: `${staff.firstName} ${staff.lastName}`,
+      specialization: staff.specialization,
     });
   };
 
@@ -477,7 +554,7 @@ const BookingWidget: React.FC<BookingWidgetProps> = ({
 
   const handleTimeSlotSelect = (timeSlot: string) => {
     setSelectedTimeSlot(timeSlot);
-    setStep(2);
+    setStep(3); // Customer info step (always step 3 now since staff selection is always step 1)
 
     triggerWidgetEvent("TIME_SELECTED", {
       time: timeSlot,
@@ -488,8 +565,11 @@ const BookingWidget: React.FC<BookingWidgetProps> = ({
   };
 
   const handleCustomerSubmit = async (data: CustomerForm) => {
+    if (!selectedService || !selectedDate || !selectedTimeSlot) return;
+
     try {
       setBookingError("");
+      setConflictError(null);
 
       triggerWidgetEvent("BOOKING_STARTED", {
         serviceName: selectedService?.name,
@@ -537,13 +617,13 @@ const BookingWidget: React.FC<BookingWidgetProps> = ({
         depositOptions.length > 1;
 
       if (requiresPayment && availablePaymentOptions.length > 0) {
-        setStep(3);
+        setStep(4); // Payment step
       } else {
         setConfirmation({
           bookingId,
           paymentRequired: false,
         });
-        setStep(4);
+        setStep(5); // Confirmation step
 
         setLastRefresh(Date.now());
 
@@ -563,18 +643,38 @@ const BookingWidget: React.FC<BookingWidgetProps> = ({
     } catch (error: any) {
       console.error("Booking creation failed:", error);
 
+      const errorMessage =
+        error?.response?.data?.message || error.message || "Unknown error";
+      const errorDetails = error?.response?.data?.details;
+
+      // Check if this is a conflict error
+      if (
+        errorMessage.includes("conflicts") ||
+        errorMessage.includes("booked") ||
+        errorMessage.includes("capacity")
+      ) {
+        const conflictError: ConflictError = {
+          type: "conflict",
+          message: errorMessage,
+          details: errorDetails,
+          suggestions: [
+            "زمان انتخاب شده قبلاً رزرو شده است",
+            "لطفاً زمان دیگری انتخاب کنید",
+            "می‌توانید دسترسی زمان‌ها را بروزرسانی کنید",
+          ],
+        };
+        setConflictError(conflictError);
+        setShowConflictHelp(true);
+      } else {
+        setBookingError(errorMessage);
+      }
+
       triggerWidgetEvent("ERROR", {
         type: "booking_creation_error",
-        error:
-          error?.response?.data?.message || error.message || "Unknown error",
+        error: errorMessage,
         step: "customer_info",
         serviceName: selectedService?.name,
       });
-
-      setBookingError(
-        error?.response?.data?.message ||
-          "ایجاد رزرو ناموفق بود. لطفاً مجدداً تلاش کنید."
-      );
     }
   };
 
@@ -603,7 +703,7 @@ const BookingWidget: React.FC<BookingWidgetProps> = ({
         bookingId: currentBookingId,
         paymentRequired: true,
       });
-      setStep(4);
+      setStep(5); // Confirmation step
 
       setLastRefresh(Date.now());
 
@@ -709,6 +809,13 @@ const BookingWidget: React.FC<BookingWidgetProps> = ({
     }
   };
 
+  const handleConflictResolution = () => {
+    setConflictError(null);
+    setShowConflictHelp(false);
+    setSelectedTimeSlot("");
+    handleRefreshAvailability();
+  };
+
   if (businessLoading || servicesLoading) {
     return (
       <div className="w-full max-w-md mx-auto">
@@ -724,24 +831,75 @@ const BookingWidget: React.FC<BookingWidgetProps> = ({
     );
   }
 
-  const steps = [
-    { id: 0, label: t("booking.select_service"), icon: Star },
-    { id: 1, label: t("booking.select_time"), icon: Clock },
-    { id: 2, label: t("booking.customer_info"), icon: User },
-    { id: 3, label: t("booking.payment"), icon: CreditCard },
-    { id: 4, label: t("booking.confirmation"), icon: CheckCircle },
-  ];
+  const shouldShowStaffSelection = serviceStaff && serviceStaff.length > 0;
+
+  const steps = shouldShowStaffSelection
+    ? [
+        { id: 0, label: "انتخاب سرویس", icon: Star },
+        { id: 1, label: "انتخاب کارمند", icon: User },
+        { id: 2, label: "انتخاب زمان", icon: Clock },
+        { id: 3, label: "اطلاعات مشتری", icon: User },
+        { id: 4, label: "پرداخت", icon: CreditCard },
+        { id: 5, label: "تأیید", icon: CheckCircle },
+      ]
+    : [
+        { id: 0, label: "انتخاب سرویس", icon: Star },
+        { id: 1, label: "انتخاب زمان", icon: Clock },
+        { id: 2, label: "اطلاعات مشتری", icon: User },
+        { id: 3, label: "پرداخت", icon: CreditCard },
+        { id: 4, label: "تأیید", icon: CheckCircle },
+      ];
 
   return (
-    <div className="w-full max-w-md md:max-w-2xl lg:max-w-4xl mx-auto">
-      <div className="bg-white rounded-2xl md:rounded-3xl shadow-lg overflow-hidden border border-gray-100">
+    <div
+      className={cn(
+        "w-full max-w-md md:max-w-2xl lg:max-w-4xl mx-auto",
+        theme === "dark" && "dark",
+        theme === "light" && "light"
+      )}
+      data-theme={theme}
+      style={
+        {
+          "--border-radius": `${borderRadius}px`,
+          "--border-radius-lg": `${Math.max(borderRadius * 1.5, 12)}px`,
+          "--border-radius-xl": `${Math.max(borderRadius * 2, 16)}px`,
+          "--border-radius-2xl": `${Math.max(borderRadius * 3, 24)}px`,
+        } as React.CSSProperties
+      }
+    >
+      <div
+        className="bg-white shadow-lg overflow-hidden border border-gray-100"
+        style={{
+          borderRadius: `${borderRadius}px`,
+        }}
+      >
         {/* Modern Header */}
         {business && showLogo && (
-          <div className="p-4 md:p-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-100">
+          <div
+            className="p-4 md:p-6 border-b"
+            style={{
+              background:
+                primaryColor && secondaryColor
+                  ? `linear-gradient(to right, ${primaryColor}15, ${secondaryColor}15)`
+                  : "linear-gradient(to right, #eff6ff, #eef2ff)",
+              borderColor: primaryColor ? `${primaryColor}20` : "#dbeafe",
+            }}
+          >
             <div className="flex items-center gap-3 md:gap-4">
               <Avatar className="h-12 w-12 md:h-14 md:w-14 ring-2 ring-white shadow-lg">
-                <AvatarImage src={business?.logo} alt={business?.name} />
-                <AvatarFallback className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm md:text-base font-bold">
+                <AvatarImage
+                  src={customLogo || business?.logo}
+                  alt={business?.name}
+                />
+                <AvatarFallback
+                  className="text-white text-sm md:text-base font-bold"
+                  style={{
+                    background:
+                      primaryColor && secondaryColor
+                        ? `linear-gradient(to right, ${primaryColor}, ${secondaryColor})`
+                        : "linear-gradient(to right, #2563eb, #4f46e5)",
+                  }}
+                >
                   {business?.name?.charAt(0) || "B"}
                 </AvatarFallback>
               </Avatar>
@@ -813,9 +971,23 @@ const BookingWidget: React.FC<BookingWidgetProps> = ({
                     className={cn(
                       "w-8 h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center font-bold transition-all duration-300 border-2 relative",
                       idx <= step
-                        ? "bg-gradient-to-r from-blue-500 to-indigo-500 text-white border-blue-500 shadow-lg shadow-blue-500/25"
+                        ? "text-white shadow-lg"
                         : "bg-white text-gray-400 border-gray-200"
                     )}
+                    style={
+                      idx <= step
+                        ? {
+                            background:
+                              primaryColor && secondaryColor
+                                ? `linear-gradient(to right, ${primaryColor}, ${secondaryColor})`
+                                : "linear-gradient(to right, #3b82f6, #6366f1)",
+                            borderColor: primaryColor || "#3b82f6",
+                            boxShadow: primaryColor
+                              ? `0 10px 15px -3px ${primaryColor}40`
+                              : "0 10px 15px -3px rgba(59, 130, 246, 0.25)",
+                          }
+                        : {}
+                    }
                   >
                     {idx < step ? (
                       <CheckCircle className="h-4 w-4 md:h-4.5 md:w-4.5 text-white" />
@@ -828,8 +1000,11 @@ const BookingWidget: React.FC<BookingWidgetProps> = ({
                   <span
                     className={cn(
                       "text-xs md:text-sm mt-2 text-center font-medium transition-colors max-w-[64px] md:max-w-[80px]",
-                      idx <= step ? "text-blue-600" : "text-gray-400"
+                      idx <= step ? "font-semibold" : "text-gray-400"
                     )}
+                    style={
+                      idx <= step ? { color: primaryColor || "#2563eb" } : {}
+                    }
                   >
                     {stepItem.label}
                   </span>
@@ -846,9 +1021,13 @@ const BookingWidget: React.FC<BookingWidgetProps> = ({
               }}
             >
               <div
-                className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-500 ease-out rounded-full"
+                className="h-full transition-all duration-500 ease-out rounded-full"
                 style={{
                   width: `${Math.max(0, Math.min(100, (step / Math.max(1, steps.length - 1)) * 100))}%`,
+                  background:
+                    primaryColor && secondaryColor
+                      ? `linear-gradient(to right, ${primaryColor}, ${secondaryColor})`
+                      : "linear-gradient(to right, #3b82f6, #6366f1)",
                 }}
               />
             </div>
@@ -882,12 +1061,48 @@ const BookingWidget: React.FC<BookingWidgetProps> = ({
                     services.data.map((service: Service) => (
                       <div
                         key={service.id}
-                        className="group border border-gray-200 rounded-xl md:rounded-2xl p-4 md:p-5 cursor-pointer hover:border-blue-300 hover:bg-blue-50 transition-all duration-200 hover:shadow-md hover:scale-[1.02]"
+                        className="group border border-gray-200 rounded-xl md:rounded-2xl p-4 md:p-5 cursor-pointer transition-all duration-200 hover:shadow-md hover:scale-[1.02]"
+                        style={
+                          {
+                            "--hover-border-color": primaryColor
+                              ? `${primaryColor}40`
+                              : "#93c5fd",
+                            "--hover-bg-color": primaryColor
+                              ? `${primaryColor}08`
+                              : "#eff6ff",
+                          } as React.CSSProperties
+                        }
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.borderColor = primaryColor
+                            ? `${primaryColor}40`
+                            : "#93c5fd";
+                          e.currentTarget.style.backgroundColor = primaryColor
+                            ? `${primaryColor}08`
+                            : "#eff6ff";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.borderColor = "#e5e7eb";
+                          e.currentTarget.style.backgroundColor = "transparent";
+                        }}
                         onClick={() => handleServiceSelect(service)}
                       >
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-base md:text-lg text-gray-900 group-hover:text-blue-600 transition-colors mb-1">
+                            <h3
+                              className="font-semibold text-base md:text-lg text-gray-900 transition-colors mb-1"
+                              style={
+                                {
+                                  "--hover-color": primaryColor || "#2563eb",
+                                } as React.CSSProperties
+                              }
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.color =
+                                  primaryColor || "#2563eb";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.color = "#111827";
+                              }}
+                            >
                               {service.name}
                             </h3>
                             {service.description && (
@@ -947,10 +1162,213 @@ const BookingWidget: React.FC<BookingWidgetProps> = ({
               </motion.div>
             )}
 
-            {/* Step 1: Date and Time selection */}
-            {step === 1 && (
+            {/* Step 1: Staff selection (if multiple staff available) */}
+            {step === 1 && shouldShowStaffSelection && (
               <motion.div
                 key="step-1"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.4, ease: "easeOut" }}
+                className="max-w-2xl mx-auto"
+              >
+                <div className="mb-6 text-center md:text-right">
+                  <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">
+                    انتخاب کارمند
+                  </h2>
+                  <p className="text-gray-600 text-sm md:text-base">
+                    {serviceStaff && serviceStaff.length === 1
+                      ? "کارمند ارائه‌دهنده این سرویس"
+                      : "کارمند مورد نظر خود را انتخاب کنید"}
+                  </p>
+                </div>
+
+                {/* Selected Service Summary */}
+                {selectedService && (
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl md:rounded-2xl p-4 md:p-5 mb-6">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-base md:text-lg text-gray-900 mb-1">
+                          {selectedService.name}
+                        </h3>
+                        <p className="text-sm text-gray-600">
+                          {selectedService.duration} دقیقه •{" "}
+                          {selectedService.price.toLocaleString()} تومان
+                        </p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setStep(0)}
+                        className="border-blue-300 text-blue-600 hover:bg-blue-100 px-3 py-2 text-sm font-semibold"
+                      >
+                        تغییر
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-3 md:space-y-4">
+                  {staffLoading ? (
+                    <div className="flex flex-col items-center gap-3 py-12">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 flex items-center justify-center">
+                        <Loader2 className="h-6 w-6 animate-spin text-white" />
+                      </div>
+                      <span className="text-gray-600 font-medium text-sm">
+                        در حال بارگذاری کارکنان...
+                      </span>
+                    </div>
+                  ) : Array.isArray(serviceStaff) && serviceStaff.length > 0 ? (
+                    serviceStaff.map((staff: any) => (
+                      <div
+                        key={staff.id}
+                        className={cn(
+                          "group border rounded-xl md:rounded-2xl p-4 md:p-5 cursor-pointer transition-all duration-200 hover:shadow-md hover:scale-[1.02] relative",
+                          selectedStaff?.id === staff.id
+                            ? "border-blue-500 bg-blue-50"
+                            : serviceStaff.length === 1
+                              ? "border-orange-300 bg-orange-50"
+                              : "border-gray-200 hover:border-blue-300 hover:bg-blue-50"
+                        )}
+                        onClick={() => handleStaffSelect(staff)}
+                      >
+                        {serviceStaff.length === 1 && !selectedStaff && (
+                          <div className="absolute -top-2 -right-2 w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center">
+                            <span className="text-white text-xs font-bold">
+                              !
+                            </span>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-4">
+                          <div className="relative">
+                            <Avatar className="h-12 w-12 md:h-14 md:w-14">
+                              {staff.avatar ? (
+                                <img
+                                  src={staff.avatar}
+                                  alt={`${staff.firstName} ${staff.lastName}`}
+                                  className="rounded-full"
+                                />
+                              ) : (
+                                <div className="bg-gradient-to-r from-blue-500 to-indigo-500 flex items-center justify-center h-full w-full text-white font-bold text-lg">
+                                  {staff.firstName.charAt(0)}
+                                  {staff.lastName.charAt(0)}
+                                </div>
+                              )}
+                            </Avatar>
+                            {selectedStaff?.id === staff.id && (
+                              <div className="absolute -top-1 -right-1 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                                <CheckCircle className="h-3 w-3 text-white" />
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-base md:text-lg text-gray-900 group-hover:text-blue-600 transition-colors mb-1">
+                              {staff.firstName} {staff.lastName}
+                            </h3>
+                            {staff.specialization && (
+                              <p className="text-sm text-gray-600 mb-2">
+                                {staff.specialization}
+                              </p>
+                            )}
+                            {staff.bio && (
+                              <p className="text-xs text-gray-500 line-clamp-2">
+                                {staff.bio}
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="flex flex-col items-end gap-2">
+                            {/* Custom price if different from service price */}
+                            {staff.services?.find(
+                              (s: any) => s.serviceId === selectedService?.id
+                            )?.customPrice && (
+                              <div className="text-right">
+                                <div className="text-lg font-bold text-gray-900">
+                                  {staff.services
+                                    .find(
+                                      (s: any) =>
+                                        s.serviceId === selectedService?.id
+                                    )
+                                    .customPrice.toLocaleString()}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  تومان
+                                </div>
+                              </div>
+                            )}
+
+                            <div
+                              className={cn(
+                                "w-5 h-5 rounded-full border-2 transition-colors",
+                                selectedStaff?.id === staff.id
+                                  ? "border-blue-500 bg-blue-500"
+                                  : "border-gray-300 group-hover:border-blue-500"
+                              )}
+                            >
+                              {selectedStaff?.id === staff.id && (
+                                <CheckCircle className="h-4 w-4 text-white" />
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-12">
+                      <div className="w-16 h-16 bg-gradient-to-r from-gray-100 to-gray-200 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <User className="w-8 h-8 text-gray-400" />
+                      </div>
+                      <p className="text-lg font-semibold text-gray-900 mb-2">
+                        هیچ کارمندی برای این سرویس موجود نیست
+                      </p>
+                      <Button
+                        variant="outline"
+                        onClick={() => setStep(0)}
+                        className="mt-4"
+                      >
+                        بازگشت به انتخاب سرویس
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                {(selectedStaff ||
+                  (serviceStaff && serviceStaff.length === 1)) && (
+                  <div className="flex justify-between mt-6">
+                    <Button
+                      onClick={handleBack}
+                      variant="outline"
+                      className="px-6"
+                    >
+                      بازگشت
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        // Auto-select single staff member if not already selected
+                        if (
+                          serviceStaff &&
+                          serviceStaff.length === 1 &&
+                          !selectedStaff
+                        ) {
+                          handleStaffSelect(serviceStaff[0]);
+                        } else {
+                          setStep(2);
+                        }
+                      }}
+                      className="px-6 bg-blue-600 hover:bg-blue-700"
+                    >
+                      ادامه
+                    </Button>
+                  </div>
+                )}
+              </motion.div>
+            )}
+
+            {/* Step 2: Date and Time selection */}
+            {step === 2 && (
+              <motion.div
+                key="step-2"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
@@ -1313,10 +1731,10 @@ const BookingWidget: React.FC<BookingWidgetProps> = ({
               </motion.div>
             )}
 
-            {/* Step 2: Customer Information */}
-            {step === 2 && (
+            {/* Step 3: Customer Information */}
+            {step === 3 && (
               <motion.div
-                key="step-2"
+                key="step-3"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -1415,7 +1833,7 @@ const BookingWidget: React.FC<BookingWidgetProps> = ({
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => setStep(1)}
+                          onClick={() => setStep(2)}
                           className="flex-1 text-xs border-blue-300 text-blue-600 hover:bg-blue-100"
                         >
                           تغییر زمان
@@ -1482,7 +1900,7 @@ const BookingWidget: React.FC<BookingWidgetProps> = ({
                             {errors.name && (
                               <p className="text-sm text-red-600 flex items-center gap-1">
                                 <AlertCircle className="h-4 w-4" />
-                                {errors.name.message}
+                                {String(errors.name.message)}
                               </p>
                             )}
                           </div>
@@ -1505,7 +1923,7 @@ const BookingWidget: React.FC<BookingWidgetProps> = ({
                             {errors.phone && (
                               <p className="text-sm text-red-600 flex items-center gap-1">
                                 <AlertCircle className="h-4 w-4" />
-                                {errors.phone.message}
+                                {String(errors.phone.message)}
                               </p>
                             )}
                           </div>
@@ -1514,7 +1932,11 @@ const BookingWidget: React.FC<BookingWidgetProps> = ({
                           <div className="space-y-2">
                             <label className="text-sm font-medium text-gray-700">
                               ایمیل{" "}
-                              <span className="text-gray-400">(اختیاری)</span>
+                              {requireEmail ? (
+                                <span className="text-red-500">*</span>
+                              ) : (
+                                <span className="text-gray-400">(اختیاری)</span>
+                              )}
                             </label>
                             <Input
                               {...register("email")}
@@ -1530,7 +1952,7 @@ const BookingWidget: React.FC<BookingWidgetProps> = ({
                             {errors.email && (
                               <p className="text-sm text-red-600 flex items-center gap-1">
                                 <AlertCircle className="h-4 w-4" />
-                                {errors.email.message}
+                                {String(errors.email.message)}
                               </p>
                             )}
                           </div>
@@ -1538,27 +1960,29 @@ const BookingWidget: React.FC<BookingWidgetProps> = ({
                       </div>
 
                       {/* Additional Information Section */}
-                      <div className="bg-white border border-gray-200 rounded-xl md:rounded-2xl p-4 md:p-6">
-                        <div className="flex items-center gap-2 mb-4">
-                          <FileText className="h-5 w-5 text-blue-500" />
-                          <h3 className="font-semibold text-gray-900">
-                            اطلاعات تکمیلی
-                          </h3>
-                        </div>
+                      {allowNotes && (
+                        <div className="bg-white border border-gray-200 rounded-xl md:rounded-2xl p-4 md:p-6">
+                          <div className="flex items-center gap-2 mb-4">
+                            <FileText className="h-5 w-5 text-blue-500" />
+                            <h3 className="font-semibold text-gray-900">
+                              اطلاعات تکمیلی
+                            </h3>
+                          </div>
 
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-700">
-                            درخواست‌های ویژه{" "}
-                            <span className="text-gray-400">(اختیاری)</span>
-                          </label>
-                          <textarea
-                            {...register("notes")}
-                            placeholder="توضیحات اضافی، درخواست‌های ویژه یا نکات مهم..."
-                            rows={3}
-                            className="w-full p-3 border-2 border-gray-200 rounded-xl text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all duration-200 resize-none hover:border-gray-300"
-                          />
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium text-gray-700">
+                              درخواست‌های ویژه{" "}
+                              <span className="text-gray-400">(اختیاری)</span>
+                            </label>
+                            <textarea
+                              {...register("notes")}
+                              placeholder="توضیحات اضافی، درخواست‌های ویژه یا نکات مهم..."
+                              rows={3}
+                              className="w-full p-3 border-2 border-gray-200 rounded-xl text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all duration-200 resize-none hover:border-gray-300"
+                            />
+                          </div>
                         </div>
-                      </div>
+                      )}
 
                       {/* Notification Preferences */}
                       {getBookingSettings() &&
@@ -1609,6 +2033,71 @@ const BookingWidget: React.FC<BookingWidgetProps> = ({
                         </div>
                       )}
 
+                      {/* Conflict Error Display */}
+                      {conflictError && (
+                        <div className="bg-orange-50 border border-orange-200 rounded-xl p-4">
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-2 text-orange-700">
+                              <AlertTriangle className="h-5 w-5" />
+                              <span className="font-medium text-sm">
+                                تداخل در زمان رزرو
+                              </span>
+                            </div>
+
+                            <div className="text-sm text-orange-600">
+                              {conflictError.message}
+                            </div>
+
+                            {conflictError.suggestions &&
+                              conflictError.suggestions.length > 0 && (
+                                <div className="space-y-2">
+                                  <div className="text-xs font-medium text-orange-700">
+                                    راه‌حل‌های پیشنهادی:
+                                  </div>
+                                  <ul className="text-xs text-orange-600 space-y-1">
+                                    {conflictError.suggestions.map(
+                                      (suggestion, index) => (
+                                        <li
+                                          key={index}
+                                          className="flex items-center gap-2"
+                                        >
+                                          <div className="w-1 h-1 bg-orange-400 rounded-full" />
+                                          {suggestion}
+                                        </li>
+                                      )
+                                    )}
+                                  </ul>
+                                </div>
+                              )}
+
+                            <div className="flex gap-2 pt-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={handleConflictResolution}
+                                className="text-xs h-8 px-3 border-orange-300 text-orange-700 hover:bg-orange-100"
+                              >
+                                بروزرسانی دسترسی
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setConflictError(null);
+                                  setShowConflictHelp(false);
+                                  setSelectedTimeSlot("");
+                                }}
+                                className="text-xs h-8 px-3 border-gray-300 text-gray-700 hover:bg-gray-100"
+                              >
+                                انتخاب زمان دیگر
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
                       {/* Action Buttons */}
                       <div className="flex flex-col md:flex-row gap-3 pt-6">
                         <Button
@@ -1637,10 +2126,10 @@ const BookingWidget: React.FC<BookingWidgetProps> = ({
               </motion.div>
             )}
 
-            {/* Step 3: Payment */}
-            {step === 3 && (
+            {/* Step 4: Payment */}
+            {step === 4 && (
               <motion.div
-                key="step-3"
+                key="step-4"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -1912,10 +2401,10 @@ const BookingWidget: React.FC<BookingWidgetProps> = ({
               </motion.div>
             )}
 
-            {/* Step 4: Confirmation */}
-            {step === 4 && (
+            {/* Step 5: Confirmation */}
+            {step === 5 && (
               <motion.div
-                key="step-4"
+                key="step-5"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}

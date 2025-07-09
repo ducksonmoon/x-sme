@@ -31,17 +31,26 @@ const WordPressGuide: React.FC = () => {
   const [businessId, setBusinessId] = useState("");
   const [theme, setTheme] = useState("light");
   const [primaryColor, setPrimaryColor] = useState("#3b82f6");
+  const [secondaryColor, setSecondaryColor] = useState("#6366f1");
+  const [customLogo, setCustomLogo] = useState("");
   const [borderRadius, setBorderRadius] = useState(8);
   const [showLogo, setShowLogo] = useState(true);
   const [allowNotes, setAllowNotes] = useState(true);
   const [copiedCode, setCopiedCode] = useState("");
 
   const generateShortcode = () => {
+    if (!businessId.trim()) {
+      return '[xsme_booking business_id="your-business-id"]';
+    }
+
     let shortcode = "[xsme_booking";
-    if (businessId) shortcode += ` business_id="${businessId}"`;
+    shortcode += ` business_id="${businessId.trim()}"`;
     if (theme !== "light") shortcode += ` theme="${theme}"`;
     if (primaryColor !== "#3b82f6")
       shortcode += ` primary_color="${primaryColor}"`;
+    if (secondaryColor && secondaryColor !== "#6366f1")
+      shortcode += ` secondary_color="${secondaryColor}"`;
+    if (customLogo.trim()) shortcode += ` custom_logo="${customLogo.trim()}"`;
     if (borderRadius !== 8) shortcode += ` border_radius="${borderRadius}"`;
     if (!showLogo) shortcode += ` show_logo="false"`;
     if (!allowNotes) shortcode += ` allow_notes="false"`;
@@ -75,6 +84,8 @@ function xsme_booking_shortcode($atts) {
         'business_id' => '',
         'theme' => 'light',
         'primary_color' => '#3b82f6',
+        'secondary_color' => '',
+        'custom_logo' => '',
         'border_radius' => '8',
         'show_logo' => 'true',
         'allow_notes' => 'true',
@@ -93,6 +104,12 @@ function xsme_booking_shortcode($atts) {
     $output .= 'data-business-id="' . esc_attr($atts['business_id']) . '" ';
     $output .= 'data-theme="' . esc_attr($atts['theme']) . '" ';
     $output .= 'data-primary-color="' . esc_attr($atts['primary_color']) . '" ';
+    if (!empty($atts['secondary_color'])) {
+        $output .= 'data-secondary-color="' . esc_attr($atts['secondary_color']) . '" ';
+    }
+    if (!empty($atts['custom_logo'])) {
+        $output .= 'data-custom-logo="' . esc_attr($atts['custom_logo']) . '" ';
+    }
     $output .= 'data-border-radius="' . esc_attr($atts['border_radius']) . '" ';
     $output .= 'data-show-logo="' . esc_attr($atts['show_logo']) . '" ';
     $output .= 'data-allow-notes="' . esc_attr($atts['allow_notes']) . '" ';
@@ -328,16 +345,139 @@ function xsme_add_tinymce_plugin($plugin_array) {
                       <input
                         type="color"
                         value={primaryColor}
-                        onChange={(e) => setPrimaryColor(e.target.value)}
+                        onChange={(e) => {
+                          console.log("Primary color changed:", e.target.value);
+                          setPrimaryColor(e.target.value);
+                        }}
                         className="h-11 w-20 border border-gray-300 rounded-lg cursor-pointer"
+                        style={{ backgroundColor: primaryColor }}
                       />
                       <Input
                         value={primaryColor}
-                        onChange={(e) => setPrimaryColor(e.target.value)}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (value.match(/^#[0-9A-Fa-f]{6}$/)) {
+                            console.log("Primary color input changed:", value);
+                            setPrimaryColor(value);
+                          }
+                        }}
                         className="h-11"
                         placeholder="#3b82f6"
                       />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          console.log("Resetting primary color to #3b82f6");
+                          setPrimaryColor("#3b82f6");
+                        }}
+                        className="h-11 px-3 text-xs"
+                      >
+                        بازنشانی
+                      </Button>
                     </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      رنگ فعلی: {primaryColor}
+                    </p>
+                    <div className="mt-2 flex items-center gap-2">
+                      <div
+                        className="w-6 h-6 rounded border border-gray-300"
+                        style={{ backgroundColor: primaryColor }}
+                      ></div>
+                      <span className="text-xs text-gray-600">
+                        پیش‌نمایش رنگ اصلی
+                      </span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      رنگ ثانویه (اختیاری)
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="color"
+                        value={secondaryColor}
+                        onChange={(e) => {
+                          console.log(
+                            "Secondary color changed:",
+                            e.target.value
+                          );
+                          setSecondaryColor(e.target.value);
+                        }}
+                        className="h-11 w-20 border border-gray-300 rounded-lg cursor-pointer"
+                        style={{ backgroundColor: secondaryColor }}
+                      />
+                      <Input
+                        value={secondaryColor}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (value.match(/^#[0-9A-Fa-f]{6}$/)) {
+                            console.log(
+                              "Secondary color input changed:",
+                              value
+                            );
+                            setSecondaryColor(value);
+                          }
+                        }}
+                        className="h-11"
+                        placeholder="#6366f1"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          console.log("Resetting secondary color to #6366f1");
+                          setSecondaryColor("#6366f1");
+                        }}
+                        className="h-11 px-3 text-xs"
+                      >
+                        بازنشانی
+                      </Button>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      رنگ فعلی: {secondaryColor} - برای گرادیان‌های زیبا
+                    </p>
+                    <div className="mt-2 flex items-center gap-2">
+                      <div
+                        className="w-6 h-6 rounded border border-gray-300"
+                        style={{ backgroundColor: secondaryColor }}
+                      ></div>
+                      <span className="text-xs text-gray-600">
+                        پیش‌نمایش رنگ ثانویه
+                      </span>
+                    </div>
+                    {primaryColor !== "#3b82f6" &&
+                      secondaryColor !== "#6366f1" && (
+                        <div className="mt-2 flex items-center gap-2">
+                          <div
+                            className="w-12 h-6 rounded border border-gray-300"
+                            style={{
+                              background: `linear-gradient(to right, ${primaryColor}, ${secondaryColor})`,
+                            }}
+                          ></div>
+                          <span className="text-xs text-gray-600">
+                            پیش‌نمایش گرادیان
+                          </span>
+                        </div>
+                      )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      لوگوی سفارشی (اختیاری)
+                    </label>
+                    <Input
+                      value={customLogo}
+                      onChange={(e) => setCustomLogo(e.target.value)}
+                      className="h-11"
+                      placeholder="https://example.com/logo.png"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      URL لوگوی سفارشی (جایگزین لوگوی کسب‌وکار)
+                    </p>
                   </div>
 
                   <div className="space-y-3">
@@ -432,6 +572,14 @@ function xsme_add_tinymce_plugin($plugin_array) {
                         این کد را در ویرایشگر WordPress کپی کنید تا ویجت نمایش
                         داده شود
                       </p>
+                      {(primaryColor !== "#3b82f6" ||
+                        secondaryColor !== "#6366f1") && (
+                        <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                          <p className="text-blue-800 text-sm">
+                            🎨 رنگ‌های سفارشی در کد اعمال شده‌اند
+                          </p>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -462,12 +610,21 @@ function xsme_add_tinymce_plugin($plugin_array) {
                         variant="outline"
                         className="w-full"
                         size="lg"
-                        onClick={() =>
-                          window.open(
-                            `/widget?businessId=${businessId}&theme=${theme}&primaryColor=${primaryColor}&borderRadius=${borderRadius}&showLogo=${showLogo}&allowNotes=${allowNotes}`,
-                            "_blank"
-                          )
-                        }
+                        onClick={() => {
+                          const params = new URLSearchParams({
+                            businessId,
+                            theme,
+                            primaryColor,
+                            borderRadius: borderRadius.toString(),
+                            showLogo: showLogo.toString(),
+                            allowNotes: allowNotes.toString(),
+                          });
+                          if (secondaryColor)
+                            params.append("secondaryColor", secondaryColor);
+                          if (customLogo)
+                            params.append("customLogo", customLogo);
+                          window.open(`/widget?${params.toString()}`, "_blank");
+                        }}
                       >
                         <ExternalLink className="w-5 h-5 mr-2" />
                         پیش‌نمایش ویجت

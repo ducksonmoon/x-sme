@@ -148,6 +148,16 @@ export const dashboardApi = {
   regenerateTimeSlots: (businessId: string, data: any) =>
     api.post(`/availability/regenerate/${businessId}`, data),
 
+  // Create time slots using advanced service
+  createTimeSlots: (data: any) => api.post(`/time-slots/create`, data),
+
+  // Preview time slots before creation
+  previewTimeSlots: (data: any) => api.post(`/time-slots/preview`, data),
+
+  // Get time slot templates
+  getTimeSlotTemplates: (businessId: string) =>
+    api.get(`/time-slots/templates`, { params: { businessId } }),
+
   // Update time slot
   updateTimeSlot: (slotId: string, data: any) =>
     api.put(`/availability/slots/${slotId}`, data),
@@ -167,6 +177,10 @@ export const dashboardApi = {
   bulkDeleteTimeSlots: (serviceId: string, data: any) =>
     api.delete(`/availability/slots/${serviceId}/bulk`, { data }),
 
+  // Bulk delete specific time slots by IDs
+  bulkDeleteTimeSlotsByIds: (slotIds: string[]) =>
+    api.delete(`/availability/slots/bulk-delete`, { data: { slotIds } }),
+
   // Create recurring slots
   createRecurringSlots: (businessId: string, data: any) =>
     api.post(`/availability/recurring/${businessId}`, data),
@@ -182,6 +196,21 @@ export const dashboardApi = {
   // Update business settings
   updateBusinessSettings: (businessId: string, settingsData: any) =>
     api.put(`/businesses/${businessId}/settings`, settingsData),
+
+  // Widget configuration endpoints
+  getWidgetConfig: (businessId: string) =>
+    api.get(`/businesses/${businessId}/widget-config`),
+
+  updateWidgetConfig: (businessId: string, configData: any) =>
+    api.put(`/businesses/${businessId}/widget-config`, configData),
+
+  // Get widget embed code
+  getWidgetEmbedCode: (businessId: string, domain: string) =>
+    api.get(`/businesses/${businessId}/widget-embed`, { params: { domain } }),
+
+  // Get widget preview URL
+  getWidgetPreviewUrl: (businessId: string) =>
+    api.get(`/businesses/${businessId}/widget-preview-url`),
 };
 
 // API endpoints for admin

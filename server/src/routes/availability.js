@@ -57,6 +57,129 @@ function validateAndNormalizeTime(time) {
   return null;
 }
 
+// @desc    Get staff-aware availability using Bookly's hierarchy
+// @route   GET /api/availability/staff/:businessId/:serviceId/:date
+// @access  Public
+router.get("/staff/:businessId/:serviceId/:date", async (req, res, next) => {
+  try {
+    const { businessId, serviceId, date } = req.params;
+    const { staffId, includeUnavailable } = req.query;
+
+    console.log('Availability request:', { businessId, serviceId, date, staffId, includeUnavailable });
+
+    if (!businessId || !serviceId || !date) {
+      return res.status(400).json({
+        success: false,
+        error: "Business ID, Service ID, and date are required",
+      });
+    }
+
+    // Use the new slot service with Bookly's hierarchy
+    const slotService = require('../services/slotService');
+    const availability = await slotService.getDetailedAvailability(businessId, serviceId, date, {
+      staffId: staffId || null,
+      includeUnavailable: includeUnavailable === 'true'
+    });
+
+    console.log('Availability result:', {
+      available: availability.available,
+      totalSlots: availability.slots?.length || 0,
+      availableSlots: availability.totalAvailable || 0,
+      bookedSlots: availability.totalBooked || 0
+    });
+
+    res.json({
+      success: true,
+      data: availability
+    });
+  } catch (error) {
+    console.error('Error getting staff-aware availability:', error);
+    next(error);
+  }
+});
+
+// @desc    Get available staff for a service
+// @route   GET /api/availability/staff-options/:serviceId
+// @access  Public
+router.get("/staff-options/:serviceId", async (req, res, next) => {
+  try {
+    const { serviceId } = req.params;
+    const { date } = req.query;
+
+    if (!serviceId) {
+      return res.status(400).json({
+        success: false,
+        error: "Service ID is required",
+      });
+    }
+
+    // Get staff members assigned to this service
+    const staff = await prisma.staff.findMany({
+      where: {
+        isActive: true,
+        staff_services: {
+          some: {
+            serviceId: serviceId
+          }
+        }
+      },
+      include: {
+        staff_services: {
+          where: {
+            serviceId: serviceId
+          },
+          include: {
+            services: {
+              select: {
+                id: true,
+                name: true,
+                price: true,
+                duration: true
+              }
+            }
+          }
+        },
+        staff_working_hours: {
+          where: { isActive: true },
+          orderBy: { dayOfWeek: 'asc' }
+        },
+        staff_time_off: date ? {
+          where: {
+            startDate: { lte: new Date(date) },
+            endDate: { gte: new Date(date) }
+          }
+        } : undefined
+      },
+      orderBy: { firstName: 'asc' }
+    });
+
+    // Filter out staff who are on time off for the requested date
+    const availableStaff = staff.filter(member => {
+      if (!date) return true;
+      return !member.staff_time_off || member.staff_time_off.length === 0;
+    });
+
+    res.json({
+      success: true,
+      data: availableStaff.map(member => ({
+        id: member.id,
+        firstName: member.firstName,
+        lastName: member.lastName,
+        fullName: `${member.firstName} ${member.lastName}`,
+        specialization: member.specialization,
+        bio: member.bio,
+        experience: member.experience,
+        customPrice: member.staff_services[0]?.customPrice,
+        workingHours: member.staff_working_hours,
+        isAvailable: true
+      }))
+    });
+  } catch (error) {
+    console.error('Error getting staff options:', error);
+    next(error);
+  }
+});
+
 // @desc    Get availability for a business
 // @route   GET /api/availability/:businessId
 // @access  Public
@@ -113,11 +236,14 @@ router.get("/:businessId", async (req, res, next) => {
 
       return res.json({
         success: true,
-        availableSlots: availability.availableSlots || [],
-        allSlots: availability.slots || [],
-        available: availability.available,
-        reason: availability.reason,
-        source: availability.source,
+        data: {
+          availableSlots: availability.availableSlots || [],
+          bookedSlots: availability.allSlots?.filter(slot => slot.isBooked) || [],
+          totalSlots: availability.allSlots?.length || 0,
+          available: availability.available,
+          reason: availability.reason,
+          source: availability.source,
+        },
       });
     }
 
@@ -163,6 +289,14 @@ router.post(
         conflictResolution = "preserve", // New: preserve, reschedule, force
       } = req.body;
 
+      console.log('Enhanced generate time slots called with:', {
+        businessId,
+        mode,
+        settings,
+        conflictResolution,
+        days
+      });
+
       if (!businessId) {
         return res.status(400).json({
           success: false,
@@ -175,6 +309,111 @@ router.post(
           success: false,
           error: "Service ID is required",
         });
+      }
+
+      // Check if this is a new template type that should use the advanced service
+      const advancedTemplates = ['weekly', 'bulk', 'custom', 'smart'];
+      if (advancedTemplates.includes(mode)) {
+        console.log('Using advanced time slot creation service for mode:', mode);
+        
+        // Use the new timeSlotCreationService
+        const timeSlotCreationService = require('../services/timeSlotCreationService');
+        
+        // Map the request to the service format
+        let pattern;
+        
+        if (mode === 'custom' && settings.pattern) {
+          // For custom mode, use the exact pattern provided
+          pattern = settings.pattern;
+        } else {
+          // For other modes, create pattern from settings
+          pattern = {
+            ...settings,
+            startTime: startTime === "auto" ? "auto" : startTime,
+            endTime: endTime === "auto" ? "auto" : endTime,
+            daysOfWeek: [1, 2, 3, 4, 5], // Monday to Friday by default
+            interval: 30,
+            excludeLunch: true,
+            lunchStart: settings.businessSettings?.lunchBreakStart || "12:00",
+            lunchEnd: settings.businessSettings?.lunchBreakEnd || "13:00",
+          };
+        }
+        
+        const serviceOptions = {
+          businessId,
+          serviceId,
+          template: mode,
+          pattern,
+          dateRange: {
+            weeks: Math.ceil(days / 7),
+            startDate: moment().format('YYYY-MM-DD'),
+            endDate: moment().add(days, 'days').format('YYYY-MM-DD')
+          },
+          conflictResolution: conflictResolution === 'preserve' ? 'skip' : conflictResolution,
+          preview: false,
+          applyHolidays: true,
+          applyBreaks: true,
+          metadata: {
+            source: 'dashboard',
+            mode: mode,
+            originalRequest: req.body
+          }
+        };
+
+        console.log('🔧 Backend Debug - Service options:', {
+          businessId: serviceOptions.businessId,
+          serviceId: serviceOptions.serviceId, 
+          template: serviceOptions.template,
+          pattern: JSON.stringify(serviceOptions.pattern, null, 2),
+          conflictResolution: serviceOptions.conflictResolution
+        });
+        
+        const result = await timeSlotCreationService.createTimeSlots(serviceOptions);
+        
+        if (result.success) {
+          // Transform the result to match the expected format
+          const transformedResult = {
+            success: true,
+            summary: {
+              totalDays: days,
+              totalCreated: result.data.slotsCreated || result.data.created.length,
+              totalSkipped: result.data.skipped.length,
+              totalConflicts: result.data.conflicts.length,
+              businessName: "Business", // TODO: Get from context
+              serviceName: "Service", // TODO: Get from context
+              isSmartGeneration: mode === 'smart',
+              conflictResolution: conflictResolution,
+              mode: mode
+            },
+            generatedSlots: result.data.created.map(slot => ({
+              date: moment(slot.date).format('YYYY-MM-DD'),
+              dayOfWeek: moment(slot.date).day(),
+              dayName: moment(slot.date).format('dddd'),
+              status: 'open',
+              slots: [{
+                id: slot.id,
+                startTime: slot.startTime,
+                endTime: slot.endTime,
+                isBooked: slot.isBooked || false,
+                isAvailable: !slot.isBooked,
+                duration: slot.duration
+              }],
+              conflicts: []
+            })),
+            conflicts: result.data.conflicts.length > 0 ? {
+              total: result.data.conflicts.length,
+              details: result.data.conflicts
+            } : undefined
+          };
+
+          console.log('Transformed result:', transformedResult);
+          return res.json(transformedResult);
+        } else {
+          return res.status(500).json({
+            success: false,
+            error: result.error || 'Failed to create time slots'
+          });
+        }
       }
 
       // Extract smart settings and business settings from the request
@@ -225,8 +464,18 @@ router.post(
       }
 
       // Get existing bookings for conflict detection
-      const startDate = moment();
-      const endDate = moment().add(parseInt(days), "days");
+      let startDate, endDate;
+      
+      // Check if startDate and endDate are provided in the request
+      if (req.body.startDate && req.body.endDate) {
+        startDate = moment(req.body.startDate);
+        endDate = moment(req.body.endDate);
+        console.log('Using provided date range:', startDate.format('YYYY-MM-DD'), 'to', endDate.format('YYYY-MM-DD'));
+      } else {
+        startDate = moment();
+        endDate = moment().add(parseInt(days), "days");
+        console.log('Using calculated date range:', startDate.format('YYYY-MM-DD'), 'to', endDate.format('YYYY-MM-DD'));
+      }
 
       const existingBookings = await prisma.booking.findMany({
         where: {
@@ -264,7 +513,10 @@ router.post(
         mode === "smart" ||
         (smartSettings && Object.keys(smartSettings).length > 0);
 
-      for (let i = 0; i < parseInt(days); i++) {
+      // Calculate the number of days to iterate
+      const daysToIterate = endDate.diff(startDate, 'days') + 1;
+      
+      for (let i = 0; i < daysToIterate; i++) {
         const date = startDate.clone().add(i, "days");
         const dayOfWeek = date.day();
 
@@ -539,6 +791,10 @@ router.post(
                   startTime: slot.startTime,
                   endTime: slot.endTime,
                   isBooked: false,
+                  capacity: 0,
+                  maxCapacity: 1,
+                  isPeakHour: slot.isPeakHour || false,
+                  notes: slot.notes || null,
                 },
               });
               createdSlots.push(createdSlot);
@@ -580,7 +836,7 @@ router.post(
       res.json({
         success: true,
         summary: {
-          totalDays: parseInt(days),
+          totalDays: daysToIterate,
           totalCreated,
           totalSkipped,
           totalConflicts,
@@ -622,7 +878,7 @@ router.put(
       const slot = await prisma.timeSlot.findUnique({
         where: { id: slotId },
         include: {
-          service: {
+          services: {
             include: {
               business: {
                 select: { id: true },
@@ -639,10 +895,34 @@ router.put(
         });
       }
 
-      // Update slot availability (isBooked is the opposite of isAvailable)
+      // Update slot with all provided data
+      const updateData = {};
+      
+      if (typeof isAvailable !== 'undefined') {
+        updateData.isBooked = !isAvailable;
+      }
+      
+      // Handle capacity updates
+      if (req.body.capacity !== undefined) {
+        updateData.capacity = parseInt(req.body.capacity);
+      }
+      
+      if (req.body.maxCapacity !== undefined) {
+        updateData.maxCapacity = parseInt(req.body.maxCapacity);
+      }
+      
+      // Handle other fields
+      if (req.body.isPeakHour !== undefined) {
+        updateData.isPeakHour = req.body.isPeakHour;
+      }
+      
+      if (req.body.notes !== undefined) {
+        updateData.notes = req.body.notes;
+      }
+
       const updatedSlot = await prisma.timeSlot.update({
         where: { id: slotId },
-        data: { isBooked: !isAvailable },
+        data: updateData,
       });
 
       // **REAL-TIME: Emit availability updated event**
@@ -675,7 +955,7 @@ router.put(
       });
 
       realtimeService.emitAvailabilityUpdated(
-        slot.service.business.id,
+        slot.services.business.id,
         slot.serviceId,
         slot.date.toISOString().split("T")[0],
         allDaySlots
@@ -747,6 +1027,10 @@ router.post(
           startTime,
           endTime,
           isBooked: !isAvailable,
+          capacity: req.body.capacity !== undefined ? parseInt(req.body.capacity) : 0,
+          maxCapacity: req.body.maxCapacity !== undefined ? parseInt(req.body.maxCapacity) : 1,
+          isPeakHour: req.body.isPeakHour || false,
+          notes: req.body.notes || null,
         },
       });
 
@@ -755,6 +1039,211 @@ router.post(
         data: timeSlot,
       });
     } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// @desc    Bulk delete specific time slots by IDs
+// @route   DELETE /api/availability/slots/bulk-delete
+// @access  Business owner, Staff, Admin
+router.delete(
+  "/slots/bulk-delete",
+  authenticate,
+  authorize("BUSINESS_OWNER", "STAFF"),
+  async (req, res, next) => {
+    try {
+      console.log('Bulk delete request received for user:', req.user ? { id: req.user.id, businessId: req.user.businessId } : 'No user');
+      
+      const { slotIds } = req.body;
+
+      if (!slotIds || !Array.isArray(slotIds) || slotIds.length === 0) {
+        return res.status(400).json({
+          success: false,
+          error: "Slot IDs array is required",
+          received: { slotIds, type: typeof slotIds }
+        });
+      }
+
+      // Validate and clean slot IDs
+      const validSlotIds = slotIds.filter(id => {
+        if (typeof id !== 'string' || !id.trim()) {
+          console.log('Invalid slot ID found:', id, typeof id);
+          return false;
+        }
+        return true;
+      });
+
+      if (validSlotIds.length === 0) {
+        return res.status(400).json({
+          success: false,
+          error: "No valid slot IDs provided",
+          received: slotIds
+        });
+      }
+
+      if (validSlotIds.length !== slotIds.length) {
+        console.log('Some slot IDs were invalid:', {
+          original: slotIds,
+          valid: validSlotIds,
+          invalid: slotIds.filter(id => !validSlotIds.includes(id))
+        });
+      }
+
+      console.log('Valid slot IDs for deletion:', validSlotIds);
+
+      // Check if all slots exist and belong to the user's business
+      let slots;
+      try {
+        slots = await prisma.timeSlot.findMany({
+          where: {
+            id: { in: validSlotIds },
+          },
+          include: {
+            services: {
+              include: {
+                business: true,
+              },
+            },
+          },
+        });
+      } catch (prismaError) {
+        console.error("Prisma query error:", prismaError);
+        console.error("Query parameters:", { validSlotIds, length: validSlotIds.length });
+        return res.status(500).json({
+          success: false,
+          error: "Database query failed",
+          details: process.env.NODE_ENV === 'development' ? prismaError.message : undefined
+        });
+      }
+
+      if (slots.length !== validSlotIds.length) {
+        const missingIds = validSlotIds.filter(id => !slots.find(s => s.id === id));
+        console.log('Bulk delete - Missing slot IDs:', missingIds);
+        
+        return res.status(404).json({
+          success: false,
+          error: "Some slots not found",
+          requestedCount: validSlotIds.length,
+          foundCount: slots.length,
+          missingIds: missingIds
+        });
+      }
+
+      // Check if all slots have valid services
+      const slotsWithoutServices = slots.filter(slot => !slot.services);
+      if (slotsWithoutServices.length > 0) {
+        return res.status(404).json({
+          success: false,
+          error: "Some slots have invalid services",
+          invalidSlots: slotsWithoutServices.map(s => ({ id: s.id, serviceId: s.serviceId }))
+        });
+      }
+
+      // Check if all slots belong to the user's business
+      const userBusinessId = req.user.businessId;
+      
+      // Debug logging
+      console.log('User business ID:', userBusinessId);
+      console.log('Slots found:', slots.length);
+      
+      if (!userBusinessId) {
+        return res.status(403).json({
+          success: false,
+          error: "User business ID not found",
+        });
+      }
+      
+      const unauthorizedSlots = slots.filter(
+        (slot) => !slot.services || slot.services.business.id !== userBusinessId
+      );
+
+      if (unauthorizedSlots.length > 0) {
+        return res.status(403).json({
+          success: false,
+          error: "You can only delete slots from your own business",
+          unauthorizedSlots: unauthorizedSlots.map(s => ({ id: s.id, serviceId: s.serviceId }))
+        });
+      }
+
+      // Check if any slots are booked
+      const bookedSlots = slots.filter((slot) => slot.isBooked);
+      if (bookedSlots.length > 0) {
+        return res.status(400).json({
+          success: false,
+          error: "Cannot delete booked slots",
+          bookedSlots: bookedSlots.map((slot) => ({
+            id: slot.id,
+            startTime: slot.startTime,
+            endTime: slot.endTime,
+            date: slot.date,
+          })),
+        });
+      }
+
+      // Delete the slots
+      const deletedSlots = await prisma.timeSlot.deleteMany({
+        where: {
+          id: { in: validSlotIds },
+        },
+      });
+
+      // Emit real-time updates for affected dates
+      const slotsByDate = {};
+      slots.forEach((slot) => {
+        if (!slotsByDate[slot.date]) {
+          slotsByDate[slot.date] = [];
+        }
+        slotsByDate[slot.date].push(slot);
+      });
+
+      for (const [date, dateSlots] of Object.entries(slotsByDate)) {
+        const realtimeService = require("../services/realtimeService");
+        realtimeService.emitAvailabilityUpdated(
+          userBusinessId,
+          dateSlots[0].serviceId,
+          date,
+          []
+        );
+      }
+
+      res.json({
+        success: true,
+        message: `${deletedSlots.count} time slots deleted successfully`,
+        deletedCount: deletedSlots.count,
+        deletedSlots: slots.map((slot) => ({
+          id: slot.id,
+          startTime: slot.startTime,
+          endTime: slot.endTime,
+          date: slot.date,
+        })),
+      });
+    } catch (error) {
+      console.error("Error in bulk delete:", error);
+      
+      // Handle Prisma-specific errors
+      if (error.code === 'P2002') {
+        return res.status(400).json({
+          success: false,
+          error: "Duplicate slot IDs provided"
+        });
+      }
+      
+      if (error.code === 'P2025') {
+        return res.status(404).json({
+          success: false,
+          error: "One or more slots not found"
+        });
+      }
+      
+      // Log the full error for debugging
+      console.error("Full error details:", {
+        message: error.message,
+        code: error.code,
+        meta: error.meta,
+        stack: error.stack
+      });
+      
       next(error);
     }
   }
@@ -1042,6 +1531,10 @@ router.post(
                   startTime: slot.startTime,
                   endTime: slot.endTime,
                   isBooked: false,
+                  capacity: 0,
+                  maxCapacity: 1,
+                  isPeakHour: slot.isPeakHour || false,
+                  notes: slot.notes || null,
                 },
               });
               createdSlots.push(createdSlot);
@@ -1135,7 +1628,7 @@ router.get(
         orderBy: [{ date: "asc" }, { startTime: "asc" }],
         take: parseInt(limit),
         include: {
-          service: {
+          services: {
             select: {
               name: true,
               duration: true,
@@ -1641,6 +2134,10 @@ router.post(
                 startTime: slot.startTime,
                 endTime: slot.endTime,
                 isBooked: false,
+                capacity: 0,
+                maxCapacity: 1,
+                isPeakHour: slot.isPeakHour || false,
+                notes: slot.notes || null,
               },
             });
             createdSlots.push(createdSlot);
@@ -1956,6 +2453,10 @@ async function getDetailedAvailability(businessId, serviceId, date) {
           endTime: slot.endTime,
           isAvailable: !slot.isBooked && !isBookedByBooking,
           isBooked: slot.isBooked || isBookedByBooking,
+          capacity: slot.capacity,
+          maxCapacity: slot.maxCapacity,
+          isPeakHour: slot.isPeakHour,
+          notes: slot.notes,
         };
 
         console.log(

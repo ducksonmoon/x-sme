@@ -2,11 +2,10 @@ import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { dashboardApi } from "@/services/api";
+import { dashboardApi, api } from "@/services/api";
 import { useBusiness } from "@/contexts/BusinessContext";
 import { useAuthStore } from "@/store/authStore";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import useRealtimeBookings from "@/hooks/useRealtimeBookings";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,30 +17,23 @@ import {
   Clock,
   Settings,
   RefreshCw,
-  CalendarDays,
-  Repeat,
   Plus,
   Trash2,
   Save,
   Copy,
   Users,
-  Coffee,
-  Zap,
   AlertCircle,
+  AlertTriangle,
   CheckCircle,
   XCircle,
+  X,
   CalendarRange,
   Smartphone,
   Building,
   Target,
-  Palette,
   Sparkles,
   BarChart3,
-  FileText,
-  Download,
-  Upload,
   Eye,
-  EyeOff,
   Filter,
   Search,
   ChevronLeft,
@@ -49,39 +41,60 @@ import {
   Play,
   Pause,
   RotateCcw,
-  Layers,
   Grid,
   List,
-  Maximize2,
-  Minimize2,
   Info,
   Home,
+  Brain,
+  Shield,
+  Lightbulb,
+  Zap,
+  Coffee,
+  Repeat,
+  FileText,
+  Download,
+  Upload,
+  EyeOff,
+  Maximize2,
+  Minimize2,
   ChevronRight as ChevronRightIcon,
 } from "lucide-react";
-import Modal from "@/components/ui/modal";
 
+// Types following Bookly's business logic
 interface TimeSlot {
   id?: string;
+  serviceId: string;
+  date: string;
   startTime: string;
   endTime: string;
   isAvailable: boolean;
-  isBooked?: boolean;
-  capacity?: number;
-  maxCapacity?: number;
-  isPeakHour?: boolean;
-  serviceDuration?: number;
-  intervalMinutes?: number;
+  isBooked: boolean;
+  capacity: number;
+  maxCapacity: number;
+  isPeakHour: boolean;
+  serviceDuration: number;
+  intervalMinutes: number;
+  staffId?: string;
+  price?: number;
+  customPrice?: number;
+  notes?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 interface Service {
   id: string;
   name: string;
+  description?: string;
   duration: number;
   price: number;
+  isActive: boolean;
+  businessId: string;
 }
 
 interface WorkingHour {
   id: string;
+  businessId: string;
   dayOfWeek: number;
   startTime: string;
   endTime: string;
@@ -89,14 +102,50 @@ interface WorkingHour {
 }
 
 interface BusinessSettings {
-  lunchBreakStart?: string;
-  lunchBreakEnd?: string;
-  maxBookingsPerSlot?: number;
-  advanceBookingDays?: number;
-  sameDayBooking?: boolean;
-  peakHoursStart?: string;
-  peakHoursEnd?: string;
-  bufferBetweenSlots?: number;
+  id: string;
+  businessId: string;
+  advanceBookingDays: number;
+  bufferBetweenSlots: number;
+  includeLunchBreak: boolean;
+  lunchBreakStart: string;
+  lunchBreakEnd: string;
+  maxBookingsPerSlot: number;
+  maxSlotsPerDay: number;
+  optimizeForPeakHours: boolean;
+  peakHoursStart: string;
+  peakHoursEnd: string;
+  respectWorkingHours: boolean;
+  sameDayBooking: boolean;
+  useServiceDuration: boolean;
+}
+
+interface Staff {
+  id: string;
+  firstName: string;
+  lastName: string;
+  specialization?: string;
+  bio?: string;
+  experience?: number;
+  isActive: boolean;
+  services: StaffService[];
+  workingHours: StaffWorkingHour[];
+}
+
+interface StaffService {
+  id: string;
+  staffId: string;
+  serviceId: string;
+  customPrice?: number;
+  service: Service;
+}
+
+interface StaffWorkingHour {
+  id: string;
+  staffId: string;
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  isActive: boolean;
 }
 
 interface GenerationMode {
@@ -107,691 +156,358 @@ interface GenerationMode {
   settings: any;
 }
 
+interface TimeSlotTemplate {
+  id: string;
+  name: string;
+  description: string;
+  settings: any;
+  businessId: string;
+}
+
+interface ConflictError {
+  type:
+    | "conflict"
+    | "capacity"
+    | "overlap"
+    | "general"
+    | "booking_conflict"
+    | "staff_unavailable"
+    | "working_hours"
+    | "service_duration";
+  message: string;
+  details?: {
+    conflictingSlots?: number;
+    conflictingBookings?: number;
+    overlappingTimes?: string[];
+    conflictingDates?: string[];
+    staffConflicts?: Array<{
+      staffId: string;
+      staffName: string;
+      conflicts: Array<{
+        date: string;
+        time: string;
+        reason: string;
+      }>;
+    }>;
+    serviceConflicts?: Array<{
+      serviceId: string;
+      serviceName: string;
+      conflicts: Array<{
+        date: string;
+        time: string;
+        reason: string;
+      }>;
+    }>;
+    workingHoursConflicts?: Array<{
+      dayOfWeek: number;
+      dayName: string;
+      requestedTime: string;
+      availableTime: string;
+    }>;
+  };
+  suggestions?: string[];
+  severity: "low" | "medium" | "high" | "critical";
+  canAutoResolve?: boolean;
+  autoResolveOptions?: Array<{
+    id: string;
+    label: string;
+    description: string;
+    action: string;
+  }>;
+}
+
 const TimeSlots: React.FC = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { business, businessId } = useBusiness();
   const { user } = useAuthStore();
 
-  // State management
+  // Basic state management
   const [selectedService, setSelectedService] = useState<string>("");
   const [selectedDate, setSelectedDate] = useState<string>(
     new Date().toISOString().split("T")[0] || ""
   );
   const [activeTab, setActiveTab] = useState("overview");
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [showAdvanced, setShowAdvanced] = useState(false);
-  const [showQuickModal, setShowQuickModal] = useState(false);
-  const [showSmartModal, setShowSmartModal] = useState(false);
-  const [showRecurringModal, setShowRecurringModal] = useState(false);
-  const [showAddSlotModal, setShowAddSlotModal] = useState(false);
-  const [showConflictModal, setShowConflictModal] = useState(false);
-  const [showRegenerateModal, setShowRegenerateModal] = useState(false);
-  const [showImpactAnalysisModal, setShowImpactAnalysisModal] = useState(false);
   const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
   const [selectAll, setSelectAll] = useState(false);
-  const [forceRegenerate, setForceRegenerate] = useState(false);
-  const [conflictResolution, setConflictResolution] = useState<
-    "preserve" | "reschedule" | "force"
-  >("preserve");
-  const [backupStrategy, setBackupStrategy] = useState<
-    "auto" | "manual" | "none"
-  >("auto");
-  const [conflictData, setConflictData] = useState<any>(null);
-  const [pendingGeneration, setPendingGeneration] = useState<any>(null);
-  const [impactAnalysis, setImpactAnalysis] = useState<any>(null);
-  const [regenerateSettings, setRegenerateSettings] = useState({
-    notifyCustomers: true,
-    createBackup: true,
-    requireConfirmation: true,
-  });
 
-  // Real-time availability updates
-  const {
-    isConnected: realtimeConnected,
-    connectionError: realtimeError,
-    connectionStatus: realtimeConnectionStatus,
-    liveAvailability,
-    subscribeToBusinessUpdates: subscribeToAvailability,
-    requestLiveAvailability,
-    notifyBookingAttempt,
-  } = useRealtimeBookings({
-    businessId: businessId || "",
-    autoConnect: !!businessId,
-    onAvailabilityUpdated: (businessId, serviceId, date, timeSlots) => {
-      // Only invalidate if it matches current selection
-      if (serviceId === selectedService && date === selectedDate) {
-        queryClient.invalidateQueries({ queryKey: ["timeSlots"] });
-        toast.success("🕒 ساعات کاری بروزرسانی شد", {
-          duration: 2000,
-          icon: "⚡",
-        });
-      }
-    },
-    onTimeSlotBooked: (businessId, serviceId, timeSlot) => {
-      if (serviceId === selectedService) {
-        queryClient.invalidateQueries({ queryKey: ["timeSlots"] });
-        toast(`🔒 اسلات ${timeSlot.startTime} رزرو شد`, {
-          duration: 3000,
-          icon: "📅",
-        });
-      }
-    },
-    onTimeSlotFreed: (businessId, serviceId, timeSlot) => {
-      if (serviceId === selectedService) {
-        queryClient.invalidateQueries({ queryKey: ["timeSlots"] });
-        toast.success(`🔓 اسلات ${timeSlot.startTime} آزاد شد`, {
-          duration: 3000,
-          icon: "✅",
-        });
-      }
-    },
-    onBookingCreated: (booking) => {
-      // Show notification when someone books through widget
-      if (booking.service?.id === selectedService) {
-        toast.success(
-          `📝 رزرو جدید: ${booking.customerName} برای ${booking.startTime}`,
-          {
-            duration: 4000,
-            icon: "🎉",
-          }
-        );
-        queryClient.invalidateQueries({ queryKey: ["timeSlots"] });
-      }
-    },
-  });
+  // Modal states
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [showBulkActionsModal, setShowBulkActionsModal] = useState(false);
+  const [showCapacityModal, setShowCapacityModal] = useState(false);
+  const [selectedSlotForCapacity, setSelectedSlotForCapacity] =
+    useState<TimeSlot | null>(null);
 
-  // Smart generation settings
-  const [smartSettings, setSmartSettings] = useState({
-    useServiceDuration: true,
-    includeLunchBreak: true,
-    optimizeForPeakHours: true,
-    respectWorkingHours: true,
-    maxSlotsPerDay: 20,
-    bufferBetweenSlots: 15, // Deprecated: Use businessSettings.bufferBetweenSlots instead
-  });
+  // Conflict handling states
+  const [modalConflictError, setModalConflictError] =
+    useState<ConflictError | null>(null);
+  const [modalSummary, setModalSummary] = useState<any>(null);
+  const [showConflictDetails, setShowConflictDetails] = useState(false);
+  const [creationStep, setCreationStep] = useState<
+    "form" | "summary" | "conflicts"
+  >("form");
 
-  // Business settings state
-  const [businessSettings, setBusinessSettings] = useState({
-    lunchBreakStart: "12:00",
-    lunchBreakEnd: "13:00",
-    maxBookingsPerSlot: 1,
-    advanceBookingDays: 30,
-    sameDayBooking: true,
-    peakHoursStart: "10:00",
-    peakHoursEnd: "16:00",
-    bufferBetweenSlots: 15,
-  });
+  // Loading states
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
-  // Recurring pattern state
-  const [recurringPattern, setRecurringPattern] = useState({
-    days: [1, 2, 3, 4, 5], // Mon-Fri
-    weeks: 4,
-    startTime: "09:00",
-    endTime: "18:00",
-  });
-
-  // Generation modes
-  const generationModes: GenerationMode[] = [
-    {
-      id: "quick",
-      name: "تولید سریع",
-      description: "تولید ساعات کاری ساده با فاصله 30 دقیقه‌ای",
-      icon: <Zap className="w-5 h-5" />,
-      settings: { mode: "basic" },
-    },
-    {
-      id: "smart",
-      name: "تولید هوشمند",
-      description: "تولید ساعات کاری با الگوریتم‌های پیشرفته",
-      icon: <Sparkles className="w-5 h-5" />,
-      settings: {
-        mode: "smart",
-        smartSettings,
-        businessSettings,
-      },
-    },
-    {
-      id: "recurring",
-      name: "الگوی دوره‌ای",
-      description: "تولید ساعات کاری تکرار شونده برای چند هفته",
-      icon: <Repeat className="w-5 h-5" />,
-      settings: {
-        mode: "recurring",
-        pattern: recurringPattern,
-        smartSettings,
-        businessSettings,
-      },
-    },
-  ];
-
-  // Fetch services for the business
+  // Queries
   const { data: services, isLoading: servicesLoading } = useQuery({
     queryKey: ["services", businessId],
     queryFn: () => dashboardApi.getServices(businessId!),
     enabled: !!businessId,
   });
 
-  // Fetch time slots for selected date and service
-  const {
-    data: timeSlots,
-    isLoading: slotsLoading,
-    refetch: refetchSlots,
-  } = useQuery({
-    queryKey: ["timeSlots", businessId, selectedService, selectedDate],
-    queryFn: async () => {
-      console.log("Fetching time slots for:", {
-        businessId,
-        selectedService,
-        selectedDate,
-      });
-      const result = await dashboardApi.getTimeSlots(
-        businessId!,
-        selectedService,
-        selectedDate
-      );
-      console.log("Time slots API response:", result);
-      return result;
-    },
-    enabled: !!businessId && !!selectedService && !!selectedDate,
-  });
-
-  // Fetch working hours for the business
-  const { data: workingHours } = useQuery({
-    queryKey: ["workingHours", businessId],
-    queryFn: () => dashboardApi.getWorkingHours(businessId!),
-    enabled: !!businessId,
-  });
-
-  // Fetch business settings
-  const { data: businessSettingsData, isLoading: settingsLoading } = useQuery({
-    queryKey: ["businessSettings", businessId],
-    queryFn: () => dashboardApi.getBusinessSettings(businessId!),
-    enabled: !!businessId,
-  });
-
-  // Auto-select first service when services load
+  // Auto-select first service if available and none selected
   useEffect(() => {
     if (
       services?.data?.data &&
       services.data.data.length > 0 &&
       !selectedService
     ) {
-      setSelectedService(services.data.data[0].id);
+      const firstService = services.data.data[0];
+      setSelectedService(firstService.id);
     }
   }, [services, selectedService]);
 
-  // Load business settings from API
-  useEffect(() => {
-    if (businessSettingsData?.data?.data) {
-      const settings = businessSettingsData.data.data;
-      console.log("Loading business settings:", settings);
-
-      setBusinessSettings({
-        lunchBreakStart: settings.lunchBreakStart || "12:00",
-        lunchBreakEnd: settings.lunchBreakEnd || "13:00",
-        maxBookingsPerSlot: settings.maxBookingsPerSlot || 1,
-        advanceBookingDays: settings.advanceBookingDays || 30,
-        sameDayBooking: settings.sameDayBooking !== false,
-        peakHoursStart: settings.peakHoursStart || "10:00",
-        peakHoursEnd: settings.peakHoursEnd || "16:00",
-        bufferBetweenSlots: settings.bufferBetweenSlots || 15,
-      });
-
-      setSmartSettings({
-        useServiceDuration: settings.useServiceDuration !== false,
-        includeLunchBreak: settings.includeLunchBreak !== false,
-        optimizeForPeakHours: settings.optimizeForPeakHours !== false,
-        respectWorkingHours: settings.respectWorkingHours !== false,
-        maxSlotsPerDay: settings.maxSlotsPerDay || 20,
-        bufferBetweenSlots: settings.bufferBetweenSlots || 15, // Deprecated: kept for compatibility
-      });
-    }
-  }, [businessSettingsData]);
-
-  // Auto-adjust buffer based on service duration if needed
-  useEffect(() => {
-    if (
-      selectedService &&
-      services?.data?.data &&
-      smartSettings.useServiceDuration
-    ) {
-      const service = services.data.data.find(
-        (s: Service) => s.id === selectedService
-      );
-      if (service) {
-        // Only suggest a minimum buffer if it's currently less than a reasonable amount
-        // but allow 0 as a valid choice
-        const suggestedMinimum = 5;
-
-        // Only auto-adjust if buffer is less than suggested AND user hasn't explicitly set it to 0
-        if (
-          businessSettings.bufferBetweenSlots > 0 &&
-          businessSettings.bufferBetweenSlots < suggestedMinimum
-        ) {
-          setBusinessSettings((prev) => ({
-            ...prev,
-            bufferBetweenSlots: suggestedMinimum,
-          }));
-        }
-      }
-    }
-  }, [selectedService, services, smartSettings.useServiceDuration]);
-
-  // Subscribe to real-time updates when service/date changes
-  useEffect(() => {
-    if (realtimeConnected && businessId) {
-      subscribeToAvailability(businessId);
-
-      // Only request availability if we have service and date selected
-      if (selectedService && selectedDate) {
-        requestLiveAvailability(businessId, selectedService, selectedDate);
-      }
-    }
-  }, [
-    realtimeConnected,
-    businessId,
-    selectedService,
-    selectedDate,
-    subscribeToAvailability,
-    requestLiveAvailability,
-  ]);
-
-  // Generate time slots mutation with conflict handling
-  const generateSlotsMutation = useMutation({
-    mutationFn: (data: {
-      businessId: string;
-      serviceId: string;
-      days: number;
-      mode: string;
-      settings: any;
-      forceRegenerate?: boolean;
-      conflictResolution?: string;
-    }) => {
-      const requestData = {
-        serviceId: data.serviceId,
-        days: data.days,
-        mode: data.mode,
-        settings: data.settings,
-        conflictResolution: data.conflictResolution || conflictResolution,
-      };
-
-      const apiCall = data.forceRegenerate
-        ? dashboardApi.regenerateTimeSlots(data.businessId, {
-            ...requestData,
-            forceRegenerate: true,
-          })
-        : dashboardApi.generateTimeSlots(data.businessId, requestData);
-
-      return apiCall;
-    },
-    onSuccess: (response) => {
-      queryClient.invalidateQueries({ queryKey: ["timeSlots"] });
-
-      const data = response.data;
-      const conflicts = data.conflicts;
-
-      if (conflicts && conflicts.total > 0) {
-        // Handle conflicts based on resolution strategy
-        setConflictData(conflicts);
-
-        if (conflictResolution === "preserve") {
-          setShowConflictModal(true);
-          toast(`تولید شد اما ${conflicts.total} تداخل یافت شد و حفظ گردید`, {
-            icon: "⚠️",
-            duration: 4000,
-          });
-        } else if (conflictResolution === "reschedule") {
-          setShowConflictModal(true);
-          toast(`تولید شد. ${conflicts.total} رزرو نیاز به جابجایی دارد`, {
-            icon: "ℹ️",
-            duration: 4000,
-          });
-        } else if (conflictResolution === "force") {
-          toast.success(`تولید شد. ${conflicts.total} رزرو متداخل لغو گردید`);
-        }
-      } else {
-        const mode = data.summary?.mode || "smart";
-        const isForceRegenerate = data.summary?.shouldForceRegenerate;
-        const message = isForceRegenerate
-          ? "ساعات کاری با موفقیت بازتولید شد"
-          : mode === "recurring"
-            ? "الگوی دوره‌ای با موفقیت ایجاد شد"
-            : "ساعات کاری با موفقیت تولید شد";
-        toast.success(message);
-      }
-
-      setIsGenerating(false);
-      setPendingGeneration(null);
-    },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "خطا در تولید ساعات کاری");
-      setIsGenerating(false);
-      setPendingGeneration(null);
-    },
+  const { data: timeSlots, isLoading: timeSlotsLoading } = useQuery({
+    queryKey: ["timeSlots", businessId, selectedService, selectedDate],
+    queryFn: () =>
+      dashboardApi.getTimeSlots(businessId!, selectedService!, selectedDate!),
+    enabled: !!businessId && !!selectedService && !!selectedDate,
   });
 
-  // Update time slot availability mutation
-  const updateSlotMutation = useMutation({
-    mutationFn: (data: { slotId: string; isAvailable: boolean }) =>
-      dashboardApi.updateTimeSlot(data.slotId, data),
+  const { data: workingHours } = useQuery({
+    queryKey: ["workingHours", businessId],
+    queryFn: () => dashboardApi.getWorkingHours(businessId!),
+    enabled: !!businessId,
+  });
+
+  const { data: businessSettings } = useQuery({
+    queryKey: ["businessSettings", businessId],
+    queryFn: () => dashboardApi.getBusinessSettings(businessId!),
+    enabled: !!businessId,
+  });
+
+  // Mutations
+  const generateTimeSlotsMutation = useMutation({
+    mutationFn: (data: any) =>
+      dashboardApi.generateTimeSlots(businessId!, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["timeSlots"] });
-      toast.success("وضعیت ساعت بروزرسانی شد");
+      toast.success("ساعات کاری با موفقیت ایجاد شد");
+      setConflictError(null);
     },
     onError: (error: any) => {
-      console.error("Update slot error:", error);
-      toast.error(error?.response?.data?.message || "خطا در بروزرسانی ساعت");
-    },
-  });
+      const errorMessage =
+        error.response?.data?.message || "خطا در ایجاد ساعات کاری";
+      const errorDetails = error.response?.data?.details;
 
-  // Create time slot mutation
-  const createSlotMutation = useMutation({
-    mutationFn: (data: {
-      businessId: string;
-      serviceId: string;
-      date: string;
-      startTime: string;
-      endTime: string;
-      isAvailable: boolean;
-    }) => {
-      console.log("Creating time slot with data:", data);
-      return dashboardApi.createTimeSlot(data);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["timeSlots"] });
-      toast.success("ساعت جدید ایجاد شد");
-    },
-    onError: (error: any) => {
-      console.error("Create slot error:", error);
-      toast.error(error?.response?.data?.message || "خطا در ایجاد ساعت");
-    },
-  });
-
-  // Delete time slot mutation
-  const deleteSlotMutation = useMutation({
-    mutationFn: (slotId: string) => dashboardApi.deleteTimeSlot(slotId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["timeSlots"] });
-      toast.success("ساعت حذف شد");
-    },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "خطا در حذف ساعت");
-    },
-  });
-
-  // Bulk delete time slots mutation
-  const bulkDeleteMutation = useMutation({
-    mutationFn: (data: { serviceId: string; days: number }) =>
-      dashboardApi.bulkDeleteTimeSlots(data.serviceId, { days: data.days }),
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["timeSlots"] });
-      toast.success(`${data.data.deletedCount} ساعت حذف شد`);
-    },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "خطا در حذف گروهی");
-    },
-  });
-
-  // Add slot mutation
-  const addSlotMutation = useMutation({
-    mutationFn: (data: {
-      businessId: string;
-      serviceId: string;
-      date: string;
-      startTime: string;
-      endTime: string;
-    }) => {
-      const requestData = { ...data, isAvailable: true };
-      console.log("Adding time slot with data:", requestData);
-      return dashboardApi.createTimeSlot(requestData);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["timeSlots"] });
-      toast.success("ساعت جدید اضافه شد");
-      setShowAddSlotModal(false);
-    },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "خطا در اضافه کردن ساعت");
-    },
-  });
-
-  // Enhanced regenerate time slots mutation
-  const regenerateSlotsMutation = useMutation({
-    mutationFn: (data: {
-      businessId: string;
-      serviceId: string;
-      days: number;
-      mode: string;
-      settings: any;
-      forceRegenerate: boolean;
-      conflictResolution: string;
-      backupStrategy: string;
-      notificationPreferences: any;
-    }) => {
-      console.log("Regenerating slots with enhanced options:", data);
-      return dashboardApi.regenerateTimeSlots(data.businessId, {
-        serviceId: data.serviceId,
-        days: data.days,
-        mode: data.mode,
-        settings: data.settings,
-        forceRegenerate: data.forceRegenerate,
-        conflictResolution: data.conflictResolution,
-        backupStrategy: data.backupStrategy,
-        notificationPreferences: data.notificationPreferences,
-      });
-    },
-    onSuccess: (response) => {
-      queryClient.invalidateQueries({ queryKey: ["timeSlots"] });
-
-      const data = response.data;
-
-      // Show impact analysis if significant changes occurred
+      // Check if this is a conflict error
       if (
-        data.impactAnalysis &&
-        (data.impactAnalysis.affectedBookings > 0 ||
-          data.summary.totalBookingsAffected > 0)
+        errorMessage.includes("conflicts") ||
+        errorMessage.includes("overlap") ||
+        errorMessage.includes("existing")
       ) {
-        setImpactAnalysis(data);
-        setShowImpactAnalysisModal(true);
+        const conflictError: ConflictError = {
+          type: "conflict",
+          message: errorMessage,
+          details: errorDetails,
+          severity: "medium",
+          suggestions: [
+            "زمان‌های انتخاب شده با ساعات موجود تداخل دارند",
+            "لطفاً بازه زمانی دیگری انتخاب کنید",
+            "می‌توانید از حالت 'جایگزینی' برای حل تداخل استفاده کنید",
+          ],
+        };
+        setConflictError(conflictError);
+        setShowConflictHelp(true);
+      } else {
+        toast.error(errorMessage);
       }
-
-      // Handle conflicts and notifications
-      if (data.conflicts && data.conflicts.total > 0) {
-        setConflictData(data.conflicts);
-        setShowConflictModal(true);
-      }
-
-      // Show appropriate success message
-      const { summary } = data;
-      let message = "بازتولید ساعات کاری با موفقیت انجام شد";
-
-      if (summary.totalBookingsAffected > 0) {
-        message += `. ${summary.totalBookingsAffected} رزرو تحت تأثیر قرار گرفت`;
-      }
-
-      if (summary.backupCreated) {
-        message += ". نسخه پشتیبان ایجاد شد";
-      }
-
-      toast.success(message);
-      setShowRegenerateModal(false);
-    },
-    onError: (error: any) => {
-      console.error("Regenerate error:", error);
-      toast.error(
-        error?.response?.data?.message || "خطا در بازتولید ساعات کاری"
-      );
-      setShowRegenerateModal(false);
     },
   });
 
-  // Save business settings mutation
-  const saveSettingsMutation = useMutation({
-    mutationFn: (data: any) => {
-      if (!businessId) {
-        return Promise.reject("No business found");
-      }
-      console.log("Saving business settings:", data);
-      return dashboardApi.updateBusinessSettings(businessId, data);
-    },
+  const updateTimeSlotMutation = useMutation({
+    mutationFn: ({ slotId, data }: { slotId: string; data: any }) =>
+      dashboardApi.updateTimeSlot(slotId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["businessSettings"] });
-      toast.success("تنظیمات با موفقیت ذخیره شد");
+      queryClient.invalidateQueries({ queryKey: ["timeSlots"] });
+      toast.success("ساعت کاری بروزرسانی شد");
+      setConflictError(null);
     },
     onError: (error: any) => {
-      console.error("Save settings error:", error);
-      toast.error(error?.response?.data?.message || "خطا در ذخیره تنظیمات");
+      const errorMessage =
+        error.response?.data?.message || "خطا در بروزرسانی ساعت کاری";
+
+      if (
+        errorMessage.includes("conflicts") ||
+        errorMessage.includes("booked")
+      ) {
+        toast.error("این ساعت کاری در حال حاضر رزرو شده و قابل تغییر نیست");
+      } else {
+        toast.error(errorMessage);
+      }
     },
   });
 
-  const handleGenerateSlots = async (
-    mode: GenerationMode,
-    skipConflictCheck = false
-  ) => {
-    if (!businessId || !selectedService) {
-      toast.error("لطفاً ابتدا یک سرویس انتخاب کنید");
-      return;
-    }
-
-    console.log("Generating slots with mode:", mode);
-    console.log("Settings being sent:", mode.settings);
-
-    // Check for existing bookings first (unless skipping or force regenerating)
-    if (
-      !skipConflictCheck &&
-      !forceRegenerate &&
-      conflictResolution === "preserve"
-    ) {
-      const hasConflicts = await checkForExistingBookings();
-      if (hasConflicts) {
-        setPendingGeneration({ mode, businessId, selectedService });
-        setShowConflictModal(true);
-        return;
-      }
-    }
-
-    setIsGenerating(true);
-    generateSlotsMutation.mutate({
-      businessId,
-      serviceId: selectedService,
-      days: 7,
-      mode: mode.settings.mode,
-      settings: mode.settings,
-      forceRegenerate,
-      conflictResolution,
-    });
-  };
-
-  // Check for existing bookings that might conflict
-  const checkForExistingBookings = async () => {
-    try {
-      const response = await dashboardApi.getBookings(businessId!, {
-        serviceId: selectedService,
-        status: "PENDING,CONFIRMED",
-        limit: 50,
-      });
-
-      const bookings = response.data?.bookings || [];
-      const futureBookings = bookings.filter((booking: any) => {
-        const bookingDate = new Date(booking.date);
-        const today = new Date();
-        const weekFromNow = new Date();
-        weekFromNow.setDate(today.getDate() + 7);
-        return bookingDate >= today && bookingDate <= weekFromNow;
-      });
-
-      return futureBookings.length > 0;
-    } catch (error) {
-      console.error("Error checking existing bookings:", error);
-      return false;
-    }
-  };
-
-  const handleToggleSlot = (
-    slotId: string | undefined,
-    isAvailable: boolean,
-    slotData?: any
-  ) => {
-    console.log("handleToggleSlot called with:", {
+  // Add capacity update mutation
+  const updateSlotCapacityMutation = useMutation({
+    mutationFn: ({
       slotId,
-      isAvailable,
-      slotData,
-      businessId,
-      selectedService,
-      selectedDate,
-    });
+      capacity,
+      maxCapacity,
+    }: {
+      slotId: string;
+      capacity: number;
+      maxCapacity: number;
+    }) => dashboardApi.updateTimeSlot(slotId, { capacity, maxCapacity }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["timeSlots"] });
+      toast.success("ظرفیت ساعت کاری بروزرسانی شد");
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "خطا در بروزرسانی ظرفیت");
+    },
+  });
 
-    if (!slotId) {
-      if (!businessId || !selectedService || !selectedDate || !slotData) {
-        console.error("Missing required data for creating slot:", {
-          businessId: !!businessId,
-          selectedService: !!selectedService,
-          selectedDate: !!selectedDate,
-          slotData: !!slotData,
-        });
-        toast.error("خطا: اطلاعات ناقص برای ایجاد ساعت");
-        return;
-      }
-
-      const createData = {
-        businessId,
-        serviceId: selectedService,
-        date: selectedDate,
-        startTime: slotData.startTime,
-        endTime: slotData.endTime,
-        isAvailable: !isAvailable,
-      };
-
-      console.log("Creating slot with data:", createData);
-      createSlotMutation.mutate(createData);
-    } else {
-      console.log("Updating slot availability:", {
-        slotId,
-        isAvailable: !isAvailable,
-      });
-      updateSlotMutation.mutate({ slotId, isAvailable: !isAvailable });
-    }
-  };
-
-  const handleDeleteSlot = (slotId: string) => {
-    if (confirm("آیا از حذف این ساعت اطمینان دارید؟")) {
-      deleteSlotMutation.mutate(slotId);
-    }
-  };
-
-  const handleBulkDelete = () => {
-    if (!selectedService) {
-      toast.error("لطفاً ابتدا یک سرویس انتخاب کنید");
-      return;
-    }
-
-    const days = prompt("تعداد روزهای آینده برای حذف (پیش‌فرض: 7):", "7");
-    if (days && !isNaN(Number(days))) {
-      bulkDeleteMutation.mutate({
-        serviceId: selectedService,
-        days: Number(days),
-      });
-    }
+  // Handlers
+  const handleServiceChange = (serviceId: string) => {
+    setSelectedService(serviceId);
+    setSelectedSlots([]);
+    setSelectAll(false);
   };
 
   const handleDateChange = (date: string) => {
     setSelectedDate(date);
+    setSelectedSlots([]);
+    setSelectAll(false);
   };
 
-  const handleServiceChange = (serviceId: string) => {
-    setSelectedService(serviceId);
+  const handleSelectSlot = (slotId: string) => {
+    setSelectedSlots((prev) =>
+      prev.includes(slotId)
+        ? prev.filter((id) => id !== slotId)
+        : [...prev, slotId]
+    );
   };
 
-  const toggleDaySelection = (day: number) => {
-    setRecurringPattern((prev) => ({
-      ...prev,
-      days: prev.days.includes(day)
-        ? prev.days.filter((d) => d !== day)
-        : [...prev.days, day],
-    }));
+  const handleSelectAll = () => {
+    if (!timeSlots?.data.data.availableSlots) return;
+
+    if (selectAll) {
+      setSelectedSlots([]);
+      setSelectAll(false);
+    } else {
+      setSelectedSlots(
+        timeSlots.data.data.availableSlots.map((slot: TimeSlot) => slot.id!)
+      );
+      setSelectAll(true);
+    }
+  };
+
+  const handleToggleSlot = (slotId: string, isAvailable: boolean) => {
+    updateTimeSlotMutation.mutate({
+      slotId,
+      data: { isAvailable },
+    });
+  };
+
+  const handleDeleteSlot = (slotId: string) => {
+    if (confirm("آیا از حذف این ساعت کاری اطمینان دارید؟")) {
+      deleteTimeSlotMutation.mutate(slotId);
+    }
+  };
+
+  // Enhanced delete mutation with conflict handling
+  const deleteTimeSlotMutation = useMutation({
+    mutationFn: (slotId: string) => dashboardApi.deleteTimeSlot(slotId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["timeSlots"] });
+      toast.success("ساعت کاری حذف شد");
+    },
+    onError: (error: any) => {
+      const errorMessage =
+        error.response?.data?.message || "خطا در حذف ساعت کاری";
+
+      if (
+        errorMessage.includes("booked") ||
+        errorMessage.includes("conflicts")
+      ) {
+        toast.error("این ساعت کاری رزرو شده و قابل حذف نیست");
+      } else {
+        toast.error(errorMessage);
+      }
+    },
+  });
+
+  const handleEditCapacity = (slot: TimeSlot) => {
+    setSelectedSlotForCapacity(slot);
+    setShowCapacityModal(true);
+  };
+
+  const handleUpdateCapacity = (capacity: number, maxCapacity: number) => {
+    if (selectedSlotForCapacity) {
+      updateSlotCapacityMutation.mutate({
+        slotId: selectedSlotForCapacity.id!,
+        capacity,
+        maxCapacity,
+      });
+      setShowCapacityModal(false);
+      setSelectedSlotForCapacity(null);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedSlots.length === 0) {
+      toast.error("لطفاً ساعات کاری را انتخاب کنید");
+      return;
+    }
+
+    if (
+      confirm(`آیا از حذف ${selectedSlots.length} ساعت کاری اطمینان دارید؟`)
+    ) {
+      try {
+        const response =
+          await dashboardApi.bulkDeleteTimeSlotsByIds(selectedSlots);
+
+        if (response.data.success) {
+          toast.success(`${response.data.deletedCount} ساعت کاری حذف شد`);
+          if (response.data.failedCount > 0) {
+            toast(
+              `${response.data.failedCount} ساعت کاری به دلیل رزرو بودن حذف نشد`,
+              {
+                icon: "⚠️",
+                duration: 4000,
+              }
+            );
+          }
+          setSelectedSlots([]);
+          setSelectAll(false);
+          // Refresh the time slots
+          queryClient.invalidateQueries({ queryKey: ["timeSlots"] });
+        } else {
+          toast.error(response.data.error || "خطا در حذف ساعات کاری");
+        }
+      } catch (error: any) {
+        console.error("Error deleting time slots:", error);
+        const errorMessage =
+          error.response?.data?.error || "خطا در حذف ساعات کاری";
+
+        // Check if this is a conflict error
+        if (
+          errorMessage.includes("booked") ||
+          errorMessage.includes("conflicts")
+        ) {
+          toast.error("برخی از ساعات کاری رزرو شده‌اند و قابل حذف نیستند");
+        } else {
+          toast.error(errorMessage);
+        }
+      }
+    }
   };
 
   const getDayName = (day: number) => {
@@ -807,2464 +523,3001 @@ const TimeSlots: React.FC = () => {
     return days[day];
   };
 
-  const getWorkingHoursForDay = (dayOfWeek: number) => {
-    if (!workingHours?.data?.data) return null;
-    return workingHours.data.data.find((wh: any) => wh.dayOfWeek === dayOfWeek);
-  };
-
-  const getSelectedServiceDetails = () => {
-    if (!selectedService || !services?.data?.data) return null;
-    return services.data.data.find((s: Service) => s.id === selectedService);
-  };
-
   const getSlotStatus = (slot: TimeSlot) => {
     if (slot.isBooked) return "booked";
-    if (slot.isAvailable) return "available";
-    return "unavailable";
+    if (!slot.isAvailable) return "unavailable";
+    return "available";
   };
 
   const getSlotStatusColor = (status: string) => {
     switch (status) {
       case "available":
-        return "border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20";
+        return "success";
       case "booked":
-        return "border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20";
+        return "destructive";
       case "unavailable":
-        return "border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/20";
+        return "secondary";
       default:
-        return "border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/20";
+        return "default";
     }
   };
 
   const getSlotStatusIcon = (status: string) => {
     switch (status) {
       case "available":
-        return <CheckCircle className="w-4 h-4 text-green-600" />;
+        return <CheckCircle className="w-4 h-4" />;
       case "booked":
-        return <XCircle className="w-4 h-4 text-red-600" />;
+        return <XCircle className="w-4 h-4" />;
       case "unavailable":
-        return <AlertCircle className="w-4 h-4 text-gray-600" />;
+        return <AlertCircle className="w-4 h-4" />;
       default:
-        return <Clock className="w-4 h-4 text-gray-600" />;
+        return <Info className="w-4 h-4" />;
     }
   };
 
-  // Batch actions
-  const handleSelectAll = () => {
-    if (selectAll) {
-      setSelectedSlots([]);
-      setSelectAll(false);
-    } else {
-      setSelectedSlots(slots.map((slot: any) => slot.id).filter(Boolean));
-      setSelectAll(true);
-    }
-  };
-
-  const handleSelectSlot = (slotId: string) => {
-    // Only allow selection of slots with valid IDs
-    if (!slotId || slotId === "") {
-      return;
-    }
-    setSelectedSlots((prev) =>
-      prev.includes(slotId)
-        ? prev.filter((id) => id !== slotId)
-        : [...prev, slotId]
-    );
-  };
-
-  const handleBatchDelete = () => {
-    if (selectedSlots.length === 0) {
-      toast.error("لطفاً ابتدا ساعات را انتخاب کنید");
-      return;
-    }
-    if (
-      confirm(
-        `آیا از حذف ${selectedSlots.length} ساعت انتخاب شده اطمینان دارید؟`
-      )
-    ) {
-      selectedSlots.forEach((slotId) => {
-        deleteSlotMutation.mutate(slotId);
-      });
-      setSelectedSlots([]);
-      setSelectAll(false);
-    }
-  };
-
-  const handleBatchSetStatus = (isAvailable: boolean) => {
-    if (selectedSlots.length === 0) {
-      toast.error("لطفاً ابتدا ساعات مورد نظر را انتخاب کنید");
-      return;
-    }
-
-    selectedSlots.forEach((slotId) => {
-      updateSlotMutation.mutate({ slotId, isAvailable });
-    });
-
-    setSelectedSlots([]);
-    setSelectAll(false);
-  };
-
-  const handleRegenerateSlots = () => {
-    if (!businessId || !selectedService) {
-      toast.error("لطفاً ابتدا یک سرویس انتخاب کنید");
-      return;
-    }
-
-    setShowRegenerateModal(true);
-  };
-
-  const handleConfirmRegenerate = () => {
-    if (!businessId || !selectedService) {
-      toast.error("لطفاً ابتدا یک سرویس انتخاب کنید");
-      return;
-    }
-
-    regenerateSlotsMutation.mutate({
-      businessId,
-      serviceId: selectedService,
-      days: 7,
-      mode: "smart",
+  // Generation modes following Bookly's logic
+  const generationModes: GenerationMode[] = [
+    {
+      id: "basic",
+      name: "ایجاد ساده",
+      description: "ایجاد ساعات کاری بر اساس تنظیمات پایه کسب و کار",
+      icon: <Clock className="w-5 h-5" />,
       settings: {
-        smartSettings,
-        businessSettings,
+        intervalMinutes: 30,
+        respectWorkingHours: true,
+        includeLunchBreak: true,
       },
-      forceRegenerate: true,
-      conflictResolution,
-      backupStrategy,
-      notificationPreferences: {
-        smsEnabled: regenerateSettings.notifyCustomers,
-        emailEnabled: false,
-        telegramEnabled: false,
+    },
+    {
+      id: "smart",
+      name: "ایجاد هوشمند",
+      description: "استفاده از هوش مصنوعی برای بهینه‌سازی ساعات کاری",
+      icon: <Brain className="w-5 h-5" />,
+      settings: {
+        optimizeForPeakHours: true,
+        useServiceDuration: true,
+        bufferBetweenSlots: 15,
       },
-    });
+    },
+    {
+      id: "recurring",
+      name: "ایجاد تکراری",
+      description: "ایجاد ساعات کاری برای چندین روز یا هفته",
+      icon: <Repeat className="w-5 h-5" />,
+      settings: {
+        repeatType: "weekly",
+        repeatCount: 4,
+        excludeWeekends: false,
+      },
+    },
+    {
+      id: "custom",
+      name: "ایجاد سفارشی",
+      description: "ایجاد ساعات کاری با تنظیمات کاملاً سفارشی",
+      icon: <Settings className="w-5 h-5" />,
+      settings: {
+        customIntervals: [],
+        customBreaks: [],
+        staffAssignment: "auto",
+      },
+    },
+  ];
+
+  // Creation form state
+  const [creationForm, setCreationForm] = useState({
+    mode: "basic",
+    startDate: selectedDate || new Date().toISOString().split("T")[0],
+    endDate: selectedDate || new Date().toISOString().split("T")[0],
+    startTime: "09:00",
+    endTime: "17:00",
+    intervalMinutes: 30,
+    serviceId: selectedService || "",
+    staffId: "",
+    maxCapacity: 1,
+    capacity: 0,
+    isPeakHour: false,
+    notes: "",
+    // Recurring options
+    repeatType: "daily", // daily, weekly, monthly
+    repeatCount: 7, // number of repetitions
+    repeatDays: [1, 2, 3, 4, 5], // days of week (0=Sunday, 1=Monday, etc.)
+    excludeWeekends: false,
+    excludeHolidays: true,
+  });
+
+  const [conflictError, setConflictError] = useState<ConflictError | null>(
+    null
+  );
+  const [showConflictHelp, setShowConflictHelp] = useState(false);
+
+  const handleCreateTimeSlots = async () => {
+    if (!creationForm.serviceId) {
+      toast.error("لطفاً سرویس را انتخاب کنید");
+      return;
+    }
+
+    setIsGenerating(true);
+    setConflictError(null);
+    setModalConflictError(null);
+    setModalSummary(null);
+    setCreationStep("form");
+
+    try {
+      let data;
+
+      if (creationForm.mode === "recurring") {
+        // Use the new recurring endpoint
+        data = {
+          businessId: businessId,
+          serviceId: creationForm.serviceId,
+          startDate: creationForm.startDate,
+          endDate: creationForm.endDate,
+          startTime: creationForm.startTime,
+          endTime: creationForm.endTime,
+          intervalMinutes: creationForm.intervalMinutes,
+          maxCapacity: creationForm.maxCapacity,
+          capacity: creationForm.capacity,
+          staffId: creationForm.staffId || undefined,
+          isPeakHour: creationForm.isPeakHour,
+          notes: creationForm.notes,
+          repeatType: creationForm.repeatType,
+          repeatCount: creationForm.repeatCount,
+          repeatDays: creationForm.repeatDays,
+          excludeWeekends: creationForm.excludeWeekends,
+          excludeHolidays: creationForm.excludeHolidays,
+        };
+
+        // Call the recurring endpoint using the correct API
+        const response = await api.post(`/time-slots/create-recurring`, data);
+        const result = response.data;
+
+        console.log("Time slot creation response:", result);
+
+        if (result.success) {
+          // Store the summary for display
+          setModalSummary(result);
+
+          // Check if there were any conflicts or skipped slots
+          console.log("Checking conflicts:", {
+            totalSkipped: result.summary?.totalSkipped,
+            totalConflicts: result.summary?.totalConflicts,
+            conflictsTotal: result.conflicts?.total,
+          });
+
+          if (
+            result.summary?.totalSkipped > 0 ||
+            result.summary?.totalConflicts > 0 ||
+            result.conflicts?.total > 0
+          ) {
+            console.log("Setting step to summary");
+            setCreationStep("summary");
+            toast.success(
+              `تعداد ${result.summary.totalCreated} ساعت کاری ایجاد شد`
+            );
+            if (result.summary.totalSkipped > 0) {
+              toast(
+                `${result.summary.totalSkipped} ساعت کاری به دلیل تداخل رد شد`,
+                {
+                  icon: "⚠️",
+                  duration: 4000,
+                }
+              );
+            }
+          } else {
+            // No conflicts, close modal and show success
+            toast.success(
+              `تعداد ${result.summary.totalCreated} ساعت کاری ایجاد شد`
+            );
+            setShowCreateModal(false);
+          }
+
+          // Refresh the time slots
+          queryClient.invalidateQueries({ queryKey: ["timeSlots"] });
+        } else {
+          // Handle conflict errors from recurring creation
+          if (
+            result.error?.includes("conflicts") ||
+            result.error?.includes("overlap")
+          ) {
+            const conflictError: ConflictError = {
+              type: "conflict",
+              message: result.error,
+              details: result.details,
+              severity: "medium",
+              suggestions: [
+                "زمان‌های انتخاب شده با ساعات موجود تداخل دارند",
+                "لطفاً بازه زمانی دیگری انتخاب کنید",
+                "می‌توانید از حالت 'جایگزینی' برای حل تداخل استفاده کنید",
+              ],
+            };
+            setModalConflictError(conflictError);
+            setCreationStep("conflicts");
+            // Don't close the modal, show the error instead
+          } else {
+            throw new Error(result.error || "خطا در ایجاد ساعات کاری");
+          }
+        }
+      } else {
+        // Use the existing endpoint for other modes
+        data = {
+          serviceId: creationForm.serviceId,
+          startDate: creationForm.startDate,
+          endDate: creationForm.endDate,
+          startTime: creationForm.startTime,
+          endTime: creationForm.endTime,
+          intervalMinutes: creationForm.intervalMinutes,
+          maxCapacity: creationForm.maxCapacity,
+          capacity: creationForm.capacity,
+          staffId: creationForm.staffId || undefined,
+          isPeakHour: creationForm.isPeakHour,
+          notes: creationForm.notes,
+          mode: creationForm.mode,
+          settings: generationModes.find((m) => m.id === creationForm.mode)
+            ?.settings,
+        };
+
+        // Use the generateTimeSlots endpoint for all modes
+        const response = await api.post(
+          `/availability/generate/${businessId}`,
+          data
+        );
+        const result = response.data;
+
+        console.log("Time slot creation response (non-recurring):", result);
+
+        if (result.success) {
+          // Store the summary for display
+          setModalSummary(result);
+
+          // Check if there were any conflicts or skipped slots
+          console.log("Checking conflicts (non-recurring):", {
+            totalSkipped: result.summary?.totalSkipped,
+            totalConflicts: result.summary?.totalConflicts,
+            conflictsTotal: result.conflicts?.total,
+          });
+
+          if (
+            result.summary?.totalSkipped > 0 ||
+            result.summary?.totalConflicts > 0 ||
+            result.conflicts?.total > 0
+          ) {
+            console.log("Setting step to summary (non-recurring)");
+            setCreationStep("summary");
+            toast.success(
+              `تعداد ${result.summary.totalCreated} ساعت کاری ایجاد شد`
+            );
+            if (result.summary.totalSkipped > 0) {
+              toast(
+                `${result.summary.totalSkipped} ساعت کاری به دلیل تداخل رد شد`,
+                {
+                  icon: "⚠️",
+                  duration: 4000,
+                }
+              );
+            }
+          } else {
+            // No conflicts, close modal and show success
+            toast.success(
+              `تعداد ${result.summary.totalCreated} ساعت کاری ایجاد شد`
+            );
+            setShowCreateModal(false);
+          }
+
+          // Refresh the time slots
+          queryClient.invalidateQueries({ queryKey: ["timeSlots"] });
+        } else {
+          // Handle conflict errors from any mode
+          if (
+            result.error?.includes("conflicts") ||
+            result.error?.includes("overlap") ||
+            result.error?.includes("existing")
+          ) {
+            const conflictError: ConflictError = {
+              type: "conflict",
+              message: result.error,
+              details: result.details,
+              severity: "medium",
+              suggestions: [
+                "زمان‌های انتخاب شده با ساعات موجود تداخل دارند",
+                "لطفاً بازه زمانی دیگری انتخاب کنید",
+                "می‌توانید از حالت 'جایگزینی' برای حل تداخل استفاده کنید",
+              ],
+            };
+            setModalConflictError(conflictError);
+            setCreationStep("conflicts");
+            // Don't close the modal, show the error instead
+          } else {
+            throw new Error(result.error || "خطا در ایجاد ساعات کاری");
+          }
+        }
+      }
+
+      setCreationForm({
+        mode: "basic",
+        startDate: selectedDate,
+        endDate: selectedDate,
+        startTime: "09:00",
+        endTime: "17:00",
+        intervalMinutes: 30,
+        serviceId: selectedService,
+        staffId: "",
+        maxCapacity: 1,
+        capacity: 0,
+        isPeakHour: false,
+        notes: "",
+        // Recurring options
+        repeatType: "daily", // daily, weekly, monthly
+        repeatCount: 7, // number of repetitions
+        repeatDays: [1, 2, 3, 4, 5], // days of week (0=Sunday, 1=Monday, etc.)
+        excludeWeekends: false,
+        excludeHolidays: true,
+      });
+    } catch (error: any) {
+      console.error("Error creating time slots:", error);
+
+      const errorMessage =
+        error?.response?.data?.message ||
+        error.message ||
+        "خطا در ایجاد ساعات کاری";
+
+      // Check if this is a conflict error
+      if (
+        errorMessage.includes("conflicts") ||
+        errorMessage.includes("overlap") ||
+        errorMessage.includes("existing")
+      ) {
+        const conflictError: ConflictError = {
+          type: "conflict",
+          message: errorMessage,
+          details: error?.response?.data?.details,
+          severity: "medium",
+          suggestions: [
+            "زمان‌های انتخاب شده با ساعات موجود تداخل دارند",
+            "لطفاً بازه زمانی دیگری انتخاب کنید",
+            "می‌توانید از حالت 'جایگزینی' برای حل تداخل استفاده کنید",
+          ],
+        };
+        setModalConflictError(conflictError);
+        setCreationStep("conflicts");
+        // Don't close the modal, show the error instead
+      } else {
+        toast.error(errorMessage);
+      }
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
-  const handleSaveSettings = () => {
-    const settingsData = {
-      // Business settings
-      lunchBreakStart: businessSettings.lunchBreakStart,
-      lunchBreakEnd: businessSettings.lunchBreakEnd,
-      maxBookingsPerSlot: businessSettings.maxBookingsPerSlot,
-      advanceBookingDays: businessSettings.advanceBookingDays,
-      sameDayBooking: businessSettings.sameDayBooking,
-      peakHoursStart: businessSettings.peakHoursStart,
-      peakHoursEnd: businessSettings.peakHoursEnd,
-      bufferBetweenSlots: businessSettings.bufferBetweenSlots,
-
-      // Smart settings
-      useServiceDuration: smartSettings.useServiceDuration,
-      includeLunchBreak: smartSettings.includeLunchBreak,
-      optimizeForPeakHours: smartSettings.optimizeForPeakHours,
-      respectWorkingHours: smartSettings.respectWorkingHours,
-      maxSlotsPerDay: smartSettings.maxSlotsPerDay,
-    };
-
-    console.log("Saving settings data:", settingsData);
-    saveSettingsMutation.mutate(settingsData);
+  const handleModalConflictResolution = () => {
+    setModalConflictError(null);
+    setModalSummary(null);
+    setCreationStep("form");
+    // Optionally refresh the data
+    queryClient.invalidateQueries({ queryKey: ["timeSlots"] });
   };
 
-  if (servicesLoading) {
+  const handleCloseModal = () => {
+    setShowCreateModal(false);
+    setModalConflictError(null);
+    setModalSummary(null);
+    setCreationStep("form");
+    setShowConflictDetails(false);
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "PENDING":
+        return "text-yellow-600 bg-yellow-100";
+      case "CONFIRMED":
+        return "text-green-600 bg-green-100";
+      case "CANCELLED":
+        return "text-red-600 bg-red-100";
+      default:
+        return "text-gray-600 bg-gray-100";
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case "PENDING":
+        return "در انتظار";
+      case "CONFIRMED":
+        return "تأیید شده";
+      case "CANCELLED":
+        return "لغو شده";
+      default:
+        return status;
+    }
+  };
+
+  // Helper functions for conflict handling
+  const getConflictSeverity = (
+    conflictType: string,
+    details?: any
+  ): "low" | "medium" | "high" | "critical" => {
+    switch (conflictType) {
+      case "working_hours":
+        return "low";
+      case "service_duration":
+        return "medium";
+      case "staff_unavailable":
+        return "medium";
+      case "capacity":
+        return "high";
+      case "booking_conflict":
+        return "high";
+      case "overlap":
+        return "critical";
+      default:
+        return "medium";
+    }
+  };
+
+  const getConflictIcon = (conflictType: string) => {
+    switch (conflictType) {
+      case "working_hours":
+        return <Clock className="w-4 h-4" />;
+      case "service_duration":
+        return <Target className="w-4 h-4" />;
+      case "staff_unavailable":
+        return <Users className="w-4 h-4" />;
+      case "capacity":
+        return <BarChart3 className="w-4 h-4" />;
+      case "booking_conflict":
+        return <AlertTriangle className="w-4 h-4" />;
+      case "overlap":
+        return <XCircle className="w-4 h-4" />;
+      default:
+        return <AlertCircle className="w-4 h-4" />;
+    }
+  };
+
+  const getConflictColor = (severity: string) => {
+    switch (severity) {
+      case "low":
+        return "text-blue-600 bg-blue-50 border-blue-200";
+      case "medium":
+        return "text-yellow-600 bg-yellow-50 border-yellow-200";
+      case "high":
+        return "text-orange-600 bg-orange-50 border-orange-200";
+      case "critical":
+        return "text-red-600 bg-red-50 border-red-200";
+      default:
+        return "text-gray-600 bg-gray-50 border-gray-200";
+    }
+  };
+
+  const getAutoResolveOptions = (conflictType: string, details?: any) => {
+    const options = [];
+
+    switch (conflictType) {
+      case "overlap":
+        options.push({
+          id: "skip_conflicts",
+          label: "رد کردن تداخل‌ها",
+          description: "ساعات تداخل‌دار را رد کرده و بقیه را ایجاد کنید",
+          action: "skip",
+        });
+        options.push({
+          id: "replace_existing",
+          label: "جایگزینی ساعات موجود",
+          description: "ساعات موجود را با ساعات جدید جایگزین کنید",
+          action: "replace",
+        });
+        break;
+      case "capacity":
+        options.push({
+          id: "increase_capacity",
+          label: "افزایش ظرفیت",
+          description: "ظرفیت ساعات موجود را افزایش دهید",
+          action: "increase_capacity",
+        });
+        break;
+      case "staff_unavailable":
+        options.push({
+          id: "assign_other_staff",
+          label: "تخصیص کارمند دیگر",
+          description: "کارمند دیگری را برای این ساعات تخصیص دهید",
+          action: "reassign_staff",
+        });
+        break;
+      case "working_hours":
+        options.push({
+          id: "extend_hours",
+          label: "تمدید ساعات کاری",
+          description: "ساعات کاری را برای این روز تمدید کنید",
+          action: "extend_hours",
+        });
+        break;
+    }
+
+    return options;
+  };
+
+  const handleAutoResolve = async (option: any) => {
+    try {
+      setIsGenerating(true);
+
+      // Add the auto-resolve option to the creation form
+      const updatedForm = {
+        ...creationForm,
+        autoResolve: option.action,
+        conflictResolution: option.id,
+      };
+
+      // Retry the creation with auto-resolve
+      if (creationForm.mode === "recurring") {
+        const response = await api.post(`/time-slots/create-recurring`, {
+          ...updatedForm,
+          businessId: businessId,
+        });
+        const result = response.data;
+
+        if (result.success) {
+          setModalSummary(result);
+          setCreationStep("summary");
+          toast.success("تداخل‌ها با موفقیت حل شدند");
+        } else {
+          throw new Error(result.error || "خطا در حل خودکار تداخل‌ها");
+        }
+      } else {
+        const response = await api.post(
+          `/availability/generate/${businessId}`,
+          updatedForm
+        );
+        const result = response.data;
+
+        if (result.success) {
+          setModalSummary(result);
+          setCreationStep("summary");
+          toast.success("تداخل‌ها با موفقیت حل شدند");
+        } else {
+          throw new Error(result.error || "خطا در حل خودکار تداخل‌ها");
+        }
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["timeSlots"] });
+    } catch (error: any) {
+      console.error("Auto-resolve error:", error);
+      toast.error(error.message || "خطا در حل خودکار تداخل‌ها");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const formatConflictTime = (timeSlot: string) => {
+    // Format time slot for better display
+    if (timeSlot.includes(" - ")) {
+      const [start, end] = timeSlot.split(" - ");
+      return `${start} تا ${end}`;
+    }
+    return timeSlot;
+  };
+
+  const getConflictTypeLabel = (type: string) => {
+    switch (type) {
+      case "working_hours":
+        return "ساعات کاری";
+      case "service_duration":
+        return "مدت سرویس";
+      case "staff_unavailable":
+        return "کارمند غیرقابل دسترس";
+      case "capacity":
+        return "ظرفیت";
+      case "booking_conflict":
+        return "تداخل رزرو";
+      case "overlap":
+        return "تداخل زمانی";
+      default:
+        return "تداخل";
+    }
+  };
+
+  if (!businessId) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <LoadingSpinner size="lg" />
-          <p className="mt-4 text-gray-600 dark:text-gray-400">
-            در حال بارگذاری سرویس‌ها...
+          <Building className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            کسب و کار انتخاب نشده
+          </h3>
+          <p className="text-gray-500 mb-4">
+            لطفاً ابتدا یک کسب و کار انتخاب کنید
           </p>
+          <Button onClick={() => navigate("/dashboard")}>
+            بازگشت به داشبورد
+          </Button>
         </div>
       </div>
     );
   }
 
-  const servicesData = services?.data || [];
-  const slots = timeSlots?.data?.availableSlots || [];
-
-  console.log("Component slots data:", {
-    timeSlots,
-    slots,
-    slotsLength: slots.length,
-    selectedService,
-    selectedDate,
-  });
-
-  const selectedServiceDetails = getSelectedServiceDetails();
-  const currentDayWorkingHours = getWorkingHoursForDay(
-    new Date(selectedDate).getDay()
-  );
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-indigo-50/30 dark:from-gray-900 dark:via-gray-800 dark:to-indigo-900/10">
-      {/* Enhanced Header with Breadcrumbs */}
-      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg border-b border-gray-200/50 dark:border-gray-700/50 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          {/* Breadcrumbs */}
-          <motion.nav
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex items-center space-x-2 space-x-reverse mb-4 text-sm"
-          >
-            <motion.button
-              onClick={() => navigate("/dashboard")}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="flex items-center px-3 py-1.5 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200"
-            >
-              <Home className="w-4 h-4 ml-1" />
-              داشبورد
-            </motion.button>
-            <ChevronRightIcon className="w-4 h-4 text-gray-400" />
-            <span className="text-gray-900 dark:text-gray-100 font-medium px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="space-y-6">
+        {/* Breadcrumb and Page Title */}
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <nav className="flex items-center space-x-2 space-x-reverse text-sm text-gray-500">
+              <button
+                onClick={() => navigate("/dashboard")}
+                className="hover:text-gray-700 transition-colors flex items-center space-x-1 space-x-reverse"
+              >
+                <Home className="w-4 h-4" />
+                <span>داشبورد</span>
+              </button>
+              <ChevronRightIcon className="w-4 h-4" />
+              <span className="text-gray-900 font-medium">ساعات کاری</span>
+            </nav>
+            <h1 className="text-3xl font-bold text-gray-900">
               مدیریت ساعات کاری
-            </span>
-          </motion.nav>
-
-          {/* Main Header */}
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="flex items-center gap-4"
-            >
-              <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg">
-                <Clock className="w-8 h-8 text-white" />
-              </div>
-              <div className="flex-1">
-                <h1 className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-indigo-900 via-purple-900 to-pink-900 dark:from-indigo-100 dark:via-purple-100 dark:to-pink-100 bg-clip-text text-transparent mb-2">
-                  مدیریت ساعات کاری هوشمند
-                </h1>
-                <p className="text-gray-600 dark:text-gray-400 text-sm lg:text-base font-medium">
-                  تنظیم و مدیریت ساعات کاری {business?.name || "کسب‌وکار"} با
-                  الگوریتم‌های هوشمند
-                </p>
-              </div>
-            </motion.div>
-
-            {/* Header Actions */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="flex flex-col sm:flex-row gap-3"
-            >
-              {/* Real-time Connection Status */}
-              <div className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-white dark:bg-gray-800">
-                <div
-                  className={`w-2 h-2 rounded-full ${
-                    realtimeConnectionStatus === "connected"
-                      ? "bg-green-500 animate-pulse"
-                      : realtimeConnectionStatus === "error"
-                        ? "bg-red-500"
-                        : realtimeConnectionStatus === "connecting"
-                          ? "bg-yellow-500 animate-pulse"
-                          : "bg-gray-400"
-                  }`}
-                />
-                <span className="text-xs font-medium">
-                  {realtimeConnectionStatus === "connected"
-                    ? "Live"
-                    : realtimeConnectionStatus === "error"
-                      ? "خطا"
-                      : realtimeConnectionStatus === "connecting"
-                        ? "اتصال..."
-                        : "قطع"}
-                </span>
-                {realtimeConnectionStatus === "connected" && (
-                  <span className="text-xs text-green-600">⚡</span>
-                )}
-              </div>
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowAdvanced(!showAdvanced)}
-                  className="flex items-center justify-center gap-2 border-2 hover:bg-indigo-50 hover:border-indigo-200 dark:hover:bg-indigo-900/20"
-                >
-                  {showAdvanced ? (
-                    <Minimize2 className="w-4 h-4 text-indigo-600" />
-                  ) : (
-                    <Maximize2 className="w-4 h-4 text-indigo-600" />
-                  )}
-                  <span className="hidden sm:inline text-indigo-700 dark:text-indigo-300 font-medium">
-                    {showAdvanced ? "نمایش ساده" : "تنظیمات پیشرفته"}
-                  </span>
-                </Button>
-              </motion.div>
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Button
-                  onClick={() => navigate("/dashboard")}
-                  size="sm"
-                  className="flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white shadow-lg border-0"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                  <span className="hidden sm:inline">بازگشت به داشبورد</span>
-                </Button>
-              </motion.div>
-            </motion.div>
+            </h1>
+            <p className="text-gray-600">
+              مدیریت و تنظیم ساعات کاری برای {business?.name}
+            </p>
           </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center space-x-3 space-x-reverse">
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => setShowSettingsModal(true)}
+              className="hidden md:flex"
+            >
+              <Settings className="w-5 h-5 ml-2" />
+              تنظیمات
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => {
+                setCreationForm((prev) => ({ ...prev, mode: "recurring" }));
+                setShowCreateModal(true);
+              }}
+              className="hidden md:flex"
+            >
+              <Repeat className="w-5 h-5 ml-2" />
+              ایجاد تکراری
+            </Button>
+            <Button
+              size="lg"
+              onClick={() => setShowCreateModal(true)}
+              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg"
+            >
+              <Plus className="w-5 h-5 ml-2" />
+              ایجاد ساعت کاری
+            </Button>
+          </div>
+        </div>
+
+        {/* Quick Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-blue-700">کل ساعات</p>
+                  <p className="text-2xl font-bold text-blue-900">
+                    {timeSlots?.data?.totalSlots || 0}
+                  </p>
+                </div>
+                <div className="p-2 bg-blue-200 rounded-lg">
+                  <Clock className="w-6 h-6 text-blue-700" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-green-700">
+                    ساعات آزاد
+                  </p>
+                  <p className="text-2xl font-bold text-green-900">
+                    {timeSlots?.data?.data?.availableSlots?.length || 0}
+                  </p>
+                </div>
+                <div className="p-2 bg-green-200 rounded-lg">
+                  <CheckCircle className="w-6 h-6 text-green-700" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-orange-700">
+                    ساعات رزرو
+                  </p>
+                  <p className="text-2xl font-bold text-orange-900">
+                    {timeSlots?.data?.bookedSlots?.length || 0}
+                  </p>
+                </div>
+                <div className="p-2 bg-orange-200 rounded-lg">
+                  <Calendar className="w-6 h-6 text-orange-700" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-purple-700">
+                    نرخ اشغال
+                  </p>
+                  <p className="text-2xl font-bold text-purple-900">
+                    {timeSlots?.data?.totalSlots
+                      ? Math.round(
+                          ((timeSlots.data.bookedSlots?.length || 0) /
+                            timeSlots.data.totalSlots) *
+                            100
+                        )
+                      : 0}
+                    %
+                  </p>
+                </div>
+                <div className="p-2 bg-purple-200 rounded-lg">
+                  <BarChart3 className="w-6 h-6 text-purple-700" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        {/* Service Selection */}
-        <Card className="shadow-sm border-0 bg-white dark:bg-gray-800">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-3 text-lg font-semibold text-gray-900 dark:text-white">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                <Settings className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+      {/* Conflict Error Display */}
+      {conflictError && (
+        <Card className="border-orange-200 bg-orange-50">
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="h-6 w-6 text-orange-600" />
+                <h3 className="text-lg font-semibold text-orange-800">
+                  تداخل در ایجاد ساعات کاری
+                </h3>
               </div>
-              انتخاب سرویس و تنظیمات
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Service and Date Selection */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+              <div className="text-sm text-orange-700">
+                {conflictError.message}
+              </div>
+
+              {conflictError.suggestions &&
+                conflictError.suggestions.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium text-orange-800">
+                      راه‌حل‌های پیشنهادی:
+                    </div>
+                    <ul className="text-sm text-orange-700 space-y-1">
+                      {conflictError.suggestions.map((suggestion, index) => (
+                        <li key={index} className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 bg-orange-500 rounded-full" />
+                          {suggestion}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+              <div className="flex gap-3 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setConflictError(null);
+                    setShowConflictHelp(false);
+                    queryClient.invalidateQueries({ queryKey: ["timeSlots"] });
+                  }}
+                  className="border-orange-300 text-orange-700 hover:bg-orange-100"
+                >
+                  <RefreshCw className="w-4 h-4 ml-2" />
+                  بروزرسانی و ادامه
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setConflictError(null);
+                    setShowConflictHelp(false);
+                  }}
+                  className="border-gray-300 text-gray-700 hover:bg-gray-100"
+                >
+                  <X className="w-4 h-4 ml-2" />
+                  بستن
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Filters */}
+      <Card className="border-0 shadow-sm bg-gradient-to-r from-gray-50 to-white">
+        <CardContent className="p-6">
+          <div className="space-y-6">
+            {/* Filter Header */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2 space-x-reverse">
+                <Filter className="w-5 h-5 text-gray-600" />
+                <h3 className="text-lg font-semibold text-gray-900">فیلترها</h3>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSelectedDate(new Date().toISOString().split("T")[0] || "");
+                  setSelectedService("");
+                }}
+                className="text-blue-600 hover:text-blue-700"
+              >
+                <RotateCcw className="w-4 h-4 ml-2" />
+                پاک کردن فیلترها
+              </Button>
+            </div>
+
+            {/* Filter Controls */}
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
               {/* Service Selection */}
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  انتخاب سرویس
+                <label className="block text-sm font-medium text-gray-700">
+                  <Target className="w-4 h-4 inline ml-1" />
+                  سرویس
                 </label>
                 <div className="relative">
                   <select
                     value={selectedService}
                     onChange={(e) => handleServiceChange(e.target.value)}
-                    className="w-full p-3 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white appearance-none cursor-pointer transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
                   >
                     <option value="">انتخاب سرویس</option>
-                    {Array.isArray(servicesData.data) &&
-                    servicesData.data.length > 0 ? (
-                      servicesData.data.map((service: Service) => (
-                        <option key={service.id} value={service.id}>
-                          {service.name} ({service.duration} دقیقه)
-                        </option>
-                      ))
-                    ) : (
-                      <option value="" disabled>
-                        {servicesLoading
-                          ? "در حال بارگذاری..."
-                          : "هیچ سرویسی یافت نشد"}
+                    {services?.data?.data?.map((service: Service) => (
+                      <option key={service.id} value={service.id}>
+                        {service.name}
                       </option>
-                    )}
+                    ))}
                   </select>
-                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                    <Target className="w-4 h-4 text-gray-400" />
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Building className="w-4 h-4 text-gray-400" />
                   </div>
                 </div>
               </div>
 
               {/* Date Selection */}
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  انتخاب تاریخ
+                <label className="block text-sm font-medium text-gray-700">
+                  <Calendar className="w-4 h-4 inline ml-1" />
+                  تاریخ
                 </label>
                 <div className="relative">
                   <Input
                     type="date"
                     value={selectedDate}
                     onChange={(e) => handleDateChange(e.target.value)}
-                    className="h-12 pr-10 border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                   />
-                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                    <Calendar className="w-4 h-4 text-gray-400" />
-                  </div>
                 </div>
               </div>
 
-              {/* Working Hours Display */}
+              {/* Quick Date Actions */}
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  ساعات کاری روز انتخاب شده
+                <label className="block text-sm font-medium text-gray-700">
+                  <Clock className="w-4 h-4 inline ml-1" />
+                  تاریخ سریع
                 </label>
-                <div className="h-12 flex items-center px-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
-                  {currentDayWorkingHours ? (
-                    <div className="flex items-center gap-2 text-sm">
-                      <div className="p-1 bg-green-100 dark:bg-green-900/30 rounded">
-                        <Clock className="w-4 h-4 text-green-600 dark:text-green-400" />
-                      </div>
-                      <span className="font-medium text-gray-900 dark:text-white">
-                        {currentDayWorkingHours.startTime} -{" "}
-                        {currentDayWorkingHours.endTime}
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2 text-sm">
-                      <div className="p-1 bg-red-100 dark:bg-red-900/30 rounded">
-                        <XCircle className="w-4 h-4 text-red-600 dark:text-red-400" />
-                      </div>
-                      <span className="font-medium text-red-600 dark:text-red-400">
-                        تعطیل
-                      </span>
-                    </div>
-                  )}
+                <div className="flex space-x-2 space-x-reverse">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedDate(
+                        new Date().toISOString().split("T")[0] || ""
+                      );
+                    }}
+                    className="flex-1"
+                  >
+                    امروز
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const tomorrow = new Date();
+                      tomorrow.setDate(tomorrow.getDate() + 1);
+                      setSelectedDate(
+                        tomorrow.toISOString().split("T")[0] || ""
+                      );
+                    }}
+                    className="flex-1"
+                  >
+                    فردا
+                  </Button>
+                </div>
+              </div>
+
+              {/* View Mode Toggle */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  <Eye className="w-4 h-4 inline ml-1" />
+                  حالت نمایش
+                </label>
+                <div className="flex bg-gray-100 rounded-lg p-1">
+                  <Button
+                    variant={viewMode === "grid" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setViewMode("grid")}
+                    className="flex-1"
+                  >
+                    <Grid className="w-4 h-4 ml-1" />
+                    شبکه
+                  </Button>
+                  <Button
+                    variant={viewMode === "list" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setViewMode("list")}
+                    className="flex-1"
+                  >
+                    <List className="w-4 h-4 ml-1" />
+                    لیست
+                  </Button>
                 </div>
               </div>
             </div>
 
-            {/* Advanced Settings */}
-            {showAdvanced && selectedServiceDetails && (
-              <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                    <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <h4 className="font-semibold text-blue-900 dark:text-blue-100">
-                    تنظیمات پیشرفته برای {selectedServiceDetails.name}
-                  </h4>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <label className="flex items-center gap-3 p-3 bg-white dark:bg-gray-800 rounded-lg border border-blue-200 dark:border-blue-800 cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-colors">
-                    <input
-                      type="checkbox"
-                      id="useServiceDuration"
-                      checked={smartSettings.useServiceDuration}
-                      onChange={(e) =>
-                        setSmartSettings((prev) => ({
-                          ...prev,
-                          useServiceDuration: e.target.checked,
-                        }))
+            {/* Active Filters Display */}
+            {(selectedService || selectedDate) && (
+              <div className="flex items-center space-x-2 space-x-reverse pt-4 border-t border-gray-200">
+                <span className="text-sm font-medium text-gray-700">
+                  فیلترهای فعال:
+                </span>
+                {selectedService && (
+                  <Badge
+                    variant="secondary"
+                    className="bg-blue-100 text-blue-800"
+                  >
+                    {
+                      services?.data?.data?.find(
+                        (s: Service) => s.id === selectedService
+                      )?.name
+                    }
+                    <button
+                      onClick={() => setSelectedService("")}
+                      className="ml-1 hover:text-blue-600"
+                    >
+                      <XCircle className="w-3 h-3" />
+                    </button>
+                  </Badge>
+                )}
+                {selectedDate && (
+                  <Badge
+                    variant="secondary"
+                    className="bg-green-100 text-green-800"
+                  >
+                    {new Date(selectedDate).toLocaleDateString("fa-IR")}
+                    <button
+                      onClick={() =>
+                        setSelectedDate(
+                          new Date().toISOString().split("T")[0] || ""
+                        )
                       }
-                      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                    />
-                    <div>
-                      <div className="font-medium text-sm text-gray-900 dark:text-white">
-                        استفاده از مدت سرویس
-                      </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
-                        فاصله بر اساس مدت سرویس
-                      </div>
-                    </div>
-                  </label>
-
-                  <label className="flex items-center gap-3 p-3 bg-white dark:bg-gray-800 rounded-lg border border-blue-200 dark:border-blue-800 cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-colors">
-                    <input
-                      type="checkbox"
-                      id="includeLunchBreak"
-                      checked={smartSettings.includeLunchBreak}
-                      onChange={(e) =>
-                        setSmartSettings((prev) => ({
-                          ...prev,
-                          includeLunchBreak: e.target.checked,
-                        }))
-                      }
-                      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                    />
-                    <div>
-                      <div className="font-medium text-sm text-gray-900 dark:text-white">
-                        شامل ساعت ناهار
-                      </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
-                        حذف ساعات ناهار
-                      </div>
-                    </div>
-                  </label>
-
-                  <label className="flex items-center gap-3 p-3 bg-white dark:bg-gray-800 rounded-lg border border-blue-200 dark:border-blue-800 cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-colors">
-                    <input
-                      type="checkbox"
-                      id="optimizeForPeakHours"
-                      checked={smartSettings.optimizeForPeakHours}
-                      onChange={(e) =>
-                        setSmartSettings((prev) => ({
-                          ...prev,
-                          optimizeForPeakHours: e.target.checked,
-                        }))
-                      }
-                      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                    />
-                    <div>
-                      <div className="font-medium text-sm text-gray-900 dark:text-white">
-                        بهینه‌سازی ساعات شلوغ
-                      </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
-                        توزیع بهتر ساعات
-                      </div>
-                    </div>
-                  </label>
-
-                  <label className="flex items-center gap-3 p-3 bg-white dark:bg-gray-800 rounded-lg border border-blue-200 dark:border-blue-800 cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-colors">
-                    <input
-                      type="checkbox"
-                      id="respectWorkingHours"
-                      checked={smartSettings.respectWorkingHours}
-                      onChange={(e) =>
-                        setSmartSettings((prev) => ({
-                          ...prev,
-                          respectWorkingHours: e.target.checked,
-                        }))
-                      }
-                      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                    />
-                    <div>
-                      <div className="font-medium text-sm text-gray-900 dark:text-white">
-                        رعایت ساعات کاری
-                      </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
-                        محدود به ساعات کاری
-                      </div>
-                    </div>
-                  </label>
-                </div>
+                      className="ml-1 hover:text-green-600"
+                    >
+                      <XCircle className="w-3 h-3" />
+                    </button>
+                  </Badge>
+                )}
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </CardContent>
+      </Card>
 
-        {/* Main Content Tabs */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-          <Tabs
-            value={activeTab}
-            onValueChange={setActiveTab}
-            className="w-full"
-          >
-            <div className="border-b border-gray-200 dark:border-gray-700">
-              <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 h-auto bg-transparent p-0">
-                <TabsTrigger
-                  value="overview"
-                  className="flex items-center gap-2 px-4 py-3 text-sm font-medium data-[state=active]:bg-blue-50 dark:data-[state=active]:bg-blue-900/20 data-[state=active]:text-blue-700 dark:data-[state=active]:text-blue-300 data-[state=active]:border-b-2 data-[state=active]:border-blue-500 rounded-none"
-                >
-                  <BarChart3 className="w-4 h-4" />
-                  <span className="hidden sm:inline">نمای کلی</span>
-                  <span className="sm:hidden">کلی</span>
-                </TabsTrigger>
-                <TabsTrigger
-                  value="generate"
-                  className="flex items-center gap-2 px-4 py-3 text-sm font-medium data-[state=active]:bg-blue-50 dark:data-[state=active]:bg-blue-900/20 data-[state=active]:text-blue-700 dark:data-[state=active]:text-blue-300 data-[state=active]:border-b-2 data-[state=active]:border-blue-500 rounded-none"
-                >
-                  <Zap className="w-4 h-4" />
-                  <span className="hidden sm:inline">تولید ساعات</span>
-                  <span className="sm:hidden">تولید</span>
-                </TabsTrigger>
-                <TabsTrigger
-                  value="manage"
-                  className="flex items-center gap-2 px-4 py-3 text-sm font-medium data-[state=active]:bg-blue-50 dark:data-[state=active]:bg-blue-900/20 data-[state=active]:text-blue-700 dark:data-[state=active]:text-blue-300 data-[state=active]:border-b-2 data-[state=active]:border-blue-500 rounded-none"
-                >
-                  <Settings className="w-4 h-4" />
-                  <span className="hidden sm:inline">مدیریت</span>
-                  <span className="sm:hidden">مدیریت</span>
-                </TabsTrigger>
-                <TabsTrigger
-                  value="settings"
-                  className="flex items-center gap-2 px-4 py-3 text-sm font-medium data-[state=active]:bg-blue-50 dark:data-[state=active]:bg-blue-900/20 data-[state=active]:text-blue-700 dark:data-[state=active]:text-blue-300 data-[state=active]:border-b-2 data-[state=active]:border-blue-500 rounded-none"
-                >
-                  <Palette className="w-4 h-4" />
-                  <span className="hidden sm:inline">تنظیمات</span>
-                  <span className="sm:hidden">تنظیمات</span>
-                </TabsTrigger>
-              </TabsList>
-            </div>
-
-            <div className="p-6">
-              {/* Overview Tab */}
-              <TabsContent value="overview" className="space-y-6 mt-0">
-                {/* Quick Stats Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {/* Today's Stats */}
-                  <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border-blue-200 dark:border-blue-800">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="flex items-center gap-3 text-base font-semibold text-blue-900 dark:text-blue-100">
-                        <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                          <Calendar className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                        </div>
-                        آمار امروز
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-blue-700 dark:text-blue-300">
-                          کل ساعات:
-                        </span>
-                        <span className="font-bold text-lg text-blue-900 dark:text-blue-100">
-                          {slots.length}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-blue-700 dark:text-blue-300">
-                          موجود:
-                        </span>
-                        <span className="font-bold text-lg text-green-600 dark:text-green-400">
-                          {slots.filter((s: any) => s.isAvailable).length}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-blue-700 dark:text-blue-300">
-                          رزرو شده:
-                        </span>
-                        <span className="font-bold text-lg text-red-600 dark:text-red-400">
-                          {slots.filter((s: any) => s.isBooked).length}
-                        </span>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Service Info */}
-                  <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border-green-200 dark:border-green-800">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="flex items-center gap-3 text-base font-semibold text-green-900 dark:text-green-100">
-                        <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                          <Target className="w-4 h-4 text-green-600 dark:text-green-400" />
-                        </div>
-                        اطلاعات سرویس
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      {selectedServiceDetails ? (
-                        <>
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-green-700 dark:text-green-300">
-                              نام:
-                            </span>
-                            <span className="font-bold text-sm text-green-900 dark:text-green-100 truncate max-w-[120px]">
-                              {selectedServiceDetails.name}
-                            </span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-green-700 dark:text-green-300">
-                              مدت:
-                            </span>
-                            <span className="font-bold text-lg text-green-900 dark:text-green-100">
-                              {selectedServiceDetails.duration} دقیقه
-                            </span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-green-700 dark:text-green-300">
-                              قیمت:
-                            </span>
-                            <span className="font-bold text-lg text-green-900 dark:text-green-100">
-                              {selectedServiceDetails.price.toLocaleString()}{" "}
-                              تومان
-                            </span>
-                          </div>
-                        </>
-                      ) : (
-                        <div className="text-center py-4">
-                          <Target className="w-8 h-8 mx-auto mb-2 text-green-400" />
-                          <p className="text-sm text-green-600 dark:text-green-400">
-                            سرویسی انتخاب نشده
-                          </p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-
-                  {/* Working Hours */}
-                  <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 border-purple-200 dark:border-purple-800">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="flex items-center gap-3 text-base font-semibold text-purple-900 dark:text-purple-100">
-                        <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                          <Clock className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                        </div>
-                        ساعات کاری
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      {currentDayWorkingHours ? (
-                        <>
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-purple-700 dark:text-purple-300">
-                              شروع:
-                            </span>
-                            <span className="font-bold text-lg text-purple-900 dark:text-purple-100">
-                              {currentDayWorkingHours.startTime}
-                            </span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-purple-700 dark:text-purple-300">
-                              پایان:
-                            </span>
-                            <span className="font-bold text-lg text-purple-900 dark:text-purple-100">
-                              {currentDayWorkingHours.endTime}
-                            </span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-purple-700 dark:text-purple-300">
-                              وضعیت:
-                            </span>
-                            <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 border-green-200 dark:border-green-800">
-                              باز
-                            </Badge>
-                          </div>
-                        </>
-                      ) : (
-                        <div className="text-center py-4">
-                          <XCircle className="w-8 h-8 mx-auto mb-2 text-red-400" />
-                          <Badge className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 border-red-200 dark:border-red-800">
-                            تعطیل
-                          </Badge>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {/* Time Slots Display */}
-                <Card className="bg-white dark:bg-gray-800 border-0 shadow-sm">
-                  <CardHeader className="pb-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                      <CardTitle className="flex items-center gap-3 text-lg font-semibold text-gray-900 dark:text-white">
-                        <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
-                          <CalendarDays className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                        </div>
-                        ساعات کاری {selectedDate}
-                      </CardTitle>
-                      <div className="flex flex-col sm:flex-row gap-2">
-                        <Button
-                          onClick={() =>
-                            setViewMode(viewMode === "grid" ? "list" : "grid")
-                          }
-                          variant="outline"
-                          size="sm"
-                          className="flex items-center gap-2"
-                        >
-                          {viewMode === "grid" ? (
-                            <List className="w-4 h-4" />
-                          ) : (
-                            <Grid className="w-4 h-4" />
-                          )}
-                          <span className="hidden sm:inline">
-                            {viewMode === "grid" ? "نمایش لیست" : "نمایش شبکه"}
-                          </span>
-                        </Button>
-                        <Button
-                          onClick={() => refetchSlots()}
-                          variant="outline"
-                          size="sm"
-                          className="flex items-center gap-2"
-                        >
-                          <RefreshCw className="w-4 h-4" />
-                          <span className="hidden sm:inline">بروزرسانی</span>
-                        </Button>
-                        <Button
-                          onClick={handleRegenerateSlots}
-                          variant="outline"
-                          size="sm"
-                          className="flex items-center gap-2 border-orange-200 text-orange-600 hover:bg-orange-50 dark:border-orange-800 dark:text-orange-400 dark:hover:bg-orange-900/20"
-                        >
-                          <RotateCcw className="w-4 h-4" />
-                          <span className="hidden sm:inline">
-                            بازتولید کامل
-                          </span>
-                        </Button>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {slotsLoading ? (
-                      <div className="flex items-center justify-center py-12">
-                        <div className="text-center">
-                          <LoadingSpinner size="lg" />
-                          <p className="mt-4 text-gray-600 dark:text-gray-400">
-                            در حال بارگذاری ساعات کاری...
-                          </p>
-                        </div>
-                      </div>
-                    ) : slots.length > 0 ? (
-                      <div className="space-y-4">
-                        {/* Enhanced Batch Actions Toolbar */}
-                        <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 rounded-xl p-4 border border-gray-200 dark:border-gray-600">
-                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                            <div className="flex items-center gap-4">
-                              <label className="flex items-center gap-2 cursor-pointer">
-                                <input
-                                  type="checkbox"
-                                  checked={selectAll}
-                                  onChange={handleSelectAll}
-                                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                                />
-                                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                  انتخاب همه
-                                </span>
-                              </label>
-                              {selectedSlots.length > 0 && (
-                                <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-800">
-                                  {selectedSlots.length} ساعت انتخاب شده
-                                </Badge>
-                              )}
-                            </div>
-                            {selectedSlots.length > 0 && (
-                              <div className="flex flex-wrap gap-2">
-                                <Button
-                                  onClick={() => handleBatchSetStatus(true)}
-                                  variant="outline"
-                                  size="sm"
-                                  className="text-green-600 border-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 flex items-center gap-1"
-                                >
-                                  <CheckCircle className="w-4 h-4" />
-                                  <span className="hidden sm:inline">
-                                    موجود
-                                  </span>
-                                </Button>
-                                <Button
-                                  onClick={() => handleBatchSetStatus(false)}
-                                  variant="outline"
-                                  size="sm"
-                                  className="text-red-600 border-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-1"
-                                >
-                                  <XCircle className="w-4 h-4" />
-                                  <span className="hidden sm:inline">
-                                    ناموجود
-                                  </span>
-                                </Button>
-                                <Button
-                                  onClick={handleBatchDelete}
-                                  variant="outline"
-                                  size="sm"
-                                  className="text-red-600 border-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-1"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                  <span className="hidden sm:inline">حذف</span>
-                                </Button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="flex items-center justify-between">
-                          <div className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">
-                            <Info className="w-4 h-4" />
-                            {slots.length} ساعت یافت شد
-                          </div>
-                          {realtimeConnected && (
-                            <div className="flex items-center gap-2 text-xs text-green-600 dark:text-green-400">
-                              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                              <span>بروزرسانی خودکار فعال</span>
-                            </div>
-                          )}
-                        </div>
-
-                        {viewMode === "grid" ? (
-                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3">
-                            {slots.map((slot: TimeSlot) => {
-                              const status = getSlotStatus(slot);
-                              const isSelected = selectedSlots.includes(
-                                slot.id || ""
-                              );
-                              const hasValidId = slot.id && slot.id !== "";
-                              return (
-                                <div
-                                  key={slot.id || Math.random()}
-                                  className={`relative group cursor-pointer transition-all duration-200 rounded-xl border-2 hover:shadow-md ${
-                                    isSelected
-                                      ? "ring-2 ring-blue-500 border-blue-300 bg-blue-50 dark:bg-blue-900/20"
-                                      : getSlotStatusColor(status)
-                                  }`}
-                                  onClick={() =>
-                                    handleToggleSlot(
-                                      slot.id,
-                                      slot.isAvailable,
-                                      slot
-                                    )
-                                  }
-                                >
-                                  {hasValidId && (
-                                    <div className="absolute top-2 right-2 z-10">
-                                      <input
-                                        type="checkbox"
-                                        checked={isSelected}
-                                        onChange={(e) => {
-                                          e.stopPropagation();
-                                          handleSelectSlot(slot.id!);
-                                        }}
-                                        className="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                                      />
-                                    </div>
-                                  )}
-                                  <div className="p-3 text-center">
-                                    <div className="font-bold text-sm text-gray-900 dark:text-white mb-1">
-                                      {slot.startTime}
-                                    </div>
-                                    <div className="flex items-center justify-center mb-2">
-                                      {getSlotStatusIcon(status)}
-                                    </div>
-                                    <Badge
-                                      variant={
-                                        slot.isAvailable
-                                          ? "default"
-                                          : "secondary"
-                                      }
-                                      className={`text-xs ${
-                                        slot.isAvailable
-                                          ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 border-green-200 dark:border-green-800"
-                                          : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 border-red-200 dark:border-red-800"
-                                      }`}
-                                    >
-                                      {slot.isAvailable ? "موجود" : "ناموجود"}
-                                    </Badge>
-                                  </div>
-                                  {hasValidId && (
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleDeleteSlot(slot.id!);
-                                      }}
-                                      className="absolute top-1 left-1 opacity-0 group-hover:opacity-100 transition-opacity p-1 text-red-500 hover:text-red-700 bg-white dark:bg-gray-800 rounded-full shadow-sm"
-                                    >
-                                      <Trash2 className="w-3 h-3" />
-                                    </button>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        ) : (
-                          <div className="space-y-2">
-                            {slots.map((slot: TimeSlot) => {
-                              const status = getSlotStatus(slot);
-                              const isSelected = selectedSlots.includes(
-                                slot.id || ""
-                              );
-                              const hasValidId = slot.id && slot.id !== "";
-                              return (
-                                <div
-                                  key={slot.id || Math.random()}
-                                  className={`p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 hover:shadow-md flex items-center justify-between ${
-                                    isSelected
-                                      ? "ring-2 ring-blue-500 border-blue-300 bg-blue-50 dark:bg-blue-900/20"
-                                      : getSlotStatusColor(status)
-                                  }`}
-                                  onClick={() =>
-                                    handleToggleSlot(
-                                      slot.id,
-                                      slot.isAvailable,
-                                      slot
-                                    )
-                                  }
-                                >
-                                  <div className="flex items-center gap-3">
-                                    {hasValidId && (
-                                      <input
-                                        type="checkbox"
-                                        checked={isSelected}
-                                        onChange={(e) => {
-                                          e.stopPropagation();
-                                          handleSelectSlot(slot.id!);
-                                        }}
-                                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                                      />
-                                    )}
-                                    {getSlotStatusIcon(status)}
-                                    <div>
-                                      <div className="font-bold text-gray-900 dark:text-white">
-                                        {slot.startTime} - {slot.endTime}
-                                      </div>
-                                      <div className="text-sm text-gray-600 dark:text-gray-400">
-                                        {slot.isAvailable ? "موجود" : "ناموجود"}
-                                      </div>
-                                    </div>
-                                  </div>
-                                  {hasValidId && (
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleDeleteSlot(slot.id!);
-                                      }}
-                                      className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                                    >
-                                      <Trash2 className="w-4 h-4" />
-                                    </button>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="text-center py-12">
-                        <Calendar className="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
-                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                          هیچ ساعتی یافت نشد
-                        </h3>
-                        <p className="text-gray-600 dark:text-gray-400 mb-4">
-                          برای این تاریخ و سرویس هیچ ساعتی تعریف نشده است
-                        </p>
-                        <Button
-                          onClick={() => setActiveTab("generate")}
-                          className="bg-blue-600 hover:bg-blue-700"
-                        >
-                          <Zap className="w-4 h-4 ml-2" />
-                          تولید ساعات کاری
-                        </Button>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              {/* Generate Tab */}
-              <TabsContent value="generate" className="space-y-6 mt-0">
-                <Card className="bg-white dark:bg-gray-800 border-0 shadow-sm">
-                  <CardHeader className="pb-4">
-                    <CardTitle className="flex items-center gap-3 text-lg font-semibold text-gray-900 dark:text-white">
-                      <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
-                        <Zap className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
-                      </div>
-                      تولید ساعات کاری
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <Button
-                        variant="default"
-                        className="flex items-center justify-center gap-3 p-6 h-auto bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white"
-                        onClick={() => setShowQuickModal(true)}
-                      >
-                        <Zap className="w-6 h-6" />
-                        <div className="text-right">
-                          <div className="font-bold">تولید سریع</div>
-                          <div className="text-sm opacity-90">
-                            فاصله ۳۰ دقیقه‌ای
-                          </div>
-                        </div>
-                      </Button>
-                      <Button
-                        variant="outline"
-                        className="flex items-center justify-center gap-3 p-6 h-auto border-2 hover:bg-gradient-to-r hover:from-purple-50 hover:to-indigo-50 dark:hover:from-purple-900/20 dark:hover:to-indigo-900/20"
-                        onClick={() => setShowSmartModal(true)}
-                      >
-                        <Sparkles className="w-6 h-6" />
-                        <div className="text-right">
-                          <div className="font-bold">تولید هوشمند</div>
-                          <div className="text-sm text-gray-600 dark:text-gray-400">
-                            الگوریتم پیشرفته
-                          </div>
-                        </div>
-                      </Button>
-                      <Button
-                        variant="outline"
-                        className="flex items-center justify-center gap-3 p-6 h-auto border-2 hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 dark:hover:from-green-900/20 dark:hover:to-emerald-900/20"
-                        onClick={() => setShowRecurringModal(true)}
-                      >
-                        <Repeat className="w-6 h-6" />
-                        <div className="text-right">
-                          <div className="font-bold">تولید دوره‌ای</div>
-                          <div className="text-sm text-gray-600 dark:text-gray-400">
-                            چند هفته
-                          </div>
-                        </div>
-                      </Button>
-                    </div>
-                    <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg flex items-center gap-2">
-                      <Info className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                      <span className="text-sm text-blue-700 dark:text-blue-300">
-                        برای شخصی‌سازی بیشتر، از تولید هوشمند یا دوره‌ای استفاده
-                        کنید.
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              {/* Manage Tab */}
-              <TabsContent value="manage" className="space-y-6 mt-0">
-                <Card className="bg-white dark:bg-gray-800 border-0 shadow-sm">
-                  <CardHeader className="pb-4">
-                    <CardTitle className="flex items-center gap-3 text-lg font-semibold text-gray-900 dark:text-white">
-                      <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-                        <Settings className="w-5 h-5 text-orange-600 dark:text-orange-400" />
-                      </div>
-                      مدیریت ساعات کاری
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-center py-12">
-                      <Settings className="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
-                      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                        بخش مدیریت
-                      </h3>
-                      <p className="text-gray-600 dark:text-gray-400">
-                        این بخش در حال توسعه است
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              {/* Settings Tab */}
-              <TabsContent value="settings" className="space-y-6 mt-0">
-                {settingsLoading ? (
-                  <div className="flex items-center justify-center h-64">
-                    <LoadingSpinner size="lg" />
-                  </div>
-                ) : (
-                  <Card className="bg-white dark:bg-gray-800 border-0 shadow-sm">
-                    <CardHeader className="pb-4">
-                      <CardTitle className="flex items-center gap-3 text-lg font-semibold text-gray-900 dark:text-white">
-                        <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                          <Palette className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                        </div>
-                        تنظیمات کسب‌وکار
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-6">
-                        {/* Business Hours Settings */}
-                        <div>
-                          <h4 className="font-medium mb-4">
-                            تنظیمات ساعات کاری
-                          </h4>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                              <label className="block text-sm font-medium mb-2">
-                                شروع ناهار
-                              </label>
-                              <Input
-                                type="time"
-                                value={businessSettings.lunchBreakStart}
-                                onChange={(e) =>
-                                  setBusinessSettings((prev) => ({
-                                    ...prev,
-                                    lunchBreakStart: e.target.value,
-                                  }))
-                                }
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-sm font-medium mb-2">
-                                پایان ناهار
-                              </label>
-                              <Input
-                                type="time"
-                                value={businessSettings.lunchBreakEnd}
-                                onChange={(e) =>
-                                  setBusinessSettings((prev) => ({
-                                    ...prev,
-                                    lunchBreakEnd: e.target.value,
-                                  }))
-                                }
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-sm font-medium mb-2">
-                                شروع ساعات شلوغ
-                              </label>
-                              <Input
-                                type="time"
-                                value={businessSettings.peakHoursStart}
-                                onChange={(e) =>
-                                  setBusinessSettings((prev) => ({
-                                    ...prev,
-                                    peakHoursStart: e.target.value,
-                                  }))
-                                }
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-sm font-medium mb-2">
-                                پایان ساعات شلوغ
-                              </label>
-                              <Input
-                                type="time"
-                                value={businessSettings.peakHoursEnd}
-                                onChange={(e) =>
-                                  setBusinessSettings((prev) => ({
-                                    ...prev,
-                                    peakHoursEnd: e.target.value,
-                                  }))
-                                }
-                              />
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Slot Settings */}
-                        <div>
-                          <h4 className="font-medium mb-4">تنظیمات اسلات‌ها</h4>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                              <label className="block text-sm font-medium mb-2">
-                                بافر بین اسلات‌ها (دقیقه)
-                              </label>
-                              <Input
-                                type="number"
-                                min={0}
-                                value={businessSettings.bufferBetweenSlots}
-                                onChange={(e) =>
-                                  setBusinessSettings((prev) => ({
-                                    ...prev,
-                                    bufferBetweenSlots: Number(e.target.value),
-                                  }))
-                                }
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-sm font-medium mb-2">
-                                حداکثر رزرو در هر اسلات
-                              </label>
-                              <Input
-                                type="number"
-                                min={1}
-                                value={businessSettings.maxBookingsPerSlot}
-                                onChange={(e) =>
-                                  setBusinessSettings((prev) => ({
-                                    ...prev,
-                                    maxBookingsPerSlot: Number(e.target.value),
-                                  }))
-                                }
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-sm font-medium mb-2">
-                                روزهای پیش‌رزرو
-                              </label>
-                              <Input
-                                type="number"
-                                min={1}
-                                value={businessSettings.advanceBookingDays}
-                                onChange={(e) =>
-                                  setBusinessSettings((prev) => ({
-                                    ...prev,
-                                    advanceBookingDays: Number(e.target.value),
-                                  }))
-                                }
-                              />
-                            </div>
-                            <div className="flex items-center space-x-2 space-x-reverse">
-                              <input
-                                type="checkbox"
-                                id="sameDayBooking"
-                                checked={businessSettings.sameDayBooking}
-                                onChange={(e) =>
-                                  setBusinessSettings((prev) => ({
-                                    ...prev,
-                                    sameDayBooking: e.target.checked,
-                                  }))
-                                }
-                                className="rounded"
-                              />
-                              <label
-                                htmlFor="sameDayBooking"
-                                className="text-sm"
-                              >
-                                رزرو همان روز مجاز
-                              </label>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Smart Generation Settings */}
-                        <div>
-                          <h4 className="font-medium mb-4">
-                            تنظیمات تولید هوشمند
-                          </h4>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="flex items-center space-x-2 space-x-reverse">
-                              <input
-                                type="checkbox"
-                                id="useServiceDuration"
-                                checked={smartSettings.useServiceDuration}
-                                onChange={(e) =>
-                                  setSmartSettings((prev) => ({
-                                    ...prev,
-                                    useServiceDuration: e.target.checked,
-                                  }))
-                                }
-                                className="rounded"
-                              />
-                              <label
-                                htmlFor="useServiceDuration"
-                                className="text-sm"
-                              >
-                                استفاده از مدت سرویس
-                              </label>
-                            </div>
-                            <div className="flex items-center space-x-2 space-x-reverse">
-                              <input
-                                type="checkbox"
-                                id="includeLunchBreak"
-                                checked={smartSettings.includeLunchBreak}
-                                onChange={(e) =>
-                                  setSmartSettings((prev) => ({
-                                    ...prev,
-                                    includeLunchBreak: e.target.checked,
-                                  }))
-                                }
-                                className="rounded"
-                              />
-                              <label
-                                htmlFor="includeLunchBreak"
-                                className="text-sm"
-                              >
-                                شامل ساعت ناهار
-                              </label>
-                            </div>
-                            <div className="flex items-center space-x-2 space-x-reverse">
-                              <input
-                                type="checkbox"
-                                id="optimizeForPeakHours"
-                                checked={smartSettings.optimizeForPeakHours}
-                                onChange={(e) =>
-                                  setSmartSettings((prev) => ({
-                                    ...prev,
-                                    optimizeForPeakHours: e.target.checked,
-                                  }))
-                                }
-                                className="rounded"
-                              />
-                              <label
-                                htmlFor="optimizeForPeakHours"
-                                className="text-sm"
-                              >
-                                بهینه‌سازی ساعات شلوغ
-                              </label>
-                            </div>
-                            <div className="flex items-center space-x-2 space-x-reverse">
-                              <input
-                                type="checkbox"
-                                id="respectWorkingHours"
-                                checked={smartSettings.respectWorkingHours}
-                                onChange={(e) =>
-                                  setSmartSettings((prev) => ({
-                                    ...prev,
-                                    respectWorkingHours: e.target.checked,
-                                  }))
-                                }
-                                className="rounded"
-                              />
-                              <label
-                                htmlFor="respectWorkingHours"
-                                className="text-sm"
-                              >
-                                رعایت ساعات کاری
-                              </label>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Save Settings */}
-                        <div className="flex justify-end">
-                          <Button
-                            className="bg-blue-600 hover:bg-blue-700"
-                            onClick={handleSaveSettings}
-                            disabled={saveSettingsMutation.isPending}
-                          >
-                            {saveSettingsMutation.isPending ? (
-                              <LoadingSpinner size="sm" />
-                            ) : (
-                              <Save className="w-4 h-4 ml-2" />
-                            )}
-                            {saveSettingsMutation.isPending
-                              ? "در حال ذخیره..."
-                              : "ذخیره تنظیمات"}
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-              </TabsContent>
-            </div>
-          </Tabs>
-        </div>
-
-        {/* Floating Action Button */}
-        <button
-          onClick={() => setShowAddSlotModal(true)}
-          className="fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-200 z-50 hover:scale-110"
-          title="افزودن ساعت جدید"
-        >
-          <Plus className="w-6 h-6" />
-        </button>
-
-        {/* Modals */}
-        {/* Conflict Resolution Modal */}
-        {showConflictModal && (
-          <Modal
-            title="تداخل در رزروها یافت شد"
-            onClose={() => {
-              setShowConflictModal(false);
-              setConflictData(null);
-              setPendingGeneration(null);
-            }}
-          >
-            <div className="space-y-6">
-              {/* Conflict Resolution Strategy Selection */}
-              {!conflictData && pendingGeneration && (
-                <div className="space-y-4">
-                  <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
-                        <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-                      </div>
-                      <h4 className="font-semibold text-amber-900 dark:text-amber-100">
-                        رزروهای موجود یافت شد
-                      </h4>
-                    </div>
-                    <p className="text-sm text-amber-700 dark:text-amber-300">
-                      برای هفته آینده رزروهایی وجود دارد. لطفاً نحوه برخورد با
-                      تداخلات را انتخاب کنید:
-                    </p>
-                  </div>
-
-                  <div className="space-y-3">
-                    <label className="flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer hover:bg-green-50 dark:hover:bg-green-900/10 transition-colors border-green-200 dark:border-green-800">
-                      <input
-                        type="radio"
-                        name="conflictResolution"
-                        value="preserve"
-                        checked={conflictResolution === "preserve"}
-                        onChange={(e) =>
-                          setConflictResolution(e.target.value as any)
-                        }
-                        className="mt-1"
-                      />
-                      <div>
-                        <div className="font-semibold text-green-900 dark:text-green-100 mb-1">
-                          حفظ رزروهای موجود (توصیه شده)
-                        </div>
-                        <div className="text-sm text-green-700 dark:text-green-300">
-                          ساعات جدید تنها در مواقعی ایجاد می‌شوند که با رزروهای
-                          موجود تداخل نداشته باشند
-                        </div>
-                      </div>
-                    </label>
-
-                    <label className="flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-colors border-blue-200 dark:border-blue-800">
-                      <input
-                        type="radio"
-                        name="conflictResolution"
-                        value="reschedule"
-                        checked={conflictResolution === "reschedule"}
-                        onChange={(e) =>
-                          setConflictResolution(e.target.value as any)
-                        }
-                        className="mt-1"
-                      />
-                      <div>
-                        <div className="font-semibold text-blue-900 dark:text-blue-100 mb-1">
-                          پیشنهاد جابجایی
-                        </div>
-                        <div className="text-sm text-blue-700 dark:text-blue-300">
-                          ساعات جدید ایجاد شده و برای رزروهای متداخل، زمان‌های
-                          جایگزین پیشنهاد می‌شود
-                        </div>
-                      </div>
-                    </label>
-
-                    <label className="flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors border-red-200 dark:border-red-800">
-                      <input
-                        type="radio"
-                        name="conflictResolution"
-                        value="force"
-                        checked={conflictResolution === "force"}
-                        onChange={(e) =>
-                          setConflictResolution(e.target.value as any)
-                        }
-                        className="mt-1"
-                      />
-                      <div>
-                        <div className="font-semibold text-red-900 dark:text-red-100 mb-1">
-                          لغو رزروهای متداخل (خطرناک)
-                        </div>
-                        <div className="text-sm text-red-700 dark:text-red-300">
-                          رزروهای متداخل به طور خودکار لغو می‌شوند. این عمل
-                          غیرقابل بازگشت است!
-                        </div>
-                      </div>
-                    </label>
-                  </div>
-
-                  <div className="flex gap-3">
-                    <Button
-                      onClick={() => {
-                        if (pendingGeneration) {
-                          handleGenerateSlots(pendingGeneration.mode, true);
-                          setShowConflictModal(false);
-                        }
-                      }}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700"
-                    >
-                      ادامه تولید
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setShowConflictModal(false);
-                        setPendingGeneration(null);
-                      }}
-                      className="flex-1"
-                    >
-                      انصراف
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              {/* Conflict Results Display */}
-              {conflictData && (
-                <div className="space-y-4">
-                  <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                    <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
-                      نتیجه تولید ساعات کاری
-                    </h4>
-                    <p className="text-sm text-blue-700 dark:text-blue-300">
-                      {conflictData.total} تداخل یافت شد و بر اساس استراتژی
-                      انتخابی مدیریت گردید.
-                    </p>
-                  </div>
-
-                  {/* Conflict Details */}
-                  <div className="max-h-96 overflow-y-auto space-y-3">
-                    {conflictData.details?.map(
-                      (conflict: any, index: number) => (
-                        <div
-                          key={index}
-                          className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border"
-                        >
-                          <div className="flex items-center justify-between mb-3">
-                            <h5 className="font-medium text-gray-900 dark:text-white">
-                              ساعت {conflict.slotTime}
-                            </h5>
-                            <Badge
-                              className={`${
-                                conflict.resolution === "preserved"
-                                  ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
-                                  : conflict.resolution ===
-                                      "reschedule_suggested"
-                                    ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
-                                    : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
-                              }`}
-                            >
-                              {conflict.resolution === "preserved" && "حفظ شده"}
-                              {conflict.resolution === "reschedule_suggested" &&
-                                "جابجایی پیشنهادی"}
-                              {conflict.resolution === "force_cancelled" &&
-                                "لغو شده"}
-                            </Badge>
-                          </div>
-
-                          <div className="space-y-2">
-                            {conflict.conflictingBookings?.map(
-                              (booking: any, bookingIndex: number) => (
-                                <div key={bookingIndex} className="text-sm">
-                                  <div className="font-medium text-gray-900 dark:text-white">
-                                    {booking.customerName} - {booking.time}
-                                  </div>
-                                  <div className="text-gray-600 dark:text-gray-400">
-                                    {booking.customerPhone}
-                                  </div>
-                                </div>
-                              )
-                            )}
-                          </div>
-
-                          {/* Reschedule Options */}
-                          {conflict.alternatives &&
-                            conflict.alternatives.length > 0 && (
-                              <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                                <div className="text-sm font-medium text-gray-900 dark:text-white mb-2">
-                                  زمان‌های پیشنهادی جایگزین:
-                                </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                  {conflict.alternatives[0]?.suggestedSlots
-                                    ?.slice(0, 4)
-                                    .map((slot: any, slotIndex: number) => (
-                                      <div
-                                        key={slotIndex}
-                                        className="text-xs p-2 bg-white dark:bg-gray-700 rounded border"
-                                      >
-                                        <div className="font-medium">
-                                          {slot.date} ({slot.dayName})
-                                        </div>
-                                        <div className="text-gray-600 dark:text-gray-400">
-                                          {slot.startTime} - {slot.endTime}
-                                        </div>
-                                        {slot.priority === "same_day" && (
-                                          <Badge className="mt-1 bg-green-100 text-green-800 text-xs">
-                                            همان روز
-                                          </Badge>
-                                        )}
-                                      </div>
-                                    ))}
-                                </div>
-                              </div>
-                            )}
-                        </div>
-                      )
-                    )}
-                  </div>
-
+      {/* Main Content */}
+      {selectedService ? (
+        <div className="space-y-6">
+          {/* Actions Bar */}
+          <div className="flex items-center justify-between bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+            <div className="flex items-center space-x-4 space-x-reverse">
+              <div className="flex items-center space-x-2 space-x-reverse">
+                <span className="text-sm font-medium text-gray-700">
+                  نمایش:
+                </span>
+                <div className="flex bg-gray-100 rounded-lg p-1">
                   <Button
-                    onClick={() => {
-                      setShowConflictModal(false);
-                      setConflictData(null);
-                    }}
-                    className="w-full"
+                    variant={viewMode === "grid" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setViewMode("grid")}
+                    className="flex-1"
                   >
-                    بستن
+                    <Grid className="w-4 h-4 ml-1" />
+                    شبکه
+                  </Button>
+                  <Button
+                    variant={viewMode === "list" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setViewMode("list")}
+                    className="flex-1"
+                  >
+                    <List className="w-4 h-4 ml-1" />
+                    لیست
+                  </Button>
+                </div>
+              </div>
+
+              {/* Select All Checkbox */}
+              {timeSlots?.data?.data?.availableSlots &&
+                timeSlots.data.data.availableSlots.length > 0 && (
+                  <div className="flex items-center space-x-2 space-x-reverse">
+                    <input
+                      type="checkbox"
+                      id="selectAllSlots"
+                      checked={selectAll}
+                      onChange={handleSelectAll}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <label
+                      htmlFor="selectAllSlots"
+                      className="text-sm font-medium text-gray-700"
+                    >
+                      انتخاب همه
+                    </label>
+                  </div>
+                )}
+
+              {selectedSlots.length > 0 && (
+                <div className="flex items-center space-x-2 space-x-reverse">
+                  <Badge
+                    variant="secondary"
+                    className="bg-blue-100 text-blue-800"
+                  >
+                    {selectedSlots.length} انتخاب شده
+                  </Badge>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowBulkActionsModal(true)}
+                  >
+                    <Users className="w-4 h-4 ml-2" />
+                    عملیات گروهی
                   </Button>
                 </div>
               )}
             </div>
-          </Modal>
-        )}
 
-        {/* Quick Modal */}
-        {showQuickModal && (
-          <Modal
-            title="تولید سریع ساعات کاری"
-            onClose={() => setShowQuickModal(false)}
-          >
-            <div className="space-y-4">
-              <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                <p className="text-sm text-blue-700 dark:text-blue-300">
-                  ساعات کاری با فاصله ۳۰ دقیقه‌ای برای ۷ روز آینده تولید می‌شود.
-                </p>
-              </div>
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="forceRegenerateQuick"
-                    checked={forceRegenerate}
-                    onChange={(e) => setForceRegenerate(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                  />
-                  <label htmlFor="forceRegenerateQuick" className="text-sm">
-                    بازتولید اجباری (حذف ساعات موجود و ایجاد جدید)
-                  </label>
-                </div>
-
-                {!forceRegenerate && (
-                  <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
-                      نحوه برخورد با رزروهای موجود:
-                    </label>
-                    <div className="space-y-2">
-                      <label className="flex items-center gap-2">
-                        <input
-                          type="radio"
-                          name="conflictResolutionQuick"
-                          value="preserve"
-                          checked={conflictResolution === "preserve"}
-                          onChange={(e) =>
-                            setConflictResolution(e.target.value as any)
-                          }
-                          className="text-blue-600"
-                        />
-                        <span className="text-sm text-green-700 dark:text-green-300">
-                          حفظ رزروهای موجود
-                        </span>
-                      </label>
-                      <label className="flex items-center gap-2">
-                        <input
-                          type="radio"
-                          name="conflictResolutionQuick"
-                          value="reschedule"
-                          checked={conflictResolution === "reschedule"}
-                          onChange={(e) =>
-                            setConflictResolution(e.target.value as any)
-                          }
-                          className="text-blue-600"
-                        />
-                        <span className="text-sm text-blue-700 dark:text-blue-300">
-                          پیشنهاد جابجایی
-                        </span>
-                      </label>
-                      <label className="flex items-center gap-2">
-                        <input
-                          type="radio"
-                          name="conflictResolutionQuick"
-                          value="force"
-                          checked={conflictResolution === "force"}
-                          onChange={(e) =>
-                            setConflictResolution(e.target.value as any)
-                          }
-                          className="text-blue-600"
-                        />
-                        <span className="text-sm text-red-700 dark:text-red-300">
-                          لغو رزروهای متداخل
-                        </span>
-                      </label>
-                    </div>
-                  </div>
-                )}
-              </div>
+            <div className="flex items-center space-x-2 space-x-reverse">
               <Button
-                onClick={() => {
-                  handleGenerateSlots({
-                    id: "quick",
-                    name: "تولید سریع",
-                    description: "تولید ساعات کاری ساده با فاصله 30 دقیقه‌ای",
-                    icon: <Zap className="w-5 h-5" />,
-                    settings: { mode: "basic" },
-                  });
-                  setShowQuickModal(false);
-                }}
-                className="w-full bg-blue-600 hover:bg-blue-700"
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  queryClient.invalidateQueries({ queryKey: ["timeSlots"] })
+                }
+                disabled={timeSlotsLoading}
               >
-                تایید و تولید
+                <RefreshCw
+                  className={`w-4 h-4 ml-2 ${timeSlotsLoading ? "animate-spin" : ""}`}
+                />
+                بروزرسانی
               </Button>
+
+              {selectedSlots.length > 0 && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleBulkDelete}
+                >
+                  <Trash2 className="w-4 h-4 ml-2" />
+                  حذف انتخاب شده
+                </Button>
+              )}
             </div>
-          </Modal>
-        )}
+          </div>
 
-        {/* Smart Modal */}
-        {showSmartModal && (
-          <Modal
-            title="تولید هوشمند ساعات کاری"
-            onClose={() => setShowSmartModal(false)}
-          >
-            <div className="space-y-4">
-              <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                <p className="text-sm text-purple-700 dark:text-purple-300">
-                  ساعات کاری با الگوریتم هوشمند (مدت سرویس، ناهار، ساعات شلوغ
-                  و...)
-                </p>
+          {/* Time Slots Display */}
+          {timeSlotsLoading ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">در حال بارگذاری ساعات کاری...</p>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    بافر بین اسلات‌ها (دقیقه)
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    value={businessSettings.bufferBetweenSlots}
-                    onChange={(e) =>
-                      setBusinessSettings((prev) => ({
-                        ...prev,
-                        bufferBetweenSlots: Number(e.target.value),
-                      }))
-                    }
-                    className="w-full p-2 border rounded"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    حداکثر اسلات در روز
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    value={smartSettings.maxSlotsPerDay}
-                    onChange={(e) =>
-                      setSmartSettings((prev) => ({
-                        ...prev,
-                        maxSlotsPerDay: Number(e.target.value),
-                      }))
-                    }
-                    className="w-full p-2 border rounded"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    شروع ناهار
-                  </label>
-                  <input
-                    type="time"
-                    value={businessSettings.lunchBreakStart}
-                    onChange={(e) =>
-                      setBusinessSettings((prev) => ({
-                        ...prev,
-                        lunchBreakStart: e.target.value,
-                      }))
-                    }
-                    className="w-full p-2 border rounded"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    پایان ناهار
-                  </label>
-                  <input
-                    type="time"
-                    value={businessSettings.lunchBreakEnd}
-                    onChange={(e) =>
-                      setBusinessSettings((prev) => ({
-                        ...prev,
-                        lunchBreakEnd: e.target.value,
-                      }))
-                    }
-                    className="w-full p-2 border rounded"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    شروع ساعات شلوغ
-                  </label>
-                  <input
-                    type="time"
-                    value={businessSettings.peakHoursStart}
-                    onChange={(e) =>
-                      setBusinessSettings((prev) => ({
-                        ...prev,
-                        peakHoursStart: e.target.value,
-                      }))
-                    }
-                    className="w-full p-2 border rounded"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    پایان ساعات شلوغ
-                  </label>
-                  <input
-                    type="time"
-                    value={businessSettings.peakHoursEnd}
-                    onChange={(e) =>
-                      setBusinessSettings((prev) => ({
-                        ...prev,
-                        peakHoursEnd: e.target.value,
-                      }))
-                    }
-                    className="w-full p-2 border rounded"
-                  />
-                </div>
-              </div>
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="forceRegenerateSmart"
-                    checked={forceRegenerate}
-                    onChange={(e) => setForceRegenerate(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                  />
-                  <label htmlFor="forceRegenerateSmart" className="text-sm">
-                    بازتولید اجباری (حذف ساعات موجود و ایجاد جدید)
-                  </label>
-                </div>
-
-                {!forceRegenerate && (
-                  <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
-                      نحوه برخورد با رزروهای موجود:
-                    </label>
-                    <div className="space-y-2">
-                      <label className="flex items-center gap-2">
-                        <input
-                          type="radio"
-                          name="conflictResolutionSmart"
-                          value="preserve"
-                          checked={conflictResolution === "preserve"}
-                          onChange={(e) =>
-                            setConflictResolution(e.target.value as any)
-                          }
-                          className="text-blue-600"
-                        />
-                        <span className="text-sm text-green-700 dark:text-green-300">
-                          حفظ رزروهای موجود
-                        </span>
-                      </label>
-                      <label className="flex items-center gap-2">
-                        <input
-                          type="radio"
-                          name="conflictResolutionSmart"
-                          value="reschedule"
-                          checked={conflictResolution === "reschedule"}
-                          onChange={(e) =>
-                            setConflictResolution(e.target.value as any)
-                          }
-                          className="text-blue-600"
-                        />
-                        <span className="text-sm text-blue-700 dark:text-blue-300">
-                          پیشنهاد جابجایی
-                        </span>
-                      </label>
-                      <label className="flex items-center gap-2">
-                        <input
-                          type="radio"
-                          name="conflictResolutionSmart"
-                          value="force"
-                          checked={conflictResolution === "force"}
-                          onChange={(e) =>
-                            setConflictResolution(e.target.value as any)
-                          }
-                          className="text-blue-600"
-                        />
-                        <span className="text-sm text-red-700 dark:text-red-300">
-                          لغو رزروهای متداخل
-                        </span>
-                      </label>
-                    </div>
-                  </div>
-                )}
-              </div>
-              <Button
-                onClick={() => {
-                  handleGenerateSlots({
-                    id: "smart",
-                    name: "تولید هوشمند",
-                    description: "تولید ساعات کاری با الگوریتم‌های پیشرفته",
-                    icon: <Sparkles className="w-5 h-5" />,
-                    settings: {
-                      mode: "smart",
-                      smartSettings,
-                      businessSettings,
-                    },
-                  });
-                  setShowSmartModal(false);
-                }}
-                className="w-full bg-purple-600 hover:bg-purple-700"
-              >
-                تایید و تولید
-              </Button>
             </div>
-          </Modal>
-        )}
-
-        {/* Recurring Modal */}
-        {showRecurringModal && (
-          <Modal
-            title="تولید دوره‌ای ساعات کاری"
-            onClose={() => setShowRecurringModal(false)}
-          >
-            <div className="space-y-4">
-              <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                <p className="text-sm text-green-700 dark:text-green-300">
-                  ساعات کاری تکرار شونده برای چند هفته (مثلاً دوشنبه‌ها و
-                  چهارشنبه‌ها)
-                </p>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    روزهای هفته
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {[0, 1, 2, 3, 4, 5, 6].map((day) => (
-                      <label key={day} className="flex items-center gap-1">
+          ) : timeSlots?.data?.data?.availableSlots &&
+            timeSlots.data.data.availableSlots.length > 0 ? (
+            <div
+              className={
+                viewMode === "grid"
+                  ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+                  : "space-y-4"
+              }
+            >
+              {timeSlots.data.data.availableSlots.map((slot: TimeSlot) => (
+                <Card
+                  key={slot.id}
+                  className={`relative group transition-all duration-200 hover:shadow-lg hover:scale-[1.02] ${
+                    selectedSlots.includes(slot.id!)
+                      ? "ring-2 ring-blue-500 bg-blue-50"
+                      : ""
+                  }`}
+                >
+                  <CardContent className="p-6">
+                    {/* Header */}
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center space-x-3 space-x-reverse">
                         <input
                           type="checkbox"
-                          checked={recurringPattern.days.includes(day)}
-                          onChange={() => toggleDaySelection(day)}
+                          checked={selectedSlots.includes(slot.id!)}
+                          onChange={() => handleSelectSlot(slot.id!)}
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                         />
-                        {getDayName(day)}
-                      </label>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    تعداد هفته
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    value={recurringPattern.weeks}
-                    onChange={(e) =>
-                      setRecurringPattern((prev) => ({
-                        ...prev,
-                        weeks: Number(e.target.value),
-                      }))
-                    }
-                    className="w-full p-2 border rounded"
-                  />
-                </div>
-              </div>
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="forceRegenerateRecurring"
-                    checked={forceRegenerate}
-                    onChange={(e) => setForceRegenerate(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                  />
-                  <label htmlFor="forceRegenerateRecurring" className="text-sm">
-                    بازتولید اجباری (حذف ساعات موجود و ایجاد جدید)
-                  </label>
-                </div>
-
-                {!forceRegenerate && (
-                  <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
-                      نحوه برخورد با رزروهای موجود:
-                    </label>
-                    <div className="space-y-2">
-                      <label className="flex items-center gap-2">
-                        <input
-                          type="radio"
-                          name="conflictResolutionRecurring"
-                          value="preserve"
-                          checked={conflictResolution === "preserve"}
-                          onChange={(e) =>
-                            setConflictResolution(e.target.value as any)
-                          }
-                          className="text-blue-600"
-                        />
-                        <span className="text-sm text-green-700 dark:text-green-300">
-                          حفظ رزروهای موجود
+                        <div className="p-2 bg-blue-100 rounded-lg">
+                          <Clock className="w-5 h-5 text-blue-600" />
+                        </div>
+                      </div>
+                      <Badge
+                        variant={getSlotStatusColor(getSlotStatus(slot))}
+                        className="text-xs font-medium"
+                      >
+                        {getSlotStatusIcon(getSlotStatus(slot))}
+                        <span className="mr-1">
+                          {getSlotStatus(slot) === "available"
+                            ? "آزاد"
+                            : getSlotStatus(slot) === "booked"
+                              ? "رزرو"
+                              : "غیرفعال"}
                         </span>
-                      </label>
-                      <label className="flex items-center gap-2">
-                        <input
-                          type="radio"
-                          name="conflictResolutionRecurring"
-                          value="reschedule"
-                          checked={conflictResolution === "reschedule"}
-                          onChange={(e) =>
-                            setConflictResolution(e.target.value as any)
-                          }
-                          className="text-blue-600"
-                        />
-                        <span className="text-sm text-blue-700 dark:text-blue-300">
-                          پیشنهاد جابجایی
-                        </span>
-                      </label>
-                      <label className="flex items-center gap-2">
-                        <input
-                          type="radio"
-                          name="conflictResolutionRecurring"
-                          value="force"
-                          checked={conflictResolution === "force"}
-                          onChange={(e) =>
-                            setConflictResolution(e.target.value as any)
-                          }
-                          className="text-blue-600"
-                        />
-                        <span className="text-sm text-red-700 dark:text-red-300">
-                          لغو رزروهای متداخل
-                        </span>
-                      </label>
+                      </Badge>
                     </div>
-                  </div>
-                )}
-              </div>
-              <Button
-                onClick={() => {
-                  handleGenerateSlots({
-                    id: "recurring",
-                    name: "الگوی دوره‌ای",
-                    description: "تولید ساعات کاری تکرار شونده برای چند هفته",
-                    icon: <Repeat className="w-5 h-5" />,
-                    settings: {
-                      mode: "recurring",
-                      pattern: recurringPattern,
-                      smartSettings,
-                      businessSettings,
-                    },
-                  });
-                  setShowRecurringModal(false);
-                }}
-                className="w-full bg-green-600 hover:bg-green-700"
-              >
-                تایید و تولید
+
+                    {/* Time Display */}
+                    <div className="text-center mb-4">
+                      <div className="text-2xl font-bold text-gray-900 mb-1">
+                        {slot.startTime} - {slot.endTime}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {new Date(selectedDate).toLocaleDateString("fa-IR", {
+                          weekday: "long",
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Capacity Info */}
+                    <div className="space-y-2 mb-4">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-600">ظرفیت:</span>
+                        <span className="font-medium">
+                          {slot.capacity}/{slot.maxCapacity}
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                          style={{
+                            width: `${(slot.capacity / slot.maxCapacity) * 100}%`,
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+
+                    {/* Additional Info */}
+                    <div className="space-y-2 mb-4">
+                      {slot.isPeakHour && (
+                        <div className="flex items-center space-x-2 space-x-reverse text-orange-600">
+                          <Zap className="w-4 h-4" />
+                          <span className="text-sm font-medium">ساعت شلوغ</span>
+                        </div>
+                      )}
+                      {slot.notes && (
+                        <div className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
+                          {slot.notes}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center space-x-2 space-x-reverse">
+                      <Button
+                        size="sm"
+                        variant={slot.isAvailable ? "outline" : "default"}
+                        onClick={() =>
+                          handleToggleSlot(slot.id!, !slot.isAvailable)
+                        }
+                        disabled={slot.isBooked}
+                        className="flex-1"
+                      >
+                        {slot.isAvailable ? (
+                          <>
+                            <Pause className="w-4 h-4 ml-2" />
+                            غیرفعال
+                          </>
+                        ) : (
+                          <>
+                            <Play className="w-4 h-4 ml-2" />
+                            فعال
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleEditCapacity(slot)}
+                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                      >
+                        <Users className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleDeleteSlot(slot.id!)}
+                        disabled={slot.isBooked}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <Card className="border-2 border-dashed border-gray-300">
+              <CardContent className="p-12 text-center">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Clock className="w-8 h-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  ساعات کاری یافت نشد
+                </h3>
+                <p className="text-gray-500 mb-6 max-w-md mx-auto">
+                  برای این تاریخ و سرویس ساعات کاری تعریف نشده است. می‌توانید
+                  ساعات کاری جدید ایجاد کنید.
+                </p>
+                <div className="flex items-center justify-center space-x-3 space-x-reverse">
+                  <Button
+                    onClick={() => setShowCreateModal(true)}
+                    className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
+                  >
+                    <Plus className="w-4 h-4 ml-2" />
+                    ایجاد ساعت کاری
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowSettingsModal(true)}
+                  >
+                    <Settings className="w-4 h-4 ml-2" />
+                    تنظیمات
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      ) : (
+        <Card className="border-2 border-dashed border-gray-300">
+          <CardContent className="p-12 text-center">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Target className="w-8 h-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              سرویس انتخاب نشده
+            </h3>
+            <p className="text-gray-500 mb-6 max-w-md mx-auto">
+              لطفاً ابتدا یک سرویس انتخاب کنید تا ساعات کاری آن را مشاهده کنید.
+            </p>
+            <Button
+              onClick={() => setShowCreateModal(true)}
+              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
+            >
+              <Plus className="w-4 h-4 ml-2" />
+              ایجاد سرویس جدید
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Create Time Slots Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold">
+                {creationStep === "form" && "ایجاد ساعات کاری"}
+                {creationStep === "summary" && "خلاصه ایجاد ساعات کاری"}
+                {creationStep === "conflicts" && "خطا در ایجاد ساعات کاری"}
+              </h2>
+              <Button variant="ghost" size="sm" onClick={handleCloseModal}>
+                <XCircle className="w-5 h-5" />
               </Button>
             </div>
-          </Modal>
-        )}
 
-        {/* Add Slot Modal */}
-        {showAddSlotModal && (
-          <Modal
-            title="افزودن ساعت جدید"
-            onClose={() => setShowAddSlotModal(false)}
-          >
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-6">
+              {/* Summary Step */}
+              {creationStep === "summary" && modalSummary && (
+                <div className="space-y-6">
+                  {/* Success Summary */}
+                  <div className="bg-green-50 border-l-4 border-green-400 p-4 rounded-lg">
+                    <div className="flex items-center">
+                      <CheckCircle className="w-5 h-5 text-green-400 ml-2" />
+                      <div>
+                        <h3 className="text-sm font-medium text-green-800">
+                          ساعات کاری با موفقیت ایجاد شد
+                        </h3>
+                        <p className="text-sm text-green-700 mt-1">
+                          {modalSummary.summary.totalCreated} ساعت کاری ایجاد شد
+                          {modalSummary.summary.totalSkipped > 0 && (
+                            <span className="block mt-1">
+                              {modalSummary.summary.totalSkipped} ساعت به دلیل
+                              تداخل رد شد
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Summary Details */}
+                  <div className="bg-white border border-gray-200 rounded-lg p-4">
+                    <h4 className="font-medium text-gray-900 mb-3">
+                      جزئیات ایجاد
+                    </h4>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-gray-500">کسب و کار:</span>
+                        <span className="font-medium mr-2">
+                          {modalSummary.summary.businessName}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">سرویس:</span>
+                        <span className="font-medium mr-2">
+                          {modalSummary.summary.serviceName}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">تعداد روزها:</span>
+                        <span className="font-medium mr-2">
+                          {modalSummary.summary.totalDays}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">ساعات ایجاد شده:</span>
+                        <span className="font-medium mr-2">
+                          {modalSummary.summary.totalCreated}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Conflicts Section */}
+                  {modalSummary.conflicts?.total > 0 && (
+                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-medium text-orange-800 flex items-center">
+                          <AlertTriangle className="w-4 h-4 ml-2" />
+                          تداخل‌های یافت شده
+                        </h4>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            setShowConflictDetails(!showConflictDetails)
+                          }
+                          className="text-orange-600 hover:text-orange-700"
+                        >
+                          {showConflictDetails ? "مخفی کردن" : "نمایش جزئیات"}
+                        </Button>
+                      </div>
+
+                      {showConflictDetails && (
+                        <div className="space-y-3">
+                          {modalSummary.conflicts.details.map(
+                            (conflict: any, index: number) => (
+                              <div
+                                key={index}
+                                className="bg-white border border-orange-200 rounded p-3"
+                              >
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="font-medium text-orange-800">
+                                    {conflict.slotTime}
+                                  </span>
+                                  <span className="text-xs px-2 py-1 rounded-full bg-orange-100 text-orange-700">
+                                    {conflict.resolution === "preserved"
+                                      ? "حفظ شده"
+                                      : "رد شده"}
+                                  </span>
+                                </div>
+
+                                {conflict.conflictingBookings?.map(
+                                  (booking: any, bookingIndex: number) => (
+                                    <div
+                                      key={bookingIndex}
+                                      className="bg-gray-50 rounded p-2 mt-2"
+                                    >
+                                      <div className="flex items-center justify-between text-sm">
+                                        <div>
+                                          <span className="font-medium">
+                                            {booking.customerName}
+                                          </span>
+                                          <span className="text-gray-500 mr-2">
+                                            {" "}
+                                            - {booking.customerPhone}
+                                          </span>
+                                        </div>
+                                        <span
+                                          className={`text-xs px-2 py-1 rounded-full ${getStatusColor(booking.status)}`}
+                                        >
+                                          {getStatusText(booking.status)}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  )
+                                )}
+                              </div>
+                            )
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Action Buttons */}
+                  <div className="flex items-center justify-end space-x-2 space-x-reverse pt-4 border-t">
+                    <Button variant="outline" onClick={handleCloseModal}>
+                      بستن
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setCreationStep("form");
+                        setModalSummary(null);
+                        setShowConflictDetails(false);
+                      }}
+                    >
+                      ایجاد ساعات کاری بیشتر
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Conflicts Step */}
+              {creationStep === "conflicts" && modalConflictError && (
+                <div className="space-y-6">
+                  {/* Enhanced Error Display with Severity */}
+                  <div
+                    className={`border-l-4 p-4 rounded-lg ${
+                      modalConflictError.severity === "critical"
+                        ? "bg-red-50 border-red-400"
+                        : modalConflictError.severity === "high"
+                          ? "bg-orange-50 border-orange-400"
+                          : modalConflictError.severity === "medium"
+                            ? "bg-yellow-50 border-yellow-400"
+                            : "bg-blue-50 border-blue-400"
+                    }`}
+                  >
+                    <div className="flex items-start">
+                      <div
+                        className={`flex-shrink-0 ${
+                          modalConflictError.severity === "critical"
+                            ? "text-red-400"
+                            : modalConflictError.severity === "high"
+                              ? "text-orange-400"
+                              : modalConflictError.severity === "medium"
+                                ? "text-yellow-400"
+                                : "text-blue-400"
+                        }`}
+                      >
+                        {getConflictIcon(modalConflictError.type)}
+                      </div>
+                      <div className="mr-3 flex-1">
+                        <div className="flex items-center justify-between">
+                          <h3
+                            className={`text-sm font-medium ${
+                              modalConflictError.severity === "critical"
+                                ? "text-red-800"
+                                : modalConflictError.severity === "high"
+                                  ? "text-orange-800"
+                                  : modalConflictError.severity === "medium"
+                                    ? "text-yellow-800"
+                                    : "text-blue-800"
+                            }`}
+                          >
+                            {getConflictTypeLabel(modalConflictError.type)}
+                          </h3>
+                          <Badge
+                            variant="secondary"
+                            className={`text-xs ${
+                              modalConflictError.severity === "critical"
+                                ? "bg-red-100 text-red-700"
+                                : modalConflictError.severity === "high"
+                                  ? "bg-orange-100 text-orange-700"
+                                  : modalConflictError.severity === "medium"
+                                    ? "bg-yellow-100 text-yellow-700"
+                                    : "bg-blue-100 text-blue-700"
+                            }`}
+                          >
+                            {modalConflictError.severity === "critical"
+                              ? "بحرانی"
+                              : modalConflictError.severity === "high"
+                                ? "بالا"
+                                : modalConflictError.severity === "medium"
+                                  ? "متوسط"
+                                  : "کم"}
+                          </Badge>
+                        </div>
+                        <p
+                          className={`text-sm mt-1 ${
+                            modalConflictError.severity === "critical"
+                              ? "text-red-700"
+                              : modalConflictError.severity === "high"
+                                ? "text-orange-700"
+                                : modalConflictError.severity === "medium"
+                                  ? "text-yellow-700"
+                                  : "text-blue-700"
+                          }`}
+                        >
+                          {modalConflictError.message}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Detailed Conflict Information */}
+                  {modalConflictError.details && (
+                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                      <h4 className="font-medium text-orange-800 mb-3 flex items-center">
+                        <Clock className="w-4 h-4 ml-2" />
+                        جزئیات تداخل‌های زمانی
+                      </h4>
+
+                      <div className="space-y-3">
+                        {/* Conflict Summary */}
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          {modalConflictError.details.conflictingSlots && (
+                            <div className="bg-white rounded p-3 border border-orange-200">
+                              <div className="flex items-center justify-between">
+                                <span className="text-orange-700 font-medium">
+                                  ساعات تداخل‌دار:
+                                </span>
+                                <Badge
+                                  variant="secondary"
+                                  className="bg-orange-100 text-orange-700"
+                                >
+                                  {modalConflictError.details.conflictingSlots}
+                                </Badge>
+                              </div>
+                            </div>
+                          )}
+
+                          {modalConflictError.details.conflictingBookings && (
+                            <div className="bg-white rounded p-3 border border-orange-200">
+                              <div className="flex items-center justify-between">
+                                <span className="text-orange-700 font-medium">
+                                  رزروهای موجود:
+                                </span>
+                                <Badge
+                                  variant="secondary"
+                                  className="bg-orange-100 text-orange-700"
+                                >
+                                  {
+                                    modalConflictError.details
+                                      .conflictingBookings
+                                  }
+                                </Badge>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Specific Conflicting Times */}
+                        {modalConflictError.details.overlappingTimes &&
+                          modalConflictError.details.overlappingTimes.length >
+                            0 && (
+                            <div className="bg-white rounded p-3 border border-orange-200">
+                              <h5 className="font-medium text-orange-800 mb-2 flex items-center">
+                                <AlertTriangle className="w-3 h-3 ml-1" />
+                                زمان‌های تداخل‌دار:
+                              </h5>
+                              <div className="space-y-2">
+                                {modalConflictError.details.overlappingTimes.map(
+                                  (timeSlot: string, index: number) => (
+                                    <div
+                                      key={index}
+                                      className="flex items-center justify-between text-sm bg-gray-50 rounded p-2"
+                                    >
+                                      <span className="text-gray-700">
+                                        {timeSlot}
+                                      </span>
+                                      <Badge
+                                        variant="secondary"
+                                        className="bg-red-100 text-red-700 text-xs"
+                                      >
+                                        تداخل
+                                      </Badge>
+                                    </div>
+                                  )
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                        {/* Additional Conflict Details */}
+                        {modalSummary?.conflicts?.details && (
+                          <div className="bg-white rounded p-3 border border-orange-200">
+                            <h5 className="font-medium text-orange-800 mb-2 flex items-center">
+                              <Info className="w-3 h-3 ml-1" />
+                              جزئیات بیشتر:
+                            </h5>
+                            <div className="space-y-2">
+                              {modalSummary.conflicts.details.map(
+                                (conflict: any, index: number) => (
+                                  <div
+                                    key={index}
+                                    className="border-l-2 border-orange-300 pl-3"
+                                  >
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className="font-medium text-gray-800">
+                                        {conflict.slotTime}
+                                      </span>
+                                      <Badge
+                                        variant="secondary"
+                                        className={`text-xs ${
+                                          conflict.resolution === "preserved"
+                                            ? "bg-green-100 text-green-700"
+                                            : "bg-red-100 text-red-700"
+                                        }`}
+                                      >
+                                        {conflict.resolution === "preserved"
+                                          ? "حفظ شده"
+                                          : "رد شده"}
+                                      </Badge>
+                                    </div>
+
+                                    {conflict.reason && (
+                                      <p className="text-xs text-gray-600 mb-2">
+                                        دلیل: {conflict.reason}
+                                      </p>
+                                    )}
+
+                                    {conflict.conflictingBookings &&
+                                      conflict.conflictingBookings.length >
+                                        0 && (
+                                        <div className="space-y-1">
+                                          <span className="text-xs font-medium text-gray-700">
+                                            رزروهای موجود:
+                                          </span>
+                                          {conflict.conflictingBookings.map(
+                                            (
+                                              booking: any,
+                                              bookingIndex: number
+                                            ) => (
+                                              <div
+                                                key={bookingIndex}
+                                                className="bg-gray-50 rounded p-2 text-xs"
+                                              >
+                                                <div className="flex items-center justify-between">
+                                                  <div>
+                                                    <span className="font-medium">
+                                                      {booking.customerName}
+                                                    </span>
+                                                    <span className="text-gray-500 mr-2">
+                                                      {" "}
+                                                      - {booking.customerPhone}
+                                                    </span>
+                                                  </div>
+                                                  <Badge
+                                                    variant="secondary"
+                                                    className={`text-xs ${getStatusColor(booking.status)}`}
+                                                  >
+                                                    {getStatusText(
+                                                      booking.status
+                                                    )}
+                                                  </Badge>
+                                                </div>
+                                                {booking.bookingTime && (
+                                                  <div className="text-gray-600 mt-1">
+                                                    زمان رزرو:{" "}
+                                                    {booking.bookingTime}
+                                                  </div>
+                                                )}
+                                              </div>
+                                            )
+                                          )}
+                                        </div>
+                                      )}
+                                  </div>
+                                )
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Suggestions */}
+                  {modalConflictError.suggestions &&
+                    modalConflictError.suggestions.length > 0 && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <h4 className="font-medium text-blue-800 mb-2 flex items-center">
+                          <Lightbulb className="w-4 h-4 ml-2" />
+                          پیشنهادات
+                        </h4>
+                        <ul className="space-y-1 text-sm text-blue-700">
+                          {modalConflictError.suggestions.map(
+                            (suggestion, index) => (
+                              <li key={index} className="flex items-start">
+                                <span className="text-blue-500 mr-2">•</span>
+                                {suggestion}
+                              </li>
+                            )
+                          )}
+                        </ul>
+                      </div>
+                    )}
+
+                  {/* Action Buttons */}
+                  <div className="flex items-center justify-end space-x-2 space-x-reverse pt-4 border-t">
+                    <Button variant="outline" onClick={handleCloseModal}>
+                      انصراف
+                    </Button>
+                    <Button
+                      onClick={handleModalConflictResolution}
+                      className="bg-orange-600 hover:bg-orange-700"
+                    >
+                      <RefreshCw className="w-4 h-4 ml-2" />
+                      تلاش مجدد
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Form Step */}
+              {creationStep === "form" && (
+                <>
+                  {/* Generation Mode Selection */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                      روش ایجاد
+                    </label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {generationModes.map((mode) => (
+                        <div
+                          key={mode.id}
+                          className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                            creationForm.mode === mode.id
+                              ? "border-blue-500 bg-blue-50"
+                              : "border-gray-200 hover:border-gray-300"
+                          }`}
+                          onClick={() =>
+                            setCreationForm((prev) => ({
+                              ...prev,
+                              mode: mode.id,
+                            }))
+                          }
+                        >
+                          <div className="flex items-center space-x-3 space-x-reverse">
+                            <div className="text-blue-600">{mode.icon}</div>
+                            <div>
+                              <h3 className="font-medium text-gray-900">
+                                {mode.name}
+                              </h3>
+                              <p className="text-sm text-gray-500">
+                                {mode.description}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Basic Settings */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        سرویس
+                      </label>
+                      <select
+                        value={creationForm.serviceId}
+                        onChange={(e) =>
+                          setCreationForm((prev) => ({
+                            ...prev,
+                            serviceId: e.target.value,
+                          }))
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">انتخاب سرویس</option>
+                        {services?.data?.data?.map((service: Service) => (
+                          <option key={service.id} value={service.id}>
+                            {service.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        فاصله زمانی (دقیقه)
+                      </label>
+                      <Input
+                        type="number"
+                        value={creationForm.intervalMinutes}
+                        onChange={(e) =>
+                          setCreationForm((prev) => ({
+                            ...prev,
+                            intervalMinutes: parseInt(e.target.value),
+                          }))
+                        }
+                        min="15"
+                        max="120"
+                        step="15"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        تاریخ شروع
+                      </label>
+                      <Input
+                        type="date"
+                        value={creationForm.startDate}
+                        onChange={(e) =>
+                          setCreationForm((prev) => ({
+                            ...prev,
+                            startDate: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        تاریخ پایان
+                      </label>
+                      <Input
+                        type="date"
+                        value={creationForm.endDate}
+                        onChange={(e) =>
+                          setCreationForm((prev) => ({
+                            ...prev,
+                            endDate: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        ساعت شروع
+                      </label>
+                      <Input
+                        type="time"
+                        value={creationForm.startTime}
+                        onChange={(e) =>
+                          setCreationForm((prev) => ({
+                            ...prev,
+                            startTime: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        ساعت پایان
+                      </label>
+                      <Input
+                        type="time"
+                        value={creationForm.endTime}
+                        onChange={(e) =>
+                          setCreationForm((prev) => ({
+                            ...prev,
+                            endTime: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        حداکثر ظرفیت
+                      </label>
+                      <Input
+                        type="number"
+                        value={creationForm.maxCapacity}
+                        onChange={(e) =>
+                          setCreationForm((prev) => ({
+                            ...prev,
+                            maxCapacity: parseInt(e.target.value),
+                          }))
+                        }
+                        min="1"
+                        max="10"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        ظرفیت اولیه
+                      </label>
+                      <Input
+                        type="number"
+                        value={creationForm.capacity}
+                        onChange={(e) =>
+                          setCreationForm((prev) => ({
+                            ...prev,
+                            capacity: parseInt(e.target.value),
+                          }))
+                        }
+                        min="0"
+                        max={creationForm.maxCapacity}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Recurring Settings - Show only for recurring mode */}
+                  {creationForm.mode === "recurring" && (
+                    <div className="space-y-4 border-t pt-4">
+                      <h3 className="text-lg font-medium text-gray-900">
+                        تنظیمات تکرار
+                      </h3>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            نوع تکرار
+                          </label>
+                          <select
+                            value={creationForm.repeatType}
+                            onChange={(e) =>
+                              setCreationForm((prev) => ({
+                                ...prev,
+                                repeatType: e.target.value,
+                              }))
+                            }
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          >
+                            <option value="daily">روزانه</option>
+                            <option value="weekly">هفتگی</option>
+                            <option value="monthly">ماهانه</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            تعداد تکرار
+                          </label>
+                          <Input
+                            type="number"
+                            value={creationForm.repeatCount}
+                            onChange={(e) =>
+                              setCreationForm((prev) => ({
+                                ...prev,
+                                repeatCount: parseInt(e.target.value),
+                              }))
+                            }
+                            min="1"
+                            max="365"
+                          />
+                        </div>
+                      </div>
+
+                      {creationForm.repeatType === "weekly" && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            روزهای هفته
+                          </label>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            {[
+                              { value: 0, label: "یکشنبه" },
+                              { value: 1, label: "دوشنبه" },
+                              { value: 2, label: "سه‌شنبه" },
+                              { value: 3, label: "چهارشنبه" },
+                              { value: 4, label: "پنج‌شنبه" },
+                              { value: 5, label: "جمعه" },
+                              { value: 6, label: "شنبه" },
+                            ].map((day) => (
+                              <div
+                                key={day.value}
+                                className="flex items-center space-x-2 space-x-reverse"
+                              >
+                                <input
+                                  type="checkbox"
+                                  id={`day-${day.value}`}
+                                  checked={creationForm.repeatDays.includes(
+                                    day.value
+                                  )}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setCreationForm((prev) => ({
+                                        ...prev,
+                                        repeatDays: [
+                                          ...prev.repeatDays,
+                                          day.value,
+                                        ],
+                                      }));
+                                    } else {
+                                      setCreationForm((prev) => ({
+                                        ...prev,
+                                        repeatDays: prev.repeatDays.filter(
+                                          (d) => d !== day.value
+                                        ),
+                                      }));
+                                    }
+                                  }}
+                                  className="rounded border-gray-300"
+                                />
+                                <label
+                                  htmlFor={`day-${day.value}`}
+                                  className="text-sm font-medium text-gray-700"
+                                >
+                                  {day.label}
+                                </label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="space-y-3">
+                        <div className="flex items-center space-x-2 space-x-reverse">
+                          <input
+                            type="checkbox"
+                            id="excludeWeekends"
+                            checked={creationForm.excludeWeekends}
+                            onChange={(e) =>
+                              setCreationForm((prev) => ({
+                                ...prev,
+                                excludeWeekends: e.target.checked,
+                              }))
+                            }
+                            className="rounded border-gray-300"
+                          />
+                          <label
+                            htmlFor="excludeWeekends"
+                            className="text-sm font-medium text-gray-700"
+                          >
+                            حذف تعطیلات آخر هفته
+                          </label>
+                        </div>
+
+                        <div className="flex items-center space-x-2 space-x-reverse">
+                          <input
+                            type="checkbox"
+                            id="excludeHolidays"
+                            checked={creationForm.excludeHolidays}
+                            onChange={(e) =>
+                              setCreationForm((prev) => ({
+                                ...prev,
+                                excludeHolidays: e.target.checked,
+                              }))
+                            }
+                            className="rounded border-gray-300"
+                          />
+                          <label
+                            htmlFor="excludeHolidays"
+                            className="text-sm font-medium text-gray-700"
+                          >
+                            حذف تعطیلات رسمی
+                          </label>
+                        </div>
+                      </div>
+
+                      {/* Recurring Summary */}
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <h4 className="text-sm font-medium text-blue-900 mb-2">
+                          خلاصه ایجاد تکراری
+                        </h4>
+                        <div className="text-sm text-blue-700 space-y-1">
+                          <p>
+                            نوع تکرار:{" "}
+                            {creationForm.repeatType === "daily"
+                              ? "روزانه"
+                              : creationForm.repeatType === "weekly"
+                                ? "هفتگی"
+                                : "ماهانه"}
+                          </p>
+                          <p>تعداد تکرار: {creationForm.repeatCount}</p>
+                          {creationForm.repeatType === "weekly" && (
+                            <p>
+                              روزهای هفته:{" "}
+                              {creationForm.repeatDays
+                                .map(
+                                  (day) =>
+                                    [
+                                      "یکشنبه",
+                                      "دوشنبه",
+                                      "سه‌شنبه",
+                                      "چهارشنبه",
+                                      "پنج‌شنبه",
+                                      "جمعه",
+                                      "شنبه",
+                                    ][day]
+                                )
+                                .join(", ")}
+                            </p>
+                          )}
+                          <p>
+                            تاریخ شروع:{" "}
+                            {creationForm.startDate
+                              ? new Date(
+                                  creationForm.startDate
+                                ).toLocaleDateString("fa-IR")
+                              : "تعیین نشده"}
+                          </p>
+                          <p>
+                            ساعت کاری: {creationForm.startTime} -{" "}
+                            {creationForm.endTime}
+                          </p>
+                          <p>
+                            فاصله زمانی: {creationForm.intervalMinutes} دقیقه
+                          </p>
+                          <p>
+                            ظرفیت: {creationForm.capacity}/
+                            {creationForm.maxCapacity}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Advanced Settings */}
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-2 space-x-reverse">
+                      <input
+                        type="checkbox"
+                        id="isPeakHour"
+                        checked={creationForm.isPeakHour}
+                        onChange={(e) =>
+                          setCreationForm((prev) => ({
+                            ...prev,
+                            isPeakHour: e.target.checked,
+                          }))
+                        }
+                        className="rounded border-gray-300"
+                      />
+                      <label
+                        htmlFor="isPeakHour"
+                        className="text-sm font-medium text-gray-700"
+                      >
+                        ساعت شلوغ
+                      </label>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        یادداشت (اختیاری)
+                      </label>
+                      <textarea
+                        value={creationForm.notes}
+                        onChange={(e) =>
+                          setCreationForm((prev) => ({
+                            ...prev,
+                            notes: e.target.value,
+                          }))
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        rows={3}
+                        placeholder="توضیحات اضافی..."
+                      />
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex items-center justify-end space-x-2 space-x-reverse pt-4 border-t">
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowCreateModal(false)}
+                    >
+                      انصراف
+                    </Button>
+                    <Button
+                      onClick={handleCreateTimeSlots}
+                      disabled={isGenerating || !creationForm.serviceId}
+                    >
+                      {isGenerating ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 ml-2 animate-spin" />
+                          در حال ایجاد...
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="w-4 h-4 ml-2" />
+                          ایجاد ساعات کاری
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Settings Modal */}
+      {showSettingsModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold">تنظیمات ساعات کاری</h2>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowSettingsModal(false)}
+              >
+                <XCircle className="w-5 h-5" />
+              </Button>
+            </div>
+
+            <Tabs defaultValue="general" className="w-full">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="general">عمومی</TabsTrigger>
+                <TabsTrigger value="advanced">پیشرفته</TabsTrigger>
+                <TabsTrigger value="templates">قالب‌ها</TabsTrigger>
+                <TabsTrigger value="analytics">تحلیل</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="general" className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center space-x-2 space-x-reverse">
+                        <Clock className="w-5 h-5" />
+                        <span>تنظیمات پایه</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          حداکثر روزهای رزرو پیش‌فرض
+                        </label>
+                        <Input
+                          type="number"
+                          defaultValue={
+                            businessSettings?.data?.advanceBookingDays || 30
+                          }
+                          min="1"
+                          max="365"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          فاصله بین ساعات کاری (دقیقه)
+                        </label>
+                        <Input
+                          type="number"
+                          defaultValue={
+                            businessSettings?.data?.bufferBetweenSlots || 15
+                          }
+                          min="0"
+                          max="60"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          حداکثر رزرو در هر ساعت
+                        </label>
+                        <Input
+                          type="number"
+                          defaultValue={
+                            businessSettings?.data?.maxBookingsPerSlot || 1
+                          }
+                          min="1"
+                          max="10"
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center space-x-2 space-x-reverse">
+                        <Coffee className="w-5 h-5" />
+                        <span>ساعت ناهار</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex items-center space-x-2 space-x-reverse">
+                        <input
+                          type="checkbox"
+                          id="includeLunchBreak"
+                          defaultChecked={
+                            businessSettings?.data?.includeLunchBreak
+                          }
+                          className="rounded border-gray-300"
+                        />
+                        <label
+                          htmlFor="includeLunchBreak"
+                          className="text-sm font-medium text-gray-700"
+                        >
+                          شامل ساعت ناهار
+                        </label>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            شروع ناهار
+                          </label>
+                          <Input
+                            type="time"
+                            defaultValue={
+                              businessSettings?.data?.lunchBreakStart || "12:00"
+                            }
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            پایان ناهار
+                          </label>
+                          <Input
+                            type="time"
+                            defaultValue={
+                              businessSettings?.data?.lunchBreakEnd || "13:00"
+                            }
+                          />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="advanced" className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center space-x-2 space-x-reverse">
+                        <Zap className="w-5 h-5" />
+                        <span>ساعات شلوغ</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex items-center space-x-2 space-x-reverse">
+                        <input
+                          type="checkbox"
+                          id="optimizeForPeakHours"
+                          defaultChecked={
+                            businessSettings?.data?.optimizeForPeakHours
+                          }
+                          className="rounded border-gray-300"
+                        />
+                        <label
+                          htmlFor="optimizeForPeakHours"
+                          className="text-sm font-medium text-gray-700"
+                        >
+                          بهینه‌سازی برای ساعات شلوغ
+                        </label>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            شروع ساعات شلوغ
+                          </label>
+                          <Input
+                            type="time"
+                            defaultValue={
+                              businessSettings?.data?.peakHoursStart || "10:00"
+                            }
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            پایان ساعات شلوغ
+                          </label>
+                          <Input
+                            type="time"
+                            defaultValue={
+                              businessSettings?.data?.peakHoursEnd || "16:00"
+                            }
+                          />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center space-x-2 space-x-reverse">
+                        <Shield className="w-5 h-5" />
+                        <span>امنیت و محدودیت‌ها</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex items-center space-x-2 space-x-reverse">
+                        <input
+                          type="checkbox"
+                          id="sameDayBooking"
+                          defaultChecked={
+                            businessSettings?.data?.sameDayBooking
+                          }
+                          className="rounded border-gray-300"
+                        />
+                        <label
+                          htmlFor="sameDayBooking"
+                          className="text-sm font-medium text-gray-700"
+                        >
+                          رزرو همان روز
+                        </label>
+                      </div>
+                      <div className="flex items-center space-x-2 space-x-reverse">
+                        <input
+                          type="checkbox"
+                          id="respectWorkingHours"
+                          defaultChecked={
+                            businessSettings?.data?.respectWorkingHours
+                          }
+                          className="rounded border-gray-300"
+                        />
+                        <label
+                          htmlFor="respectWorkingHours"
+                          className="text-sm font-medium text-gray-700"
+                        >
+                          رعایت ساعات کاری
+                        </label>
+                      </div>
+                      <div className="flex items-center space-x-2 space-x-reverse">
+                        <input
+                          type="checkbox"
+                          id="useServiceDuration"
+                          defaultChecked={
+                            businessSettings?.data?.useServiceDuration
+                          }
+                          className="rounded border-gray-300"
+                        />
+                        <label
+                          htmlFor="useServiceDuration"
+                          className="text-sm font-medium text-gray-700"
+                        >
+                          استفاده از مدت زمان سرویس
+                        </label>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="templates" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      <span className="flex items-center space-x-2 space-x-reverse">
+                        <FileText className="w-5 h-5" />
+                        <span>قالب‌های ساعات کاری</span>
+                      </span>
+                      <Button
+                        size="sm"
+                        onClick={() => setShowTemplateModal(true)}
+                      >
+                        <Plus className="w-4 h-4 ml-2" />
+                        قالب جدید
+                      </Button>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-8">
+                      <FileText className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">
+                        قالب‌ای یافت نشد
+                      </h3>
+                      <p className="text-gray-500 mb-4">
+                        قالب‌های ساعات کاری برای ذخیره و استفاده مجدد از تنظیمات
+                        ایجاد کنید
+                      </p>
+                      <Button onClick={() => setShowTemplateModal(true)}>
+                        <Plus className="w-4 h-4 ml-2" />
+                        ایجاد قالب جدید
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="analytics" className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center space-x-2 space-x-reverse">
+                        <BarChart3 className="w-5 h-5" />
+                        <span>آمار کلی</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">
+                            کل ساعات کاری
+                          </span>
+                          <span className="font-medium">1,234</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">
+                            ساعات رزرو شده
+                          </span>
+                          <span className="font-medium text-green-600">
+                            856
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">
+                            نرخ اشغال
+                          </span>
+                          <span className="font-medium text-blue-600">69%</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center space-x-2 space-x-reverse">
+                        <Calendar className="w-5 h-5" />
+                        <span>محبوب‌ترین ساعات</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">10:00 - 11:00</span>
+                          <Badge variant="success">95%</Badge>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">14:00 - 15:00</span>
+                          <Badge variant="success">87%</Badge>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">16:00 - 17:00</span>
+                          <Badge variant="secondary">72%</Badge>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center space-x-2 space-x-reverse">
+                        <Lightbulb className="w-5 h-5" />
+                        <span>پیشنهادات</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="p-3 bg-blue-50 rounded-lg">
+                          <p className="text-sm text-blue-800">
+                            افزایش ساعات کاری در روزهای چهارشنبه
+                          </p>
+                        </div>
+                        <div className="p-3 bg-green-50 rounded-lg">
+                          <p className="text-sm text-green-800">
+                            کاهش فاصله بین ساعات در ساعات شلوغ
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
+            </Tabs>
+
+            <div className="flex items-center justify-end space-x-2 space-x-reverse pt-6 border-t mt-6">
+              <Button
+                variant="outline"
+                onClick={() => setShowSettingsModal(false)}
+              >
+                انصراف
+              </Button>
+              <Button
+                onClick={() => {
+                  toast.success("تنظیمات با موفقیت ذخیره شد");
+                  setShowSettingsModal(false);
+                }}
+              >
+                <Save className="w-4 h-4 ml-2" />
+                ذخیره تنظیمات
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Template Modal */}
+      {showTemplateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold">ایجاد قالب ساعات کاری</h2>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowTemplateModal(false)}
+              >
+                <XCircle className="w-5 h-5" />
+              </Button>
+            </div>
+
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  نام قالب
+                </label>
+                <Input
+                  type="text"
+                  placeholder="مثال: ساعات کاری هفتگی"
+                  className="w-full"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  توضیحات
+                </label>
+                <textarea
+                  placeholder="توضیحات قالب..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  rows={3}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    فاصله زمانی (دقیقه)
+                  </label>
+                  <Input
+                    type="number"
+                    defaultValue={30}
+                    min="15"
+                    max="120"
+                    step="15"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    حداکثر ظرفیت
+                  </label>
+                  <Input type="number" defaultValue={1} min="1" max="10" />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     ساعت شروع
                   </label>
-                  <input
-                    type="time"
-                    id="newSlotStart"
-                    className="w-full p-2 border rounded"
-                    defaultValue="09:00"
-                  />
+                  <Input type="time" defaultValue="09:00" />
                 </div>
+
                 <div>
-                  <label className="block text-sm font-medium mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     ساعت پایان
                   </label>
-                  <input
-                    type="time"
-                    id="newSlotEnd"
-                    className="w-full p-2 border rounded"
-                    defaultValue="09:30"
-                  />
+                  <Input type="time" defaultValue="17:00" />
                 </div>
               </div>
-              <Button
-                onClick={() => {
-                  const startTime = (
-                    document.getElementById("newSlotStart") as HTMLInputElement
-                  ).value;
-                  const endTime = (
-                    document.getElementById("newSlotEnd") as HTMLInputElement
-                  ).value;
 
-                  if (!startTime || !endTime) {
-                    toast.error("لطفاً ساعت شروع و پایان را وارد کنید");
-                    return;
-                  }
+              <div className="space-y-4">
+                <h3 className="font-medium text-gray-900">روزهای هفته</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {[0, 1, 2, 3, 4, 5, 6].map((day) => (
+                    <div
+                      key={day}
+                      className="flex items-center space-x-2 space-x-reverse"
+                    >
+                      <input
+                        type="checkbox"
+                        id={`day-${day}`}
+                        defaultChecked={day < 5} // Monday to Friday
+                        className="rounded border-gray-300"
+                      />
+                      <label
+                        htmlFor={`day-${day}`}
+                        className="text-sm font-medium text-gray-700"
+                      >
+                        {getDayName(day)}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
 
-                  if (!businessId || !selectedService || !selectedDate) {
-                    toast.error("خطا: اطلاعات ناقص برای ایجاد ساعت");
-                    return;
-                  }
-
-                  const addData = {
-                    businessId: businessId!,
-                    serviceId: selectedService,
-                    date: selectedDate,
-                    startTime,
-                    endTime,
-                  };
-
-                  addSlotMutation.mutate(addData);
-                }}
-                className="w-full bg-blue-600 hover:bg-blue-700"
-              >
-                افزودن ساعت
-              </Button>
-            </div>
-          </Modal>
-        )}
-
-        {/* Enhanced Regenerate Modal */}
-        {showRegenerateModal && (
-          <Modal
-            title="بازتولید کامل ساعات کاری"
-            onClose={() => setShowRegenerateModal(false)}
-          >
-            <div className="space-y-6">
-              {/* Warning Section */}
-              <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
-                    <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
+              <div className="space-y-4">
+                <h3 className="font-medium text-gray-900">تنظیمات پیشرفته</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2 space-x-reverse">
+                    <input
+                      type="checkbox"
+                      id="includeLunchBreakTemplate"
+                      defaultChecked={true}
+                      className="rounded border-gray-300"
+                    />
+                    <label
+                      htmlFor="includeLunchBreakTemplate"
+                      className="text-sm font-medium text-gray-700"
+                    >
+                      شامل ساعت ناهار
+                    </label>
                   </div>
-                  <h4 className="font-semibold text-red-900 dark:text-red-100">
-                    هشدار: عملیات حساس
-                  </h4>
-                </div>
-                <p className="text-sm text-red-700 dark:text-red-300 mb-3">
-                  این عملیات تمام ساعات کاری موجود را حذف کرده و مجدداً ایجاد
-                  می‌کند. ممکن است بر روی رزروهای موجود تأثیر بگذارد.
-                </p>
-                <div className="text-xs text-red-600 dark:text-red-400">
-                  ⚠️ این عملیات غیرقابل بازگشت است (مگر اینکه نسخه پشتیبان فعال
-                  باشد)
-                </div>
-              </div>
-
-              {/* Backup Strategy */}
-              <div className="space-y-3">
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  استراتژی پشتیبان‌گیری:
-                </label>
-                <div className="space-y-2">
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="backupStrategy"
-                      value="auto"
-                      checked={backupStrategy === "auto"}
-                      onChange={(e) => setBackupStrategy(e.target.value as any)}
-                      className="text-blue-600"
-                    />
-                    <span className="text-sm">
-                      <strong>خودکار (توصیه شده)</strong> - نسخه پشتیبان قبل از
-                      بازتولید
-                    </span>
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="backupStrategy"
-                      value="manual"
-                      checked={backupStrategy === "manual"}
-                      onChange={(e) => setBackupStrategy(e.target.value as any)}
-                      className="text-blue-600"
-                    />
-                    <span className="text-sm">
-                      <strong>دستی</strong> - تأیید پشتیبان‌گیری توسط کاربر
-                    </span>
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="backupStrategy"
-                      value="none"
-                      checked={backupStrategy === "none"}
-                      onChange={(e) => setBackupStrategy(e.target.value as any)}
-                      className="text-blue-600"
-                    />
-                    <span className="text-sm text-red-600 dark:text-red-400">
-                      <strong>بدون پشتیبان</strong> - خطرناک!
-                    </span>
-                  </label>
-                </div>
-              </div>
-
-              {/* Conflict Resolution Strategy */}
-              <div className="space-y-3">
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  نحوه برخورد با رزروهای موجود:
-                </label>
-                <div className="space-y-2">
-                  <label className="flex items-start gap-2 p-3 border rounded-lg cursor-pointer hover:bg-green-50 dark:hover:bg-green-900/10">
-                    <input
-                      type="radio"
-                      name="conflictResolutionRegenerate"
-                      value="preserve"
-                      checked={conflictResolution === "preserve"}
-                      onChange={(e) =>
-                        setConflictResolution(e.target.value as any)
-                      }
-                      className="mt-1 text-green-600"
-                    />
-                    <div>
-                      <div className="font-medium text-green-900 dark:text-green-100">
-                        حفظ رزروها
-                      </div>
-                      <div className="text-xs text-green-700 dark:text-green-300">
-                        ساعات جدید فقط در مواقع خالی ایجاد می‌شوند
-                      </div>
-                    </div>
-                  </label>
-                  <label className="flex items-start gap-2 p-3 border rounded-lg cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/10">
-                    <input
-                      type="radio"
-                      name="conflictResolutionRegenerate"
-                      value="reschedule"
-                      checked={conflictResolution === "reschedule"}
-                      onChange={(e) =>
-                        setConflictResolution(e.target.value as any)
-                      }
-                      className="mt-1 text-blue-600"
-                    />
-                    <div>
-                      <div className="font-medium text-blue-900 dark:text-blue-100">
-                        پیشنهاد جابجایی
-                      </div>
-                      <div className="text-xs text-blue-700 dark:text-blue-300">
-                        زمان‌های جایگزین برای رزروهای متداخل پیشنهاد می‌شود
-                      </div>
-                    </div>
-                  </label>
-                  <label className="flex items-start gap-2 p-3 border rounded-lg cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/10">
-                    <input
-                      type="radio"
-                      name="conflictResolutionRegenerate"
-                      value="force"
-                      checked={conflictResolution === "force"}
-                      onChange={(e) =>
-                        setConflictResolution(e.target.value as any)
-                      }
-                      className="mt-1 text-red-600"
-                    />
-                    <div>
-                      <div className="font-medium text-red-900 dark:text-red-100">
-                        لغو رزروهای متداخل
-                      </div>
-                      <div className="text-xs text-red-700 dark:text-red-300">
-                        خطرناک! رزروها لغو می‌شوند
-                      </div>
-                    </div>
-                  </label>
-                </div>
-              </div>
-
-              {/* Additional Options */}
-              <div className="space-y-3">
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  گزینه‌های اضافی:
-                </label>
-                <div className="space-y-2">
-                  <label className="flex items-center gap-2">
+                  <div className="flex items-center space-x-2 space-x-reverse">
                     <input
                       type="checkbox"
-                      checked={regenerateSettings.notifyCustomers}
-                      onChange={(e) =>
-                        setRegenerateSettings((prev) => ({
-                          ...prev,
-                          notifyCustomers: e.target.checked,
-                        }))
-                      }
-                      className="text-blue-600"
+                      id="optimizeForPeakHoursTemplate"
+                      defaultChecked={true}
+                      className="rounded border-gray-300"
                     />
-                    <span className="text-sm">
-                      اطلاع‌رسانی پیامکی به مشتریان
-                    </span>
-                  </label>
-                  <label className="flex items-center gap-2">
+                    <label
+                      htmlFor="optimizeForPeakHoursTemplate"
+                      className="text-sm font-medium text-gray-700"
+                    >
+                      بهینه‌سازی برای ساعات شلوغ
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-2 space-x-reverse">
                     <input
                       type="checkbox"
-                      checked={regenerateSettings.createBackup}
-                      onChange={(e) =>
-                        setRegenerateSettings((prev) => ({
-                          ...prev,
-                          createBackup: e.target.checked,
-                        }))
-                      }
-                      className="text-blue-600"
+                      id="useServiceDurationTemplate"
+                      defaultChecked={true}
+                      className="rounded border-gray-300"
                     />
-                    <span className="text-sm">ایجاد نسخه پشتیبان</span>
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={regenerateSettings.requireConfirmation}
-                      onChange={(e) =>
-                        setRegenerateSettings((prev) => ({
-                          ...prev,
-                          requireConfirmation: e.target.checked,
-                        }))
-                      }
-                      className="text-blue-600"
-                    />
-                    <span className="text-sm">نیاز به تأیید نهایی</span>
-                  </label>
+                    <label
+                      htmlFor="useServiceDurationTemplate"
+                      className="text-sm font-medium text-gray-700"
+                    >
+                      استفاده از مدت زمان سرویس
+                    </label>
+                  </div>
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex gap-3">
-                <Button
-                  onClick={handleConfirmRegenerate}
-                  disabled={regenerateSlotsMutation.isPending}
-                  className="flex-1 bg-red-600 hover:bg-red-700 text-white"
-                >
-                  {regenerateSlotsMutation.isPending ? (
-                    <LoadingSpinner size="sm" />
-                  ) : (
-                    <RotateCcw className="w-4 h-4 ml-2" />
-                  )}
-                  {regenerateSlotsMutation.isPending
-                    ? "در حال بازتولید..."
-                    : "تأیید و بازتولید"}
-                </Button>
+              <div className="flex items-center justify-end space-x-2 space-x-reverse pt-4 border-t">
                 <Button
                   variant="outline"
-                  onClick={() => setShowRegenerateModal(false)}
-                  className="flex-1"
+                  onClick={() => setShowTemplateModal(false)}
                 >
                   انصراف
                 </Button>
+                <Button
+                  onClick={() => {
+                    toast.success("قالب با موفقیت ایجاد شد");
+                    setShowTemplateModal(false);
+                  }}
+                >
+                  <Save className="w-4 h-4 ml-2" />
+                  ایجاد قالب
+                </Button>
               </div>
             </div>
-          </Modal>
-        )}
+          </div>
+        </div>
+      )}
 
-        {/* Impact Analysis Modal */}
-        {showImpactAnalysisModal && impactAnalysis && (
-          <Modal
-            title="تحلیل تأثیرات بازتولید"
-            onClose={() => {
-              setShowImpactAnalysisModal(false);
-              setImpactAnalysis(null);
-            }}
-          >
-            <div className="space-y-6">
-              {/* Summary */}
-              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-3">
-                  خلاصه تغییرات
-                </h4>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-blue-700 dark:text-blue-300">
-                      ساعات ایجاد شده:
-                    </span>
-                    <span className="font-bold ml-2">
-                      {impactAnalysis.summary?.totalCreated || 0}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-blue-700 dark:text-blue-300">
-                      ساعات حذف شده:
-                    </span>
-                    <span className="font-bold ml-2">
-                      {impactAnalysis.summary?.totalDeleted || 0}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-blue-700 dark:text-blue-300">
-                      رزروهای تحت تأثیر:
-                    </span>
-                    <span className="font-bold ml-2">
-                      {impactAnalysis.summary?.totalBookingsAffected || 0}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-blue-700 dark:text-blue-300">
-                      نسخه پشتیبان:
-                    </span>
-                    <span className="font-bold ml-2">
-                      {impactAnalysis.summary?.backupCreated
-                        ? "✅ ایجاد شد"
-                        : "❌ ایجاد نشد"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Customer Impact */}
-              {impactAnalysis.impactAnalysis && (
-                <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
-                  <h4 className="font-semibold text-amber-900 dark:text-amber-100 mb-3">
-                    تأثیر بر مشتریان
-                  </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
-                    <div>
-                      <span className="text-amber-700 dark:text-amber-300">
-                        رزروهای تحت تأثیر:
-                      </span>
-                      <span className="font-bold ml-2">
-                        {impactAnalysis.impactAnalysis.affectedBookings}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-amber-700 dark:text-amber-300">
-                        مشتریان منحصربه‌فرد:
-                      </span>
-                      <span className="font-bold ml-2">
-                        {impactAnalysis.impactAnalysis.uniqueCustomers}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-amber-700 dark:text-amber-300">
-                        کل درآمد تحت تأثیر:
-                      </span>
-                      <span className="font-bold ml-2">
-                        {Math.round(
-                          impactAnalysis.impactAnalysis.totalRevenue
-                        ).toLocaleString()}{" "}
-                        تومان
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Customer Notifications */}
-              {impactAnalysis.customerNotifications && (
-                <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-                  <h4 className="font-semibold text-green-900 dark:text-green-100 mb-3">
-                    اطلاع‌رسانی مشتریان
-                  </h4>
-                  <div className="text-sm text-green-700 dark:text-green-300">
-                    <p>
-                      {impactAnalysis.customerNotifications.notificationsSent}{" "}
-                      پیامک از مجموع{" "}
-                      {impactAnalysis.customerNotifications.total} اطلاع‌رسانی
-                      ارسال شد.
-                    </p>
-                  </div>
-                </div>
-              )}
-
+      {/* Bulk Actions Modal */}
+      {showBulkActionsModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold">عملیات گروهی</h2>
               <Button
-                onClick={() => {
-                  setShowImpactAnalysisModal(false);
-                  setImpactAnalysis(null);
-                }}
-                className="w-full"
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowBulkActionsModal(false)}
               >
-                بستن
+                <XCircle className="w-5 h-5" />
               </Button>
             </div>
-          </Modal>
-        )}
-      </div>
+
+            <div className="space-y-4">
+              <div className="text-center py-4">
+                <Users className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  {selectedSlots.length} ساعت کاری انتخاب شده
+                </h3>
+                <p className="text-gray-500">
+                  عملیات مورد نظر خود را انتخاب کنید
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  onClick={() => {
+                    // Implement bulk activate
+                    toast.success(`${selectedSlots.length} ساعت کاری فعال شد`);
+                    setShowBulkActionsModal(false);
+                  }}
+                >
+                  <CheckCircle className="w-4 h-4 ml-2" />
+                  فعال کردن همه
+                </Button>
+
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  onClick={() => {
+                    // Implement bulk deactivate
+                    toast.success(
+                      `${selectedSlots.length} ساعت کاری غیرفعال شد`
+                    );
+                    setShowBulkActionsModal(false);
+                  }}
+                >
+                  <XCircle className="w-4 h-4 ml-2" />
+                  غیرفعال کردن همه
+                </Button>
+
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  onClick={() => {
+                    // Implement bulk copy
+                    toast.success(`${selectedSlots.length} ساعت کاری کپی شد`);
+                    setShowBulkActionsModal(false);
+                  }}
+                >
+                  <Copy className="w-4 h-4 ml-2" />
+                  کپی کردن
+                </Button>
+
+                <Button
+                  variant="destructive"
+                  className="w-full justify-start"
+                  onClick={() => {
+                    if (
+                      confirm(
+                        `آیا از حذف ${selectedSlots.length} ساعت کاری اطمینان دارید؟`
+                      )
+                    ) {
+                      handleBulkDelete();
+                      setShowBulkActionsModal(false);
+                    }
+                  }}
+                >
+                  <Trash2 className="w-4 h-4 ml-2" />
+                  حذف همه
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Capacity Management Modal */}
+      {showCapacityModal && selectedSlotForCapacity && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold">مدیریت ظرفیت</h2>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setShowCapacityModal(false);
+                  setSelectedSlotForCapacity(null);
+                }}
+              >
+                <XCircle className="w-5 h-5" />
+              </Button>
+            </div>
+
+            <div className="space-y-6">
+              <div className="text-center">
+                <div className="text-lg font-medium text-gray-900 mb-2">
+                  {selectedSlotForCapacity.startTime} -{" "}
+                  {selectedSlotForCapacity.endTime}
+                </div>
+                <div className="text-sm text-gray-500">
+                  {new Date(selectedDate).toLocaleDateString("fa-IR")}
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    ظرفیت فعلی
+                  </label>
+                  <Input
+                    type="number"
+                    defaultValue={selectedSlotForCapacity.capacity}
+                    min="0"
+                    max={selectedSlotForCapacity.maxCapacity}
+                    onChange={(e) => {
+                      const newCapacity = parseInt(e.target.value);
+                      if (newCapacity <= selectedSlotForCapacity.maxCapacity) {
+                        setSelectedSlotForCapacity({
+                          ...selectedSlotForCapacity,
+                          capacity: newCapacity,
+                        });
+                      }
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    حداکثر ظرفیت
+                  </label>
+                  <Input
+                    type="number"
+                    defaultValue={selectedSlotForCapacity.maxCapacity}
+                    min="1"
+                    max="10"
+                    onChange={(e) => {
+                      const newMaxCapacity = parseInt(e.target.value);
+                      setSelectedSlotForCapacity({
+                        ...selectedSlotForCapacity,
+                        maxCapacity: newMaxCapacity,
+                        capacity: Math.min(
+                          selectedSlotForCapacity.capacity,
+                          newMaxCapacity
+                        ),
+                      });
+                    }}
+                  />
+                </div>
+
+                <div className="bg-gray-50 p-3 rounded-lg">
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-gray-600">نرخ اشغال:</span>
+                    <span className="font-medium">
+                      {Math.round(
+                        (selectedSlotForCapacity.capacity /
+                          selectedSlotForCapacity.maxCapacity) *
+                          100
+                      )}
+                      %
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div
+                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                      style={{
+                        width: `${(selectedSlotForCapacity.capacity / selectedSlotForCapacity.maxCapacity) * 100}%`,
+                      }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end space-x-2 space-x-reverse pt-4 border-t">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowCapacityModal(false);
+                    setSelectedSlotForCapacity(null);
+                  }}
+                >
+                  انصراف
+                </Button>
+                <Button
+                  onClick={() =>
+                    handleUpdateCapacity(
+                      selectedSlotForCapacity.capacity,
+                      selectedSlotForCapacity.maxCapacity
+                    )
+                  }
+                  disabled={updateSlotCapacityMutation.isPending}
+                >
+                  {updateSlotCapacityMutation.isPending ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 ml-2 animate-spin" />
+                      در حال بروزرسانی...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4 ml-2" />
+                      بروزرسانی ظرفیت
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

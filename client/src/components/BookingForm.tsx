@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { dashboardApi } from "@/services/api";
+import { dashboardApi, api } from "@/services/api";
 import { useBusiness } from "@/contexts/BusinessContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import PersianCalendar from "@/components/ui/PersianCalendar";
+import { Avatar } from "@/components/ui/avatar";
 import toast from "react-hot-toast";
 import LoadingSpinner from "./LoadingSpinner";
 
@@ -21,6 +22,7 @@ interface FormData {
   customerPhone: string;
   customerEmail: string;
   serviceId: string;
+  staffId: string | undefined;
   date: string;
   startTime: string;
   endTime: string;
@@ -33,6 +35,19 @@ interface TimeSlot {
   isAvailable: boolean;
   isBooked?: boolean;
   price: number;
+  staffId?: string;
+  staffName?: string;
+  staffSpecialization?: string;
+}
+
+interface StaffMember {
+  id: string;
+  firstName: string;
+  lastName: string;
+  specialization?: string;
+  bio?: string;
+  avatar?: string;
+  customPrice?: number;
 }
 
 const BookingForm: React.FC<BookingFormProps> = ({
@@ -48,6 +63,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
     customerPhone: "",
     customerEmail: "",
     serviceId: "",
+    staffId: undefined,
     date: "",
     startTime: "",
     endTime: "",
@@ -55,9 +71,11 @@ const BookingForm: React.FC<BookingFormProps> = ({
   });
 
   const [selectedService, setSelectedService] = useState<any>(null);
+  const [selectedStaff, setSelectedStaff] = useState<StaffMember | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>("");
   const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
+  const [availableStaff, setAvailableStaff] = useState<StaffMember[]>([]);
   const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [showCalendar, setShowCalendar] = useState(false);
@@ -67,6 +85,22 @@ const BookingForm: React.FC<BookingFormProps> = ({
     queryKey: ["business-services", businessId],
     queryFn: () => dashboardApi.getServices(businessId!),
     enabled: !!businessId,
+  });
+
+  // Fetch staff for selected service
+  const { data: staffData, isLoading: loadingStaff } = useQuery({
+    queryKey: ["service-staff", formData.serviceId, formData.date],
+    queryFn: async () => {
+      if (!formData.serviceId) return [];
+
+      const dateParam = formData.date ? `?date=${formData.date}` : "";
+      const response = await api.get(
+        `/availability/staff-options/${formData.serviceId}${dateParam}`
+      );
+
+      return response.data.success ? response.data.data : [];
+    },
+    enabled: !!formData.serviceId,
   });
 
   // Create booking mutation
@@ -89,15 +123,18 @@ const BookingForm: React.FC<BookingFormProps> = ({
       customerPhone: "",
       customerEmail: "",
       serviceId: "",
+      staffId: undefined,
       date: "",
       startTime: "",
       endTime: "",
       notes: "",
     });
     setSelectedService(null);
+    setSelectedStaff(null);
     setSelectedDate(null);
     setSelectedTimeSlot("");
     setAvailableSlots([]);
+    setAvailableStaff([]);
     setFormErrors({});
     setShowCalendar(false);
   };
@@ -128,6 +165,11 @@ const BookingForm: React.FC<BookingFormProps> = ({
       errors.serviceId = "انتخاب خدمت الزامی است";
     }
 
+    // Validate staff selection when staff are available
+    if (availableStaff.length > 0 && !formData.staffId) {
+      errors.staffId = "انتخاب کارمند الزامی است";
+    }
+
     if (!selectedDate) {
       errors.date = "انتخاب تاریخ الزامی است";
     }
@@ -140,40 +182,11 @@ const BookingForm: React.FC<BookingFormProps> = ({
     return Object.keys(errors).length === 0;
   };
 
-  const generateTimeSlots = (serviceId: string) => {
-    const service = services?.data?.data?.find((s: any) => s.id === serviceId);
-    if (!service) return [];
-
-    const slots: TimeSlot[] = [];
-    const startHour = 9; // 9 AM
-    const endHour = 18; // 6 PM
-    const slotDuration = 30; // 30 minutes
-
-    for (let hour = startHour; hour < endHour; hour++) {
-      for (let minute = 0; minute < 60; minute += slotDuration) {
-        const startTime = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
-        const endDateTime = new Date(`2000-01-01T${startTime}:00`);
-        endDateTime.setMinutes(
-          endDateTime.getMinutes() + (service.duration || 60)
-        );
-
-        if (endDateTime.getHours() <= endHour) {
-          const endTime = `${endDateTime.getHours().toString().padStart(2, "0")}:${endDateTime.getMinutes().toString().padStart(2, "0")}`;
-
-          slots.push({
-            startTime,
-            endTime,
-            isAvailable: true,
-            price: service.price,
-          });
-        }
-      }
-    }
-
-    return slots;
-  };
-
-  const checkAvailability = async (serviceId: string, date: Date) => {
+  const checkAvailability = async (
+    serviceId: string,
+    date: Date,
+    staffId?: string
+  ) => {
     if (!serviceId || !date) return;
 
     setIsCheckingAvailability(true);
@@ -185,70 +198,74 @@ const BookingForm: React.FC<BookingFormProps> = ({
       const dateString = `${year}-${month}-${day}`;
 
       console.log(
-        "Checking availability for date:",
+        "Checking staff-aware availability for date:",
         dateString,
         "serviceId:",
-        serviceId
+        serviceId,
+        "staffId:",
+        staffId
       );
 
-      const allSlots = generateTimeSlots(serviceId);
+      // Use new staff-aware availability endpoint
+      const staffParam = staffId ? `?staffId=${staffId}` : "";
+      const response = await api.get(
+        `/availability/staff/${businessId}/${serviceId}/${dateString}${staffParam}`
+      );
 
-      const existingBookings = await dashboardApi.getBookings(businessId!, {
-        date: dateString,
-        serviceId: serviceId,
-      });
+      console.log("Staff-aware availability response:", response.data);
 
-      console.log("Existing bookings response:", existingBookings?.data);
+      if (response.data.success && response.data.data) {
+        const slots = response.data.data.slots || [];
+        const totalAvailable = response.data.data.totalAvailable || 0;
+        const totalBooked = response.data.data.totalBooked || 0;
 
-      const bookingsData =
-        existingBookings?.data?.bookings || existingBookings?.data || [];
-      console.log("Processed bookings data:", bookingsData);
+        console.log(
+          `Found ${slots.length} total slots, ${totalAvailable} available, ${totalBooked} booked`
+        );
 
-      const availableSlots = allSlots.map((slot) => {
-        const isBooked = bookingsData.some((booking: any) => {
-          if (booking.status === "CANCELLED") return false;
+        // Transform slots to match the expected format
+        const formattedSlots = slots.map((slot: any) => ({
+          startTime: slot.startTime,
+          endTime: slot.endTime,
+          isAvailable: slot.isAvailable,
+          isBooked: slot.isBooked || false,
+          price: slot.price || 0,
+          staffId: slot.staffId,
+          staffName: slot.staffName,
+          staffSpecialization: slot.staffSpecialization,
+          workingHoursSource: slot.workingHoursSource,
+        }));
 
-          const bookingStart = booking.startTime;
-          const bookingEnd = booking.endTime;
-
-          const conflict =
-            (slot.startTime >= bookingStart && slot.startTime < bookingEnd) ||
-            (slot.endTime > bookingStart && slot.endTime <= bookingEnd) ||
-            (slot.startTime <= bookingStart && slot.endTime >= bookingEnd);
-
-          if (conflict) {
-            console.log(
-              `Slot ${slot.startTime}-${slot.endTime} conflicts with booking ${bookingStart}-${bookingEnd}`
-            );
-          }
-
-          return conflict;
-        });
-
-        return {
-          ...slot,
-          isAvailable: !isBooked,
-          isBooked: isBooked,
-        };
-      });
-
-      console.log("Available slots:", availableSlots);
-      setAvailableSlots(availableSlots);
-    } catch (error) {
+        console.log("Formatted available slots:", formattedSlots);
+        setAvailableSlots(formattedSlots);
+      } else {
+        console.warn("No availability data returned");
+        console.log("Response data:", response.data);
+        setAvailableSlots([]);
+      }
+    } catch (error: any) {
       console.error("Error checking availability:", error);
+      console.error("Error details:", error.response?.data);
       toast.error("خطا در بررسی دسترسی زمان‌ها");
+      setAvailableSlots([]);
     } finally {
       setIsCheckingAvailability(false);
     }
   };
 
   useEffect(() => {
+    if (staffData) {
+      setAvailableStaff(staffData);
+    }
+  }, [staffData]);
+
+  useEffect(() => {
     if (formData.serviceId && selectedDate) {
-      checkAvailability(formData.serviceId, selectedDate);
+      checkAvailability(formData.serviceId, selectedDate, formData.staffId);
     } else {
       setAvailableSlots([]);
     }
-  }, [formData.serviceId, selectedDate]);
+  }, [formData.serviceId, selectedDate, formData.staffId]);
 
   const handleInputChange = (field: keyof FormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -260,8 +277,26 @@ const BookingForm: React.FC<BookingFormProps> = ({
     if (field === "serviceId") {
       const service = services?.data?.data?.find((s: any) => s.id === value);
       setSelectedService(service);
+      setSelectedStaff(null);
       setSelectedTimeSlot("");
-      setFormData((prev) => ({ ...prev, startTime: "", endTime: "" }));
+      setFormData((prev) => ({
+        ...prev,
+        startTime: "",
+        endTime: "",
+        staffId: undefined,
+      }));
+    }
+
+    if (field === "staffId") {
+      const staff = availableStaff.find((s) => s.id === value);
+      setSelectedStaff(staff || null);
+      setSelectedTimeSlot("");
+      setFormData((prev) => ({
+        ...prev,
+        startTime: "",
+        endTime: "",
+        staffId: value || undefined,
+      }));
     }
   };
 
@@ -277,14 +312,10 @@ const BookingForm: React.FC<BookingFormProps> = ({
     console.log("Selected date:", dateString);
 
     setFormData((prev) => ({
-      customerName: prev.customerName,
-      customerPhone: prev.customerPhone,
-      customerEmail: prev.customerEmail,
-      serviceId: prev.serviceId,
+      ...prev,
       date: dateString,
       startTime: "",
       endTime: "",
-      notes: prev.notes,
     }));
     setShowCalendar(false);
 
@@ -295,7 +326,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
 
   const handleTimeSlotSelect = (slot: TimeSlot) => {
     if (!slot.isAvailable) {
-      toast.error("این زمان قبلاً رزرو شده است");
+      toast.error("این زمان قبلاً رزرو شده است. لطفاً زمان دیگری انتخاب کنید.");
       return;
     }
 
@@ -323,6 +354,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
     const bookingData = {
       businessId: businessId!,
       serviceId: formData.serviceId,
+      ...(formData.staffId && { staffId: formData.staffId }),
       customerName: formData.customerName.trim(),
       customerPhone: formData.customerPhone.trim(),
       customerEmail: formData.customerEmail.trim() || undefined,
@@ -332,7 +364,35 @@ const BookingForm: React.FC<BookingFormProps> = ({
       notes: formData.notes.trim() || undefined,
     };
 
-    createBookingMutation.mutate(bookingData);
+    try {
+      await createBookingMutation.mutateAsync(bookingData);
+    } catch (error: any) {
+      const errorMessage =
+        error?.response?.data?.message || "خطا در ایجاد رزرو";
+      const errorDetails = error?.response?.data?.details;
+
+      // Check if this is a conflict error and provide better guidance
+      if (
+        errorMessage.includes("conflicts") ||
+        errorMessage.includes("booked") ||
+        errorMessage.includes("capacity")
+      ) {
+        toast.error(
+          "زمان انتخاب شده در دسترس نیست. لطفاً زمان دیگری انتخاب کنید یا دسترسی زمان‌ها را بروزرسانی کنید.",
+          { duration: 5000 }
+        );
+
+        // Clear the selected time slot to force user to select a new one
+        setSelectedTimeSlot("");
+        setFormData((prev) => ({
+          ...prev,
+          startTime: "",
+          endTime: "",
+        }));
+      } else {
+        toast.error(errorMessage);
+      }
+    }
   };
 
   // Calculate min and max dates for calendar
@@ -420,12 +480,15 @@ const BookingForm: React.FC<BookingFormProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    نام و نام خانوادگی *
+                    نام
                   </label>
                   <Input
                     value={formData.customerName}
                     onChange={(e) =>
-                      handleInputChange("customerName", e.target.value)
+                      setFormData((prev) => ({
+                        ...prev,
+                        customerName: e.target.value,
+                      }))
                     }
                     placeholder="مثال: علی احمدی"
                     className={`h-11 ${formErrors.customerName ? "border-red-500" : ""}`}
@@ -439,12 +502,15 @@ const BookingForm: React.FC<BookingFormProps> = ({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    شماره تلفن *
+                    نام خانوادگی
                   </label>
                   <Input
                     value={formData.customerPhone}
                     onChange={(e) =>
-                      handleInputChange("customerPhone", e.target.value)
+                      setFormData((prev) => ({
+                        ...prev,
+                        customerPhone: e.target.value,
+                      }))
                     }
                     placeholder="09123456789"
                     className={`h-11 ${formErrors.customerPhone ? "border-red-500" : ""}`}
@@ -457,23 +523,38 @@ const BookingForm: React.FC<BookingFormProps> = ({
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  ایمیل (اختیاری)
-                </label>
-                <Input
-                  value={formData.customerEmail}
-                  onChange={(e) =>
-                    handleInputChange("customerEmail", e.target.value)
-                  }
-                  placeholder="example@email.com"
-                  className={`h-11 ${formErrors.customerEmail ? "border-red-500" : ""}`}
-                />
-                {formErrors.customerEmail && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {formErrors.customerEmail}
-                  </p>
-                )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    ایمیل
+                  </label>
+                  <Input
+                    type="email"
+                    value={formData.customerEmail}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        customerEmail: e.target.value,
+                      }))
+                    }
+                    className={`h-11 ${formErrors.customerEmail ? "border-red-500" : ""}`}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    شماره تلفن
+                  </label>
+                  <Input
+                    value={formData.customerPhone}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        customerPhone: e.target.value,
+                      }))
+                    }
+                    className={`h-11 ${formErrors.customerPhone ? "border-red-500" : ""}`}
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -556,6 +637,100 @@ const BookingForm: React.FC<BookingFormProps> = ({
               )}
             </CardContent>
           </Card>
+
+          {/* Staff Selection */}
+          {formData.serviceId && availableStaff.length > 0 && (
+            <Card className="border-gray-200 dark:border-gray-700">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <svg
+                    className="w-5 h-5 text-purple-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
+                    />
+                  </svg>
+                  انتخاب کارمند
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loadingStaff ? (
+                  <div className="flex justify-center py-8">
+                    <LoadingSpinner />
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      کارمند مورد نظر *
+                    </label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {availableStaff.map((staff: StaffMember) => (
+                        <div
+                          key={staff.id}
+                          onClick={() => handleInputChange("staffId", staff.id)}
+                          className={`
+                            p-4 border-2 rounded-lg cursor-pointer transition-all
+                            ${
+                              formData.staffId === staff.id
+                                ? "border-purple-500 bg-purple-50 dark:bg-purple-900/20"
+                                : "border-gray-200 dark:border-gray-700 hover:border-gray-300"
+                            }
+                          `}
+                        >
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-10 w-10">
+                              {staff.avatar ? (
+                                <img
+                                  src={staff.avatar}
+                                  alt={`${staff.firstName} ${staff.lastName}`}
+                                />
+                              ) : (
+                                <div className="bg-gray-300 flex items-center justify-center h-full w-full text-gray-600">
+                                  {staff.firstName.charAt(0)}
+                                  {staff.lastName.charAt(0)}
+                                </div>
+                              )}
+                            </Avatar>
+                            <div className="flex-1">
+                              <h4 className="font-medium text-gray-900 dark:text-white">
+                                {staff.firstName} {staff.lastName}
+                              </h4>
+                              {staff.specialization && (
+                                <p className="text-sm text-gray-500 dark:text-gray-400">
+                                  {staff.specialization}
+                                </p>
+                              )}
+                              {staff.customPrice && (
+                                <p className="text-sm text-green-600 font-medium">
+                                  {staff.customPrice.toLocaleString()} تومان
+                                </p>
+                              )}
+                            </div>
+                            {formData.staffId === staff.id && (
+                              <Badge className="bg-purple-100 text-purple-800">
+                                انتخاب شده
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {formErrors.staffId && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {formErrors.staffId}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Date and Time Selection */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -667,8 +842,14 @@ const BookingForm: React.FC<BookingFormProps> = ({
                             <div className="font-medium">
                               {slot.startTime} - {slot.endTime}
                             </div>
+                            {slot.staffName && (
+                              <div className="text-xs opacity-75 mt-1">
+                                {slot.staffName}
+                              </div>
+                            )}
                             {!slot.isAvailable && (
-                              <div className="text-xs mt-1 text-red-500">
+                              <div className="text-xs mt-1 text-red-500 flex items-center gap-1">
+                                <div className="w-1 h-1 bg-red-500 rounded-full" />
                                 رزرو شده
                               </div>
                             )}
@@ -727,7 +908,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
                 onChange={(e) => handleInputChange("notes", e.target.value)}
                 placeholder="یادداشت یا توضیحات اضافی برای این رزرو..."
                 rows={3}
-                className="w-full p-3 border border-gray-200 dark:border-gray-700 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full p-3 border border-gray-200 dark:border-gray-700 rounded-md resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 maxLength={500}
               />
               <div className="text-xs text-gray-500 mt-1">
@@ -752,6 +933,16 @@ const BookingForm: React.FC<BookingFormProps> = ({
                     </span>
                     <p className="font-medium">{selectedService.name}</p>
                   </div>
+                  {selectedStaff && (
+                    <div>
+                      <span className="text-gray-600 dark:text-gray-400">
+                        کارمند:
+                      </span>
+                      <p className="font-medium">
+                        {selectedStaff.firstName} {selectedStaff.lastName}
+                      </p>
+                    </div>
+                  )}
                   <div>
                     <span className="text-gray-600 dark:text-gray-400">
                       تاریخ:

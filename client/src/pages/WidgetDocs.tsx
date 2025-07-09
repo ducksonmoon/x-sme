@@ -469,11 +469,157 @@ const WidgetDocs: React.FC = () => {
                             <label className="block text-sm font-medium mb-2">
                               رنگ اصلی
                             </label>
+                            <div className="flex items-center gap-3">
+                              <input
+                                type="color"
+                                id="wp-color"
+                                value="#3b82f6"
+                                className="h-11 w-20 border border-gray-300 rounded-lg cursor-pointer"
+                                style={{ backgroundColor: "#3b82f6" }}
+                                onInput={(e) => {
+                                  const target = e.target as HTMLInputElement;
+                                  target.style.backgroundColor = target.value;
+                                  // Update text input
+                                  const textInput = document.getElementById(
+                                    "wp-color-text"
+                                  ) as HTMLInputElement;
+                                  textInput.value = target.value;
+                                  // Update preview
+                                  const preview = document.getElementById(
+                                    "wp-color-preview"
+                                  ) as HTMLDivElement;
+                                  preview.style.backgroundColor = target.value;
+                                }}
+                              />
+                              <input
+                                type="text"
+                                id="wp-color-text"
+                                value="#3b82f6"
+                                placeholder="#3b82f6"
+                                className="flex-1 h-11 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                onInput={(e) => {
+                                  const target = e.target as HTMLInputElement;
+                                  const colorInput = document.getElementById(
+                                    "wp-color"
+                                  ) as HTMLInputElement;
+                                  if (target.value.match(/^#[0-9A-Fa-f]{6}$/)) {
+                                    colorInput.value = target.value;
+                                    colorInput.style.backgroundColor =
+                                      target.value;
+                                  }
+                                }}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const colorInput = document.getElementById(
+                                    "wp-color"
+                                  ) as HTMLInputElement;
+                                  const textInput = document.getElementById(
+                                    "wp-color-text"
+                                  ) as HTMLInputElement;
+                                  colorInput.value = "#3b82f6";
+                                  textInput.value = "#3b82f6";
+                                  colorInput.style.backgroundColor = "#3b82f6";
+                                }}
+                                className="h-11 px-3 text-xs border border-gray-300 rounded-lg hover:bg-gray-50"
+                              >
+                                بازنشانی
+                              </button>
+                            </div>
+                            <div className="mt-2 flex items-center gap-2">
+                              <div
+                                className="w-6 h-6 rounded border border-gray-300"
+                                style={{ backgroundColor: "#3b82f6" }}
+                                id="wp-color-preview"
+                              ></div>
+                              <span className="text-xs text-gray-600">
+                                پیش‌نمایش رنگ اصلی
+                              </span>
+                            </div>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium mb-2">
+                              رنگ ثانویه (اختیاری)
+                            </label>
+                            <div className="flex items-center gap-3">
+                              <input
+                                type="color"
+                                id="wp-secondary-color"
+                                value="#6366f1"
+                                className="h-11 w-20 border border-gray-300 rounded-lg cursor-pointer"
+                                style={{ backgroundColor: "#6366f1" }}
+                                onInput={(e) => {
+                                  const target = e.target as HTMLInputElement;
+                                  target.style.backgroundColor = target.value;
+                                  // Update text input
+                                  const textInput = document.getElementById(
+                                    "wp-secondary-color-text"
+                                  ) as HTMLInputElement;
+                                  textInput.value = target.value;
+                                  // Update preview
+                                  const preview = document.getElementById(
+                                    "wp-secondary-color-preview"
+                                  ) as HTMLDivElement;
+                                  preview.style.backgroundColor = target.value;
+                                }}
+                              />
+                              <input
+                                type="text"
+                                id="wp-secondary-color-text"
+                                value="#6366f1"
+                                placeholder="#6366f1"
+                                className="flex-1 h-11 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                onInput={(e) => {
+                                  const target = e.target as HTMLInputElement;
+                                  const colorInput = document.getElementById(
+                                    "wp-secondary-color"
+                                  ) as HTMLInputElement;
+                                  if (target.value.match(/^#[0-9A-Fa-f]{6}$/)) {
+                                    colorInput.value = target.value;
+                                    colorInput.style.backgroundColor =
+                                      target.value;
+                                  }
+                                }}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const colorInput = document.getElementById(
+                                    "wp-secondary-color"
+                                  ) as HTMLInputElement;
+                                  const textInput = document.getElementById(
+                                    "wp-secondary-color-text"
+                                  ) as HTMLInputElement;
+                                  colorInput.value = "#6366f1";
+                                  textInput.value = "#6366f1";
+                                  colorInput.style.backgroundColor = "#6366f1";
+                                }}
+                                className="h-11 px-3 text-xs border border-gray-300 rounded-lg hover:bg-gray-50"
+                              >
+                                بازنشانی
+                              </button>
+                            </div>
+                            <div className="mt-2 flex items-center gap-2">
+                              <div
+                                className="w-6 h-6 rounded border border-gray-300"
+                                style={{ backgroundColor: "#6366f1" }}
+                                id="wp-secondary-color-preview"
+                              ></div>
+                              <span className="text-xs text-gray-600">
+                                پیش‌نمایش رنگ ثانویه
+                              </span>
+                            </div>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium mb-2">
+                              لوگوی سفارشی (اختیاری)
+                            </label>
                             <input
-                              type="color"
-                              id="wp-color"
-                              value="#3b82f6"
-                              className="w-full h-12 border border-gray-300 rounded-lg"
+                              type="text"
+                              id="wp-custom-logo"
+                              placeholder="https://example.com/logo.png"
+                              className="w-full p-3 border border-gray-300 rounded-lg"
                             />
                           </div>
                           <button
@@ -490,20 +636,38 @@ const WidgetDocs: React.FC = () => {
                               )?.value;
                               const color = (
                                 document.getElementById(
-                                  "wp-color"
+                                  "wp-color-text"
+                                ) as HTMLInputElement
+                              )?.value;
+                              const secondaryColor = (
+                                document.getElementById(
+                                  "wp-secondary-color-text"
+                                ) as HTMLInputElement
+                              )?.value;
+                              const customLogo = (
+                                document.getElementById(
+                                  "wp-custom-logo"
                                 ) as HTMLInputElement
                               )?.value;
 
-                              if (!businessId) {
+                              if (!businessId.trim()) {
                                 alert("لطفاً شناسه کسب‌وکار را وارد کنید");
                                 return;
                               }
 
-                              let code = `[xsme_booking business_id="${businessId}"`;
+                              let code = `[xsme_booking business_id="${businessId.trim()}"`;
                               if (theme !== "light")
                                 code += ` theme="${theme}"`;
                               if (color !== "#3b82f6")
                                 code += ` primary_color="${color}"`;
+                              if (
+                                secondaryColor &&
+                                secondaryColor !== "#6366f1" &&
+                                secondaryColor.trim()
+                              )
+                                code += ` secondary_color="${secondaryColor.trim()}"`;
+                              if (customLogo && customLogo.trim())
+                                code += ` custom_logo="${customLogo.trim()}"`;
                               code += "]";
 
                               const codeElement =
@@ -559,7 +723,7 @@ const WidgetDocs: React.FC = () => {
                                 id="wp-generated-code"
                                 className="text-green-400 text-sm"
                               >
-                                [xsme_booking business_id="your-business-id"]
+                                [xsme_booking business_id="business-123"]
                               </code>
                             </div>
                           </div>
@@ -863,6 +1027,34 @@ const WidgetDocs: React.FC = () => {
                                   <td className="px-4 py-3">#3b82f6</td>
                                   <td className="px-4 py-3">رنگ اصلی (HEX)</td>
                                 </tr>
+                                <tr>
+                                  <td className="px-4 py-3">
+                                    <code className="bg-gray-100 px-2 py-1 rounded">
+                                      data-secondary-color
+                                    </code>
+                                  </td>
+                                  <td className="px-4 py-3">
+                                    <Badge variant="secondary">اختیاری</Badge>
+                                  </td>
+                                  <td className="px-4 py-3">-</td>
+                                  <td className="px-4 py-3">
+                                    رنگ ثانویه برای گرادیان (HEX)
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td className="px-4 py-3">
+                                    <code className="bg-gray-100 px-2 py-1 rounded">
+                                      data-custom-logo
+                                    </code>
+                                  </td>
+                                  <td className="px-4 py-3">
+                                    <Badge variant="secondary">اختیاری</Badge>
+                                  </td>
+                                  <td className="px-4 py-3">-</td>
+                                  <td className="px-4 py-3">
+                                    URL لوگوی سفارشی
+                                  </td>
+                                </tr>
                               </tbody>
                             </table>
                           </div>
@@ -880,6 +1072,8 @@ const WidgetDocs: React.FC = () => {
      data-theme="light"
      data-language="fa"
      data-primary-color="#ec4899"
+     data-secondary-color="#f97316"
+     data-custom-logo="https://example.com/logo.png"
      data-border-radius="12"
      data-show-logo="true"
      data-show-business-info="true"
@@ -906,8 +1100,35 @@ const WidgetDocs: React.FC = () => {
                                 id="color-config"
                                 code={`data-primary-color="#3b82f6"     <!-- آبی -->
 data-primary-color="#ec4899"     <!-- صورتی -->
-data-primary-color="#10b981"     <!-- سبز -->`}
+data-primary-color="#10b981"     <!-- سبز -->
+
+<!-- رنگ ثانویه برای گرادیان -->
+data-secondary-color="#6366f1"   <!-- بنفش -->
+data-secondary-color="#f97316"   <!-- نارنجی -->
+data-secondary-color="#06b6d4"   <!-- آبی روشن -->`}
                               />
+                            </div>
+
+                            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                              <h4 className="font-semibold text-blue-800 mb-2">
+                                🎨 لوگوی سفارشی
+                              </h4>
+                              <p className="text-blue-700 text-sm mb-3">
+                                جایگزین کردن لوگوی کسب‌وکار با لوگوی سفارشی
+                              </p>
+                              <CodeBlock
+                                id="custom-logo-config"
+                                code={`data-custom-logo="https://example.com/logo.png"
+data-custom-logo="https://your-brand.com/logo.svg"
+data-custom-logo="https://cdn.example.com/brand-logo.jpg"`}
+                              />
+                              <div className="mt-3 p-3 bg-blue-100 rounded-lg">
+                                <p className="text-blue-800 text-sm">
+                                  <strong>💡 نکته:</strong> لوگوی سفارشی جایگزین
+                                  لوگوی کسب‌وکار می‌شود و در هدر ویجت نمایش داده
+                                  می‌شود.
+                                </p>
+                              </div>
                             </div>
 
                             <div className="bg-gray-50 p-4 rounded-lg">
@@ -950,7 +1171,8 @@ data-min-advance-booking="2"     <!-- حداقل 2 ساعت از قبل -->`}
                                 id="display-options"
                                 code={`data-show-logo="true"            <!-- نمایش لوگو -->
 data-show-business-info="true"   <!-- نمایش اطلاعات کسب‌وکار -->
-data-allow-notes="true"          <!-- امکان یادداشت مشتری -->`}
+data-allow-notes="true"          <!-- امکان یادداشت مشتری -->
+data-custom-logo="https://..."   <!-- لوگوی سفارشی -->`}
                               />
                             </div>
                           </div>
@@ -1597,6 +1819,8 @@ max_advance_booking="60"]`}
     businessId="beauty-salon-789"
     theme="light"
     primaryColor="#ec4899"
+    secondaryColor="#f97316"
+    customLogo="https://beauty-salon.com/logo.png"
     showLogo={true}
     onBookingComplete={(booking) => {
         // ارسال به گوگل آنالیتیکس

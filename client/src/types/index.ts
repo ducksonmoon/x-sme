@@ -50,6 +50,80 @@ export interface Service {
   updatedAt: string;
 }
 
+// Staff types
+export interface Staff {
+  id: string;
+  businessId: string;
+  firstName: string;
+  lastName: string;
+  email?: string;
+  phone?: string;
+  avatar?: string;
+  bio?: string;
+  specialization?: string;
+  experience?: string;
+  isActive: boolean;
+  canLogin: boolean;
+  createdAt: string;
+  updatedAt: string;
+  services?: StaffService[];
+  workingHours?: StaffWorkingHour[];
+  breaks?: StaffBreak[];
+  timeOff?: StaffTimeOff[];
+  _count?: {
+    bookings: number;
+  };
+}
+
+export interface StaffService {
+  id: string;
+  staffId: string;
+  serviceId: string;
+  customPrice?: number;
+  isActive: boolean;
+  service: {
+    id: string;
+    name: string;
+    price: number;
+    duration: number;
+  };
+}
+
+export interface StaffWorkingHour {
+  id: string;
+  staffId: string;
+  dayOfWeek: number; // 0 = Sunday, 1 = Monday, etc.
+  startTime: string; // HH:MM format
+  endTime: string; // HH:MM format
+  isActive: boolean;
+}
+
+export interface StaffBreak {
+  id: string;
+  staffId: string;
+  title: string;
+  startTime: string;
+  endTime: string;
+  dayOfWeek?: number;
+  isActive: boolean;
+}
+
+export interface StaffTimeOff {
+  id: string;
+  staffId: string;
+  startDate: string;
+  endDate: string;
+  reason?: string;
+  type:
+    | "VACATION"
+    | "SICK_LEAVE"
+    | "PERSONAL"
+    | "HOLIDAY"
+    | "TRAINING"
+    | "OTHER";
+  isActive: boolean;
+}
+
 // Booking types
 export interface Booking {
   id: string;
@@ -59,6 +133,7 @@ export interface Booking {
   notes?: string;
   serviceId: string;
   businessId: string;
+  staffId?: string; // Add staff assignment
   startTime: string;
   endTime: string;
   status: "pending" | "confirmed" | "cancelled" | "completed";
@@ -69,6 +144,11 @@ export interface Booking {
   updatedAt: string;
   service?: Service;
   business?: Business;
+  staff?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  };
 }
 
 // Payment types
@@ -130,9 +210,10 @@ export interface DayData {
 // Widget configuration
 export interface WidgetConfig {
   businessId: string;
-  theme?: "light" | "dark";
+  theme?: "light" | "dark" | "auto";
   language?: "fa";
   primaryColor?: string;
+  secondaryColor?: string;
   borderRadius?: number;
   showLogo?: boolean;
   showBusinessInfo?: boolean;
@@ -140,6 +221,8 @@ export interface WidgetConfig {
   requireEmail?: boolean;
   maxAdvanceBooking?: number; // days
   minAdvanceBooking?: number; // hours
+  customLogo?: string;
+  embedMode?: boolean;
 }
 
 // Form types
@@ -152,6 +235,7 @@ export interface CustomerInfo {
 
 export interface BookingFormData {
   serviceId: string;
+  staffId?: string; // Add staff selection
   date: string;
   timeSlot: string;
   customerInfo: CustomerInfo;

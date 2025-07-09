@@ -31,6 +31,7 @@ import {
 import { dashboardApi, subscriptionApi } from "@/services/api";
 import { useBusiness } from "@/contexts/BusinessContext";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import WidgetConfiguration from "@/components/WidgetConfiguration";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -2698,145 +2699,46 @@ const Settings: React.FC = () => {
 
         {/* Widget Settings */}
         {activeTab === "widget" && (
-          <div className="space-y-6">
-            <Card className="shadow-sm border-0 bg-white dark:bg-gray-800">
-              <CardHeader className="border-b border-gray-200 dark:border-gray-700">
-                <div className="flex items-center space-x-3 space-x-reverse">
-                  <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg">
-                    <svg
-                      className="w-6 h-6 text-purple-600 dark:text-purple-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                      />
-                    </svg>
-                  </div>
-                  <div>
-                    <CardTitle className="text-xl">تنظیمات ویجت</CardTitle>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                      کد و لینک ویجت رزرو
-                    </p>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-6"
+          >
+            <Card className="border-0 shadow-xl bg-gradient-to-br from-white via-purple-50/30 to-indigo-50/30 dark:from-gray-800 dark:via-purple-900/10 dark:to-indigo-900/10 backdrop-blur-sm">
+              <CardHeader className="border-b border-purple-200/50 dark:border-purple-800/50 bg-gradient-to-r from-purple-50/50 to-indigo-50/50 dark:from-purple-900/20 dark:to-indigo-900/20">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4 space-x-reverse">
+                    <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-2xl flex items-center justify-center shadow-lg">
+                      <svg
+                        className="w-8 h-8 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                        />
+                      </svg>
+                    </div>
+                    <div>
+                      <CardTitle className="text-2xl font-bold bg-gradient-to-r from-purple-900 to-indigo-900 dark:from-purple-100 dark:to-indigo-100 bg-clip-text text-transparent">
+                        تنظیمات ویجت
+                      </CardTitle>
+                      <p className="text-purple-700 dark:text-purple-300 mt-1 font-medium">
+                        شخصی‌سازی ظاهر و عملکرد ویجت رزرو
+                      </p>
+                    </div>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="p-6">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                        کد ویجت
-                      </label>
-                      <div className="relative">
-                        <div className="bg-gray-900 text-gray-100 p-4 rounded-lg font-mono text-sm overflow-x-auto">
-                          <code>
-                            {`<script src="${window.location.origin}/widget.js" data-business-id="${businessId}"></script>`}
-                          </code>
-                        </div>
-                        <button
-                          onClick={() => {
-                            navigator.clipboard.writeText(
-                              `<script src="${window.location.origin}/widget.js" data-business-id="${businessId}"></script>`
-                            );
-                            toast.success("کد کپی شد");
-                          }}
-                          className="absolute top-2 left-2 p-2 bg-gray-700 hover:bg-gray-600 rounded text-white transition-colors"
-                        >
-                          <svg
-                            className="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                            />
-                          </svg>
-                        </button>
-                      </div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                        این کد را در صفحه وب‌سایت خود قرار دهید
-                      </p>
-                    </div>
-                  </div>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-500">
-                        لینک پیش‌نمایش
-                      </label>
-                      <div className="relative">
-                        <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
-                          <code className="text-sm text-gray-700 dark:text-gray-300 break-all">
-                            {`${window.location.origin}/widget?businessId=${businessId}`}
-                          </code>
-                        </div>
-                        <button
-                          onClick={() => {
-                            navigator.clipboard.writeText(
-                              `${window.location.origin}/widget?businessId=${businessId}`
-                            );
-                            toast.success("لینک کپی شد");
-                          }}
-                          className="absolute top-2 left-2 p-2 bg-gray-600 hover:bg-gray-500 rounded text-white transition-colors"
-                        >
-                          <svg
-                            className="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                            />
-                          </svg>
-                        </button>
-                      </div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                        برای تست ویجت از این لینک استفاده کنید
-                      </p>
-                    </div>
-                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                      <div className="flex items-start space-x-3 space-x-reverse">
-                        <svg
-                          className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
-                        <div>
-                          <h4 className="font-medium text-blue-900 dark:text-blue-100">
-                            نکته مهم
-                          </h4>
-                          <p className="text-sm text-blue-800 dark:text-blue-200 mt-1">
-                            ویجت فقط زمانی کار می‌کند که کسب‌وکار فعال باشد. در
-                            صورت غیرفعال بودن، مشتریان قادر به رزرو نخواهند بود.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <WidgetConfiguration />
               </CardContent>
             </Card>
-          </div>
+          </motion.div>
         )}
 
         {/* Subscription Settings */}

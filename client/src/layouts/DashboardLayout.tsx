@@ -250,6 +250,7 @@ const navItems = [
   { to: "/dashboard", label: "داشبورد", icon: DashboardIcon },
   { to: "/dashboard/bookings", label: "رزروها", icon: BookingIcon },
   { to: "/dashboard/services", label: "سرویس‌ها", icon: ServicesIcon },
+  { to: "/dashboard/staff", label: "کارکنان", icon: UsersIcon },
   { to: "/dashboard/timeslots", label: "ساعات کاری", icon: TimeIcon },
   { to: "/dashboard/analytics", label: "تحلیل‌ها", icon: AnalyticsIcon },
   { to: "/dashboard/settings", label: "تنظیمات", icon: SettingsIcon },

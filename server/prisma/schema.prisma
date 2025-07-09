@@ -8,22 +8,21 @@ datasource db {
 }
 
 model User {
-  id          String    @id @default(cuid())
-  email       String    @unique
-  password    String
-  firstName   String?
-  lastName    String?
-  phone       String?
-  role        UserRole  @default(BUSINESS_OWNER)
-  businessId  String?
-  isActive    Boolean   @default(true)
-  lastLoginAt DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  business    Business? @relation(fields: [businessId], references: [id])
-
-  // Add subscription relation
+  id            String         @id @default(cuid())
+  email         String         @unique
+  password      String
+  firstName     String?
+  lastName      String?
+  phone         String?
+  role          UserRole       @default(BUSINESS_OWNER)
+  businessId    String?
+  isActive      Boolean        @default(true)
+  lastLoginAt   DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  staff         staff?
   subscriptions Subscription[]
+  business      Business?      @relation(fields: [businessId], references: [id])
 
   @@map("users")
 }
@@ -42,17 +41,16 @@ model Business {
   isActive     Boolean           @default(true)
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
+  billingInfo  BillingInfo?
   bookings     Booking[]
   settings     BusinessSettings?
   holidays     Holiday[]
   services     Service[]
+  staff        staff[]
+  subscription Subscription?
+  usageStats   UsageStats[]
   users        User[]
   workingHours WorkingHour[]
-
-  // Add subscription and usage tracking
-  subscription   Subscription?
-  usageStats     UsageStats[]
-  billingInfo    BillingInfo?
 
   @@map("businesses")
 }
@@ -86,24 +84,26 @@ model BusinessSettings {
   respectWorkingHours  Boolean  @default(true)
   sameDayBooking       Boolean  @default(true)
   useServiceDuration   Boolean  @default(true)
+  widgetConfig         Json?
   business             Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@map("business_settings")
 }
 
 model Service {
-  id          String     @id @default(cuid())
-  businessId  String
-  name        String
-  description String?
-  duration    Int
-  price       Decimal    @db.Decimal(10, 2)
-  isActive    Boolean    @default(true)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  TimeSlot    TimeSlot[]
-  bookings    Booking[]
-  business    Business   @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  id             String           @id @default(cuid())
+  businessId     String
+  name           String
+  description    String?
+  duration       Int
+  price          Decimal          @db.Decimal(10, 2)
+  isActive       Boolean          @default(true)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  TimeSlot       TimeSlot[]
+  bookings       Booking[]
+  business       Business         @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  staff_services staff_services[]
 
   @@map("services")
 }
@@ -153,8 +153,10 @@ model Booking {
   notes         String?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
+  staffId       String?
   business      Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
   service       Service       @relation(fields: [serviceId], references: [id])
+  staff         staff?        @relation(fields: [staffId], references: [id])
   payments      Payment[]
   reminders     Reminder[]
 
@@ -194,20 +196,229 @@ model Reminder {
 }
 
 model TimeSlot {
-  id        String   @id @default(cuid())
-  serviceId String
-  date      DateTime
-  startTime String
-  endTime   String
-  isBooked  Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  services  Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  id          String   @id @default(cuid())
+  serviceId   String
+  date        DateTime
+  startTime   String
+  endTime     String
+  isBooked    Boolean  @default(false)
+  capacity    Int      @default(0)
+  maxCapacity Int      @default(1)
+  isPeakHour  Boolean  @default(false)
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  services    Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
 
+  @@unique([serviceId, date, startTime])
   @@index([date, isBooked])
   @@index([serviceId, date])
   @@index([serviceId, date, startTime])
   @@index([serviceId, isBooked])
+}
+
+model Plan {
+  id             String         @id @default(cuid())
+  name           String         @unique
+  nameEn         String?
+  description    String
+  setupFee       Decimal        @db.Decimal(10, 2)
+  monthlyFee     Decimal        @db.Decimal(10, 2)
+  yearlyFee      Decimal?       @db.Decimal(10, 2)
+  commissionRate Float          @default(0)
+  bookingsLimit  Int?
+  servicesLimit  Int?
+  smsLimit       Int?
+  features       Json
+  isActive       Boolean        @default(true)
+  sortOrder      Int            @default(0)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  subscriptions  Subscription[]
+
+  @@map("plans")
+}
+
+model Subscription {
+  id                 String             @id @default(cuid())
+  businessId         String             @unique
+  userId             String
+  planId             String
+  status             SubscriptionStatus @default(TRIAL)
+  billingCycle       BillingCycle       @default(MONTHLY)
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  trialStart         DateTime?
+  trialEnd           DateTime?
+  cancelledAt        DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  invoices           Invoice[]
+  business           Business           @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  plan               Plan               @relation(fields: [planId], references: [id])
+  user               User               @relation(fields: [userId], references: [id])
+  usageStats         UsageStats[]
+
+  @@map("subscriptions")
+}
+
+model Invoice {
+  id             String           @id @default(cuid())
+  subscriptionId String
+  number         String           @unique
+  amount         Decimal          @db.Decimal(10, 2)
+  setupFee       Decimal?         @db.Decimal(10, 2)
+  monthlyFee     Decimal?         @db.Decimal(10, 2)
+  commissionFee  Decimal?         @db.Decimal(10, 2)
+  discountAmount Decimal?         @db.Decimal(10, 2)
+  taxAmount      Decimal?         @db.Decimal(10, 2)
+  totalAmount    Decimal          @db.Decimal(10, 2)
+  currency       String           @default("IRR")
+  status         InvoiceStatus    @default(PENDING)
+  dueDate        DateTime
+  paidAt         DateTime?
+  description    String?
+  metadata       Json?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  payments       InvoicePayment[]
+  subscription   Subscription     @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@map("invoices")
+}
+
+model InvoicePayment {
+  id            String         @id @default(cuid())
+  invoiceId     String
+  amount        Decimal        @db.Decimal(10, 2)
+  gateway       PaymentGateway
+  gatewayRef    String?
+  status        PaymentStatus  @default(PENDING)
+  transactionId String?
+  metadata      Json?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  invoice       Invoice        @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@map("invoice_payments")
+}
+
+model UsageStats {
+  id             String       @id @default(cuid())
+  businessId     String
+  subscriptionId String
+  month          Int
+  year           Int
+  bookingsCount  Int          @default(0)
+  smsCount       Int          @default(0)
+  revenueAmount  Decimal      @default(0) @db.Decimal(10, 2)
+  commissionOwed Decimal      @default(0) @db.Decimal(10, 2)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  business       Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@unique([businessId, subscriptionId, month, year])
+  @@map("usage_stats")
+}
+
+model BillingInfo {
+  id            String   @id @default(cuid())
+  businessId    String   @unique
+  companyName   String?
+  taxId         String?
+  address       String?
+  city          String?
+  postalCode    String?
+  phone         String?
+  email         String?
+  bankAccount   String?
+  bankName      String?
+  accountHolder String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  business      Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@map("billing_info")
+}
+
+model staff {
+  id                  String                @id @default(cuid())
+  businessId          String
+  firstName           String
+  lastName            String
+  email               String?
+  phone               String?
+  avatar              String?
+  bio                 String?
+  specialization      String?
+  experience          String?
+  isActive            Boolean               @default(true)
+  canLogin            Boolean               @default(false)
+  userId              String?               @unique
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime @updatedAt
+  bookings            Booking[]
+  businesses          Business              @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  users               User?                 @relation(fields: [userId], references: [id])
+  staff_breaks        staff_breaks[]
+  staff_services      staff_services[]
+  staff_time_off      staff_time_off[]
+  staff_working_hours staff_working_hours[]
+}
+
+model staff_breaks {
+  id        String   @id @default(cuid())
+  staffId   String
+  title     String   @default("Break")
+  startTime String
+  endTime   String
+  dayOfWeek Int?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  staff     staff    @relation(fields: [staffId], references: [id], onDelete: Cascade)
+}
+
+model staff_services {
+  id          String   @id @default(cuid())
+  staffId     String
+  serviceId   String
+  customPrice Decimal? @db.Decimal(10, 2)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  services    Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  staff       staff    @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@unique([staffId, serviceId])
+}
+
+model staff_time_off {
+  id        String      @id @default(cuid())
+  staffId   String
+  startDate DateTime    @db.Date
+  endDate   DateTime    @db.Date
+  reason    String?
+  type      TimeOffType @default(VACATION)
+  isActive  Boolean     @default(true)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime @updatedAt
+  staff     staff       @relation(fields: [staffId], references: [id], onDelete: Cascade)
+}
+
+model staff_working_hours {
+  id        String   @id @default(cuid())
+  staffId   String
+  dayOfWeek Int
+  startTime String
+  endTime   String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  staff     staff    @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@unique([staffId, dayOfWeek])
 }
 
 enum UserRole {
@@ -256,139 +467,6 @@ enum ReminderStatus {
   FAILED
 }
 
-// New models for subscription management
-
-model Plan {
-  id                String   @id @default(cuid())
-  name              String   @unique
-  nameEn            String?
-  description       String
-  setupFee          Decimal  @db.Decimal(10, 2)
-  monthlyFee        Decimal  @db.Decimal(10, 2)
-  yearlyFee         Decimal? @db.Decimal(10, 2)
-  commissionRate    Float    @default(0)
-  bookingsLimit     Int?     // null = unlimited
-  servicesLimit     Int?
-  smsLimit          Int?
-  features          Json     // Array of feature codes
-  isActive          Boolean  @default(true)
-  sortOrder         Int      @default(0)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  subscriptions     Subscription[]
-
-  @@map("plans")
-}
-
-model Subscription {
-  id                String             @id @default(cuid())
-  businessId        String             @unique
-  userId            String
-  planId            String
-  status            SubscriptionStatus @default(TRIAL)
-  billingCycle      BillingCycle       @default(MONTHLY)
-  currentPeriodStart DateTime
-  currentPeriodEnd   DateTime
-  trialStart        DateTime?
-  trialEnd          DateTime?
-  cancelledAt       DateTime?
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-
-  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  user     User     @relation(fields: [userId], references: [id])
-  plan     Plan     @relation(fields: [planId], references: [id])
-  invoices Invoice[]
-  usageStats UsageStats[]
-
-  @@map("subscriptions")
-}
-
-model Invoice {
-  id             String        @id @default(cuid())
-  subscriptionId String
-  number         String        @unique // INV-2024-001
-  amount         Decimal       @db.Decimal(10, 2)
-  setupFee       Decimal?      @db.Decimal(10, 2)
-  monthlyFee     Decimal?      @db.Decimal(10, 2)
-  commissionFee  Decimal?      @db.Decimal(10, 2)
-  discountAmount Decimal?      @db.Decimal(10, 2)
-  taxAmount      Decimal?      @db.Decimal(10, 2)
-  totalAmount    Decimal       @db.Decimal(10, 2)
-  currency       String        @default("IRR")
-  status         InvoiceStatus @default(PENDING)
-  dueDate        DateTime
-  paidAt         DateTime?
-  description    String?
-  metadata       Json?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-
-  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
-  payments     InvoicePayment[]
-
-  @@map("invoices")
-}
-
-model InvoicePayment {
-  id            String         @id @default(cuid())
-  invoiceId     String
-  amount        Decimal        @db.Decimal(10, 2)
-  gateway       PaymentGateway
-  gatewayRef    String?
-  status        PaymentStatus  @default(PENDING)
-  transactionId String?
-  metadata      Json?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-
-  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-
-  @@map("invoice_payments")
-}
-
-model UsageStats {
-  id             String   @id @default(cuid())
-  businessId     String
-  subscriptionId String
-  month          Int      // 1-12
-  year           Int      // 2024
-  bookingsCount  Int      @default(0)
-  smsCount       Int      @default(0)
-  revenueAmount  Decimal  @default(0) @db.Decimal(10, 2)
-  commissionOwed Decimal  @default(0) @db.Decimal(10, 2)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  business     Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
-
-  @@unique([businessId, subscriptionId, month, year])
-  @@map("usage_stats")
-}
-
-model BillingInfo {
-  id             String   @id @default(cuid())
-  businessId     String   @unique
-  companyName    String?
-  taxId          String?
-  address        String?
-  city           String?
-  postalCode     String?
-  phone          String?
-  email          String?
-  bankAccount    String?
-  bankName       String?
-  accountHolder  String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-
-  @@map("billing_info")
-}
-
-// Updated enums
 enum SubscriptionStatus {
   TRIAL
   ACTIVE
@@ -408,4 +486,13 @@ enum InvoiceStatus {
   OVERDUE
   CANCELLED
   REFUNDED
+}
+
+enum TimeOffType {
+  VACATION
+  SICK_LEAVE
+  PERSONAL
+  HOLIDAY
+  TRAINING
+  OTHER
 }

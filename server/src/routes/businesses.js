@@ -700,4 +700,293 @@ router.put("/:id/settings", authenticate, authorize("BUSINESS_OWNER", "STAFF"), 
   }
 });
 
+// @desc    Get widget configuration
+// @route   GET /api/businesses/:id/widget-config
+// @access  Private (Business owners and staff only)
+router.get("/:id/widget-config", authenticate, authorize("BUSINESS_OWNER", "STAFF"), async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    // Check if user has access to this business
+    if (req.user.businessId !== id) {
+      return res.status(403).json({
+        success: false,
+        error: "Access denied to this business",
+      });
+    }
+
+    const settings = await prisma.businessSettings.findUnique({
+      where: { businessId: id },
+    });
+
+    // Default widget configuration
+    const defaultWidgetConfig = {
+      businessId: id,
+      theme: "auto",
+      language: "fa",
+      primaryColor: "#3b82f6",
+      secondaryColor: "#1e40af",
+      borderRadius: 8,
+      showLogo: true,
+      allowNotes: true,
+      requireEmail: false,
+      maxAdvanceBooking: 30,
+      minAdvanceBooking: 2,
+      embedMode: true,
+      showBusinessInfo: true,
+      version: "1.0.0",
+      lastUpdated: new Date().toISOString(),
+    };
+
+    // If settings exist and have widget config, merge with defaults
+    if (settings && settings.widgetConfig) {
+      const widgetConfig = typeof settings.widgetConfig === 'string' 
+        ? JSON.parse(settings.widgetConfig) 
+        : settings.widgetConfig;
+      
+      const mergedConfig = { ...defaultWidgetConfig, ...widgetConfig };
+      mergedConfig.lastUpdated = new Date().toISOString();
+      
+      return res.json({
+        success: true,
+        data: mergedConfig,
+      });
+    }
+
+    res.json({
+      success: true,
+      data: defaultWidgetConfig,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// @desc    Update widget configuration
+// @route   PUT /api/businesses/:id/widget-config
+// @access  Private (Business owners and staff only)
+router.put("/:id/widget-config", authenticate, authorize("BUSINESS_OWNER", "STAFF"), async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const widgetConfig = req.body;
+
+    // Check if user has access to this business
+    if (req.user.businessId !== id) {
+      return res.status(403).json({
+        success: false,
+        error: "Access denied to this business",
+      });
+    }
+
+    // Validate required fields
+    if (!widgetConfig.businessId || widgetConfig.businessId !== id) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid business ID",
+      });
+    }
+
+    // Validate color format
+    if (widgetConfig.primaryColor && !/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(widgetConfig.primaryColor)) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid primary color format",
+      });
+    }
+
+    if (widgetConfig.secondaryColor && !/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(widgetConfig.secondaryColor)) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid secondary color format",
+      });
+    }
+
+    // Validate numeric ranges
+    if (widgetConfig.borderRadius !== undefined && (widgetConfig.borderRadius < 0 || widgetConfig.borderRadius > 50)) {
+      return res.status(400).json({
+        success: false,
+        error: "Border radius must be between 0 and 50",
+      });
+    }
+
+    if (widgetConfig.maxAdvanceBooking !== undefined && (widgetConfig.maxAdvanceBooking < 1 || widgetConfig.maxAdvanceBooking > 365)) {
+      return res.status(400).json({
+        success: false,
+        error: "Max advance booking must be between 1 and 365 days",
+      });
+    }
+
+    if (widgetConfig.minAdvanceBooking !== undefined && (widgetConfig.minAdvanceBooking < 1 || widgetConfig.minAdvanceBooking > 48)) {
+      return res.status(400).json({
+        success: false,
+        error: "Min advance booking must be between 1 and 48 hours",
+      });
+    }
+
+    // Update widget configuration
+    const settings = await prisma.businessSettings.upsert({
+      where: { businessId: id },
+      update: {
+        widgetConfig: JSON.stringify(widgetConfig),
+      },
+      create: {
+        businessId: id,
+        widgetConfig: JSON.stringify(widgetConfig),
+      },
+    });
+
+    res.json({
+      success: true,
+      data: widgetConfig,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// @desc    Get widget embed code
+// @route   GET /api/businesses/:id/widget-embed
+// @access  Private (Business owners and staff only)
+router.get("/:id/widget-embed", authenticate, authorize("BUSINESS_OWNER", "STAFF"), async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { domain } = req.query;
+
+    // Check if user has access to this business
+    if (req.user.businessId !== id) {
+      return res.status(403).json({
+        success: false,
+        error: "Access denied to this business",
+      });
+    }
+
+    const settings = await prisma.businessSettings.findUnique({
+      where: { businessId: id },
+    });
+
+    let widgetConfig = {
+      businessId: id,
+      theme: "auto",
+      primaryColor: "#3b82f6",
+      borderRadius: 8,
+      showLogo: true,
+      allowNotes: true,
+      requireEmail: false,
+      maxAdvanceBooking: 30,
+      minAdvanceBooking: 2,
+    };
+
+    if (settings && settings.widgetConfig) {
+      const config = typeof settings.widgetConfig === 'string' 
+        ? JSON.parse(settings.widgetConfig) 
+        : settings.widgetConfig;
+      widgetConfig = { ...widgetConfig, ...config };
+    }
+
+    const attributes = [
+      `data-business-id="${widgetConfig.businessId}"`,
+      `data-theme="${widgetConfig.theme}"`,
+      `data-primary-color="${widgetConfig.primaryColor}"`,
+      `data-border-radius="${widgetConfig.borderRadius}"`,
+      `data-show-logo="${widgetConfig.showLogo}"`,
+      `data-allow-notes="${widgetConfig.allowNotes}"`,
+      `data-require-email="${widgetConfig.requireEmail}"`,
+      `data-max-advance-booking="${widgetConfig.maxAdvanceBooking}"`,
+      `data-min-advance-booking="${widgetConfig.minAdvanceBooking}"`,
+    ];
+
+    if (widgetConfig.secondaryColor) {
+      attributes.push(`data-secondary-color="${widgetConfig.secondaryColor}"`);
+    }
+
+    if (widgetConfig.customLogo) {
+      attributes.push(`data-custom-logo="${widgetConfig.customLogo}"`);
+    }
+
+    const embedCode = `<script src="${domain || req.get('origin')}/widget.js" ${attributes.join(" ")}></script>`;
+
+    res.json({
+      success: true,
+      data: {
+        embedCode,
+        config: widgetConfig,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// @desc    Get widget preview URL
+// @route   GET /api/businesses/:id/widget-preview-url
+// @access  Private (Business owners and staff only)
+router.get("/:id/widget-preview-url", authenticate, authorize("BUSINESS_OWNER", "STAFF"), async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    // Check if user has access to this business
+    if (req.user.businessId !== id) {
+      return res.status(403).json({
+        success: false,
+        error: "Access denied to this business",
+      });
+    }
+
+    const settings = await prisma.businessSettings.findUnique({
+      where: { businessId: id },
+    });
+
+    let widgetConfig = {
+      businessId: id,
+      theme: "auto",
+      primaryColor: "#3b82f6",
+      borderRadius: 8,
+      showLogo: true,
+      allowNotes: true,
+      requireEmail: false,
+      maxAdvanceBooking: 30,
+      minAdvanceBooking: 2,
+    };
+
+    if (settings && settings.widgetConfig) {
+      const config = typeof settings.widgetConfig === 'string' 
+        ? JSON.parse(settings.widgetConfig) 
+        : settings.widgetConfig;
+      widgetConfig = { ...widgetConfig, ...config };
+    }
+
+    const params = new URLSearchParams({
+      businessId: widgetConfig.businessId,
+      theme: widgetConfig.theme,
+      primaryColor: widgetConfig.primaryColor,
+      borderRadius: widgetConfig.borderRadius.toString(),
+      showLogo: widgetConfig.showLogo.toString(),
+      allowNotes: widgetConfig.allowNotes.toString(),
+      requireEmail: widgetConfig.requireEmail.toString(),
+      maxAdvanceBooking: widgetConfig.maxAdvanceBooking.toString(),
+      minAdvanceBooking: widgetConfig.minAdvanceBooking.toString(),
+    });
+
+    if (widgetConfig.secondaryColor) {
+      params.set("secondaryColor", widgetConfig.secondaryColor);
+    }
+
+    if (widgetConfig.customLogo) {
+      params.set("customLogo", widgetConfig.customLogo);
+    }
+
+    const previewUrl = `${req.get('origin')}/widget-preview?${params.toString()}`;
+
+    res.json({
+      success: true,
+      data: {
+        previewUrl,
+        config: widgetConfig,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 module.exports = router;

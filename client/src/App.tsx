@@ -30,6 +30,7 @@ const ResetPassword = React.lazy(() => import("@pages/auth/ResetPassword"));
 const Dashboard = React.lazy(() => import("@pages/dashboard/Dashboard"));
 const Bookings = React.lazy(() => import("@pages/dashboard/Bookings"));
 const Services = React.lazy(() => import("@pages/dashboard/Services"));
+const Staff = React.lazy(() => import("@pages/dashboard/Staff"));
 const TimeSlots = React.lazy(() => import("@pages/dashboard/TimeSlots"));
 const Analytics = React.lazy(() => import("@pages/dashboard/Analytics"));
 const Settings = React.lazy(() => import("@pages/dashboard/Settings"));
@@ -51,6 +52,7 @@ const AdminBusinessDashboard = React.lazy(
 const WidgetDemo = React.lazy(() => import("@pages/WidgetDemo"));
 const WidgetDocs = React.lazy(() => import("@pages/WidgetDocs"));
 const Widget = React.lazy(() => import("@pages/Widget"));
+const WidgetPreview = React.lazy(() => import("@pages/WidgetPreview"));
 
 // Error pages
 const NotFound = React.lazy(() => import("@pages/NotFound"));
@@ -86,8 +88,9 @@ function App() {
             <Route path="widget-docs" element={<WidgetDocs />} />
           </Route>
 
-          {/* Widget route (no layout) */}
+          {/* Widget routes (no layout) */}
           <Route path="/widget" element={<Widget />} />
+          <Route path="/widget-preview" element={<WidgetPreview />} />
 
           {/* Auth routes */}
           <Route path="/auth" element={<AuthLayout />}>
@@ -110,6 +113,7 @@ function App() {
             <Route index element={<Dashboard />} />
             <Route path="bookings" element={<Bookings />} />
             <Route path="services" element={<Services />} />
+            <Route path="staff" element={<Staff />} />
             <Route path="timeslots" element={<TimeSlots />} />
             <Route path="analytics" element={<Analytics />} />
             <Route path="settings" element={<Settings />} />

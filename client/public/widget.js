@@ -10,26 +10,73 @@
 (function() {
   'use strict';
 
-  // Widget configuration
+  // Widget configuration - matching BookingWidget.tsx structure
   const WIDGET_CONFIG = {
     apiBaseUrl: 'https://api.x-sme.ir',
-    widgetBaseUrl: 'http://localhost:3000',
-    version: '1.1.0'
+    widgetBaseUrl: window.location.origin,
+    version: '1.2.0'
   };
 
-  // Default widget options (matching Widget.tsx defaults)
+  // Default widget options - matching BookingWidgetProps interface
   const DEFAULT_OPTIONS = {
-    theme: 'light',
-    language: 'fa',
-    primaryColor: '#3b82f6',
-    borderRadius: 8,
+    // Core props from BookingWidgetProps
+    businessId: null,
+    embedMode: true,
+    theme: 'auto', // 'light' | 'dark' | 'auto'
     showLogo: true,
+    accentColor: '#3b82f6',
+    customLogo: null, // New: Custom logo URL
+    primaryColor: '#3b82f6', // New: Primary color for theming
+    secondaryColor: null, // New: Secondary color for theming
+    
+    // Additional customization options
+    language: 'fa',
+    borderRadius: 8,
     showBusinessInfo: true,
     allowNotes: true,
     requireEmail: false,
     maxAdvanceBooking: 30,
     minAdvanceBooking: 2,
-    embedMode: true
+    
+    // Callback functions
+    onBookingComplete: null,
+    onBookingStarted: null,
+    onBookingCancelled: null,
+    onServiceSelected: null,
+    onStaffSelected: null,
+    onDateSelected: null,
+    onTimeSelected: null,
+    onWidgetRestart: null,
+    onAvailabilityRefreshed: null,
+    onError: null,
+    onReady: null,
+    onLoaded: null
+  };
+
+  // Event types matching BookingWidget.tsx triggerWidgetEvent calls
+  const WIDGET_EVENTS = {
+    // Booking flow events
+    BOOKING_STARTED: 'booking:started',
+    BOOKING_COMPLETE: 'booking:complete',
+    BOOKING_CANCELLED: 'booking:cancelled',
+    
+    // Selection events
+    SERVICE_SELECTED: 'service:selected',
+    STAFF_SELECTED: 'staff:selected',
+    DATE_SELECTED: 'date:selected',
+    TIME_SELECTED: 'time:selected',
+    
+    // Widget lifecycle events
+    WIDGET_RESTART: 'widget:restart',
+    AVAILABILITY_REFRESHED: 'availability:refreshed',
+    REFRESH_COMPLETE: 'refresh:complete',
+    
+    // System events
+    ERROR: 'error',
+    WIDGET_READY: 'widget:ready',
+    RESIZE: 'resize',
+    UPDATE_CONFIG: 'update:config',
+    FORCE_REFRESH_DATA: 'force:refresh:data'
   };
 
   /**
@@ -40,7 +87,9 @@
     const containers = document.querySelectorAll('[id^="xsme-booking-widget"]');
     
     containers.forEach(container => {
-      const businessId = container.getAttribute('data-business-id') || container.getAttribute('data-business');
+      const businessId = container.getAttribute('data-business-id') || 
+                        container.getAttribute('data-business') ||
+                        container.getAttribute('data-businessid');
       
       if (!businessId) {
         console.error('X-SME Widget: business-id is required');
@@ -48,7 +97,7 @@
       }
 
       // Parse options from data attributes
-      const options = parseOptions(container);
+      const options = parseOptions(container, businessId);
       
       // Create widget
       createWidget(container, businessId, options);
@@ -56,61 +105,109 @@
   }
 
   /**
-   * Parse widget options from data attributes
+   * Parse widget options from data attributes - matching BookingWidgetProps
    */
-  function parseOptions(container) {
-    const options = { ...DEFAULT_OPTIONS };
+  function parseOptions(container, businessId) {
+    const options = { ...DEFAULT_OPTIONS, businessId };
     
-    // Parse data attributes (matching Widget.tsx parameter names)
+    // Core BookingWidgetProps attributes
+    const embedMode = container.getAttribute('data-embed-mode');
     const theme = container.getAttribute('data-theme');
-    const language = container.getAttribute('data-language');
-    const primaryColor = container.getAttribute('data-primary-color') || container.getAttribute('data-accent-color');
-    const borderRadius = container.getAttribute('data-border-radius');
     const showLogo = container.getAttribute('data-show-logo');
+    const accentColor = container.getAttribute('data-accent-color') || 
+                       container.getAttribute('data-primary-color');
+    const customLogo = container.getAttribute('data-custom-logo') || 
+                      container.getAttribute('data-logo');
+    const primaryColor = container.getAttribute('data-primary-color') || 
+                        container.getAttribute('data-accent-color');
+    const secondaryColor = container.getAttribute('data-secondary-color');
+    
+    // Additional customization attributes
+    const language = container.getAttribute('data-language');
+    const borderRadius = container.getAttribute('data-border-radius');
     const showBusinessInfo = container.getAttribute('data-show-business-info');
     const allowNotes = container.getAttribute('data-allow-notes');
     const requireEmail = container.getAttribute('data-require-email');
     const maxAdvanceBooking = container.getAttribute('data-max-advance-booking');
     const minAdvanceBooking = container.getAttribute('data-min-advance-booking');
     
+    // Parse boolean values
+    if (embedMode !== null) options.embedMode = embedMode !== 'false';
     if (theme) options.theme = theme;
-    if (language) options.language = language;
-    if (primaryColor) options.primaryColor = primaryColor;
-    if (borderRadius) options.borderRadius = parseInt(borderRadius);
     if (showLogo !== null) options.showLogo = showLogo !== 'false';
+    if (accentColor) options.accentColor = accentColor;
+    if (customLogo) options.customLogo = customLogo;
+    if (primaryColor) options.primaryColor = primaryColor;
+    if (secondaryColor) options.secondaryColor = secondaryColor;
+    if (language) options.language = language;
+    if (borderRadius) options.borderRadius = parseInt(borderRadius);
     if (showBusinessInfo !== null) options.showBusinessInfo = showBusinessInfo !== 'false';
     if (allowNotes !== null) options.allowNotes = allowNotes !== 'false';
     if (requireEmail !== null) options.requireEmail = requireEmail === 'true';
     if (maxAdvanceBooking) options.maxAdvanceBooking = parseInt(maxAdvanceBooking);
     if (minAdvanceBooking) options.minAdvanceBooking = parseInt(minAdvanceBooking);
     
+    // Setup callback functions from global scope
+    setupCallbacks(options);
+    
     return options;
   }
 
   /**
-   * Create widget iframe
+   * Setup callback functions from global scope
+   */
+  function setupCallbacks(options) {
+    const callbackMappings = {
+      onBookingComplete: 'xsmeOnBookingComplete',
+      onBookingStarted: 'xsmeOnBookingStarted',
+      onBookingCancelled: 'xsmeOnBookingCancelled',
+      onServiceSelected: 'xsmeOnServiceSelected',
+      onStaffSelected: 'xsmeOnStaffSelected',
+      onDateSelected: 'xsmeOnDateSelected',
+      onTimeSelected: 'xsmeOnTimeSelected',
+      onWidgetRestart: 'xsmeOnWidgetRestart',
+      onAvailabilityRefreshed: 'xsmeOnAvailabilityRefreshed',
+      onError: 'xsmeOnError',
+      onReady: 'xsmeOnReady',
+      onLoaded: 'xsmeOnLoaded'
+    };
+
+    Object.entries(callbackMappings).forEach(([optionKey, globalKey]) => {
+      if (window[globalKey] && typeof window[globalKey] === 'function') {
+        options[optionKey] = window[globalKey];
+      }
+    });
+  }
+
+  /**
+   * Create widget iframe - matching BookingWidget structure
    */
   function createWidget(container, businessId, options) {
     // Create iframe
     const iframe = document.createElement('iframe');
     
-    // Build widget URL with parameters (matching Widget.tsx parameter names)
+    // Build widget URL with parameters - matching BookingWidgetProps
     const params = new URLSearchParams({
       businessId,
+      embedMode: options.embedMode.toString(),
       theme: options.theme,
-      language: options.language,
-      primaryColor: options.primaryColor,
-      borderRadius: options.borderRadius.toString(),
       showLogo: options.showLogo.toString(),
+      accentColor: options.accentColor,
+      language: options.language,
+      borderRadius: options.borderRadius.toString(),
       showBusinessInfo: options.showBusinessInfo.toString(),
       allowNotes: options.allowNotes.toString(),
       requireEmail: options.requireEmail.toString(),
       maxAdvanceBooking: options.maxAdvanceBooking.toString(),
       minAdvanceBooking: options.minAdvanceBooking.toString(),
-      embed: 'true'
+      customLogo: options.customLogo,
+      primaryColor: options.primaryColor,
+      secondaryColor: options.secondaryColor
     });
     
     iframe.src = `${WIDGET_CONFIG.widgetBaseUrl}/widget?${params.toString()}`;
+    
+    // Apply styling - matching BookingWidget visual structure
     iframe.style.cssText = `
       width: 100%;
       height: 480px;
@@ -118,32 +215,27 @@
       border: none;
       border-radius: ${options.borderRadius}px;
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-      --primary-color: ${options.primaryColor};
+      --primary-color: ${options.accentColor};
       --border-radius: ${options.borderRadius}px;
       overflow: hidden;
       transition: height 0.3s ease;
+      background: white;
     `;
 
-    // Responsive sizing
-    if (window.innerWidth >= 768) {
-      iframe.style.height = '520px';
-      iframe.style.minHeight = '480px';
-    }
-    if (window.innerWidth >= 1024) {
-      iframe.style.height = '580px';
-      iframe.style.minHeight = '520px';
-    }
+    // Responsive sizing - matching BookingWidget responsive design
+    applyResponsiveSizing(iframe);
 
-    // Add responsive behavior
+    // Add iframe attributes
     iframe.setAttribute('scrolling', 'no');
     iframe.setAttribute('frameborder', '0');
+    iframe.setAttribute('title', 'X-SME Booking Widget');
     
     // Clear container and add iframe
     container.innerHTML = '';
     container.appendChild(iframe);
     
-    // Apply CSS variables to container (matching Widget.tsx behavior)
-    container.style.setProperty('--primary-color', options.primaryColor);
+    // Apply CSS variables to container - matching BookingWidget styling
+    container.style.setProperty('--primary-color', options.accentColor);
     container.style.setProperty('--border-radius', `${options.borderRadius}px`);
     container.style.overflow = 'hidden';
     container.style.borderRadius = `${options.borderRadius}px`;
@@ -151,16 +243,13 @@
     // Setup message listener for iframe communication
     setupMessageListener(iframe, container, options);
     
-    // Setup booking completion callback
-    setupBookingCallback(iframe, options);
-    
-    // Handle iframe load for initial height adjustment
+    // Handle iframe load for initial setup
     iframe.onload = function() {
       // Send initial configuration to iframe
       setTimeout(() => {
         iframe.contentWindow.postMessage({
           type: 'PARENT_READY',
-          data: { options }
+          data: { options, businessId }
         }, '*');
       }, 100);
       
@@ -173,25 +262,7 @@
     };
 
     // Handle window resize for responsive iframe sizing
-    const handleResize = () => {
-      if (window.innerWidth >= 1024) {
-        iframe.style.minHeight = '520px';
-        if (parseInt(iframe.style.height) < 520) {
-          iframe.style.height = '580px';
-        }
-      } else if (window.innerWidth >= 768) {
-        iframe.style.minHeight = '480px';
-        if (parseInt(iframe.style.height) < 480) {
-          iframe.style.height = '520px';
-        }
-      } else {
-        iframe.style.minHeight = '400px';
-        if (parseInt(iframe.style.height) < 400) {
-          iframe.style.height = '480px';
-        }
-      }
-    };
-
+    const handleResize = () => applyResponsiveSizing(iframe);
     window.addEventListener('resize', handleResize);
     iframe._resizeCleanup = () => {
       window.removeEventListener('resize', handleResize);
@@ -217,12 +288,39 @@
   }
 
   /**
-   * Setup message listener for iframe communication
+   * Apply responsive sizing - matching BookingWidget responsive design
+   */
+  function applyResponsiveSizing(iframe) {
+    if (window.innerWidth >= 1024) {
+      iframe.style.minHeight = '520px';
+      if (parseInt(iframe.style.height) < 520) {
+        iframe.style.height = '580px';
+      }
+    } else if (window.innerWidth >= 768) {
+      iframe.style.minHeight = '480px';
+      if (parseInt(iframe.style.height) < 480) {
+        iframe.style.height = '520px';
+      }
+    } else {
+      iframe.style.minHeight = '400px';
+      if (parseInt(iframe.style.height) < 400) {
+        iframe.style.height = '480px';
+      }
+    }
+  }
+
+  /**
+   * Setup message listener for iframe communication - matching BookingWidget events
    */
   function setupMessageListener(iframe, container, options) {
     function handleMessage(event) {
       // Verify origin (allow both production and development)
-      const allowedOrigins = ['x-sme.ir', 'localhost:3000', '127.0.0.1:3000'];
+      const allowedOrigins = [
+      'x-sme.ir', 
+      'localhost:3000', 
+      '127.0.0.1:3000',
+      window.location.hostname
+    ];
       const isAllowedOrigin = allowedOrigins.some(origin => event.origin.includes(origin));
       if (!isAllowedOrigin) return;
 
@@ -232,11 +330,10 @@
         switch (type) {
           case 'RESIZE':
             if (data && data.height) {
-              // Desktop-responsive height calculation
+              // Desktop-responsive height calculation - matching BookingWidget layout
               let minHeight = 400;
               let padding = 20;
               
-              // Adjust minimums and padding for larger screens
               if (window.innerWidth >= 768) {
                 minHeight = 480;
                 padding = 30;
@@ -253,10 +350,10 @@
             break;
             
           case 'WIDGET_READY':
-            // Widget is ready, send acknowledgment if needed
+            // Widget is ready, send acknowledgment
             iframe.contentWindow.postMessage({
               type: 'PARENT_READY',
-              data: { options }
+              data: { options, businessId: options.businessId }
             }, '*');
             
             // Trigger widget ready events
@@ -267,75 +364,69 @@
             });
             break;
             
-          case 'BOOKING_COMPLETE':
-            handleBookingComplete(data);
+          // Booking flow events - matching BookingWidget triggerWidgetEvent calls
+          case 'BOOKING_STARTED':
+            handleBookingEvent('booking:started', data, options);
             break;
             
-          case 'BOOKING_STARTED':
-            triggerWidgetEvent('booking:started', data);
+          case 'BOOKING_COMPLETE':
+            handleBookingEvent('booking:complete', data, options);
             break;
             
           case 'BOOKING_CANCELLED':
-            triggerWidgetEvent('booking:cancelled', data);
+            handleBookingEvent('booking:cancelled', data, options);
             break;
             
-          case 'ERROR':
-            triggerWidgetEvent('error', data);
-            break;
-            
+          // Selection events - matching BookingWidget event triggers
           case 'SERVICE_SELECTED':
-            triggerWidgetEvent('service:selected', data);
+            handleSelectionEvent('service:selected', data, options);
+            break;
+            
+          case 'STAFF_SELECTED':
+            handleSelectionEvent('staff:selected', data, options);
             break;
             
           case 'DATE_SELECTED':
-            triggerWidgetEvent('date:selected', data);
+            handleSelectionEvent('date:selected', data, options);
             break;
             
           case 'TIME_SELECTED':
-            triggerWidgetEvent('time:selected', data);
+            handleSelectionEvent('time:selected', data, options);
             break;
             
+          // Widget lifecycle events
           case 'WIDGET_RESTART':
-            triggerWidgetEvent('widget:restart', data);
+            handleWidgetEvent('widget:restart', data, options);
+            break;
+            
+          case 'AVAILABILITY_REFRESHED':
+            handleWidgetEvent('availability:refreshed', data, options);
+            break;
+            
+          case 'REFRESH_COMPLETE':
+            handleRefreshComplete(data);
+            break;
+            
+          case 'ERROR':
+            handleErrorEvent(data, options);
+            break;
+            
+          case 'FORCE_REFRESH_DATA':
             // Force iframe to refresh its data
             iframe.contentWindow.postMessage({
               type: 'FORCE_REFRESH_DATA'
             }, '*');
             break;
             
-          case 'AVAILABILITY_REFRESHED':
-            triggerWidgetEvent('availability:refreshed', data);
-            break;
-            
-          case 'REFRESH_COMPLETE':
-            // Show success notification for refresh
-            showRefreshNotification(data.message || 'ساعات موجود بروزرسانی شد');
+          case 'UPDATE_CONFIG':
+            // Handle config updates from widget
+            handleConfigUpdate(data, container, iframe);
             break;
             
           case 'REDIRECT':
             if (data && data.url) {
               window.open(data.url, '_blank');
             }
-            break;
-
-          case 'UPDATE_CONFIG':
-            // Handle config updates from widget
-            if (data) {
-              // Update container styles with new config
-              if (data.primaryColor) {
-                container.style.setProperty('--primary-color', data.primaryColor);
-                iframe.style.setProperty('--primary-color', data.primaryColor);
-              }
-              if (data.borderRadius) {
-                container.style.setProperty('--border-radius', `${data.borderRadius}px`);
-                iframe.style.borderRadius = `${data.borderRadius}px`;
-              }
-            }
-            break;
-
-          case 'REFRESH':
-            // Refresh the iframe
-            iframe.src = iframe.src;
             break;
         }
       } catch (error) {
@@ -358,33 +449,129 @@
   }
 
   /**
-   * Setup booking completion callback
+   * Handle booking events - matching BookingWidget event structure
    */
-  function setupBookingCallback(iframe, options) {
-    // Custom callback if provided
-    if (window.xsmeOnBookingComplete && typeof window.xsmeOnBookingComplete === 'function') {
-      return;
-    }
+  function handleBookingEvent(eventType, data, options) {
+    // Trigger global event
+    triggerWidgetEvent(eventType, data);
     
-    // Default callback - show success message
-    window.xsmeOnBookingComplete = function(booking) {
-      // Create success notification
-      showSuccessNotification(booking);
-      
-      // Send analytics event if available
-      if (window.gtag) {
-        window.gtag('event', 'booking_complete', {
-          booking_id: booking.id,
-          business_id: booking.businessId,
-          service_name: booking.serviceName,
-          amount: booking.amount
-        });
-      }
+    // Call specific callback if provided
+    const callbackMappings = {
+      'booking:started': 'onBookingStarted',
+      'booking:complete': 'onBookingComplete',
+      'booking:cancelled': 'onBookingCancelled'
     };
+    
+    const callbackName = callbackMappings[eventType];
+    if (callbackName && options[callbackName] && typeof options[callbackName] === 'function') {
+      try {
+        options[callbackName](data);
+      } catch (error) {
+        console.error(`X-SME Widget: Error in ${callbackName} callback:`, error);
+      }
+    }
   }
 
   /**
-   * Trigger widget events
+   * Handle selection events - matching BookingWidget selection handlers
+   */
+  function handleSelectionEvent(eventType, data, options) {
+    // Trigger global event
+    triggerWidgetEvent(eventType, data);
+    
+    // Call specific callback if provided
+    const callbackMappings = {
+      'service:selected': 'onServiceSelected',
+      'staff:selected': 'onStaffSelected',
+      'date:selected': 'onDateSelected',
+      'time:selected': 'onTimeSelected'
+    };
+    
+    const callbackName = callbackMappings[eventType];
+    if (callbackName && options[callbackName] && typeof options[callbackName] === 'function') {
+      try {
+        options[callbackName](data);
+      } catch (error) {
+        console.error(`X-SME Widget: Error in ${callbackName} callback:`, error);
+      }
+    }
+  }
+
+  /**
+   * Handle widget lifecycle events
+   */
+  function handleWidgetEvent(eventType, data, options) {
+    // Trigger global event
+    triggerWidgetEvent(eventType, data);
+    
+    // Call specific callback if provided
+    const callbackMappings = {
+      'widget:restart': 'onWidgetRestart',
+      'availability:refreshed': 'onAvailabilityRefreshed'
+    };
+    
+    const callbackName = callbackMappings[eventType];
+    if (callbackName && options[callbackName] && typeof options[callbackName] === 'function') {
+      try {
+        options[callbackName](data);
+      } catch (error) {
+        console.error(`X-SME Widget: Error in ${callbackName} callback:`, error);
+      }
+    }
+  }
+
+  /**
+   * Handle refresh complete - matching BookingWidget refresh feedback
+   */
+  function handleRefreshComplete(data) {
+    // Show success notification for refresh
+    showRefreshNotification(data.message || 'ساعات موجود بروزرسانی شد');
+      
+    // Trigger event
+    triggerWidgetEvent('refresh:complete', data);
+  }
+
+  /**
+   * Handle error events - matching BookingWidget error handling
+   */
+  function handleErrorEvent(data, options) {
+    // Trigger global error event
+    triggerWidgetEvent('error', data);
+    
+    // Call error callback if provided
+    if (options.onError && typeof options.onError === 'function') {
+      try {
+        options.onError(data);
+      } catch (error) {
+        console.error('X-SME Widget: Error in onError callback:', error);
+      }
+    }
+  }
+
+  /**
+   * Handle config updates from widget
+   */
+  function handleConfigUpdate(data, container, iframe) {
+    if (data) {
+      // Update container styles with new config
+      if (data.accentColor || data.primaryColor) {
+        const color = data.accentColor || data.primaryColor;
+        container.style.setProperty('--primary-color', color);
+        iframe.style.setProperty('--primary-color', color);
+      }
+      if (data.secondaryColor) {
+        container.style.setProperty('--secondary-color', data.secondaryColor);
+        iframe.style.setProperty('--secondary-color', data.secondaryColor);
+      }
+      if (data.borderRadius) {
+        container.style.setProperty('--border-radius', `${data.borderRadius}px`);
+        iframe.style.borderRadius = `${data.borderRadius}px`;
+      }
+    }
+  }
+
+  /**
+   * Trigger widget events - matching BookingWidget event structure
    */
   function triggerWidgetEvent(eventType, data, containerId = null) {
     const eventName = `xsme:${eventType}`;
@@ -414,6 +601,7 @@
       'booking:started': 'xsmeOnBookingStarted', 
       'booking:cancelled': 'xsmeOnBookingCancelled',
       'service:selected': 'xsmeOnServiceSelected',
+      'staff:selected': 'xsmeOnStaffSelected',
       'date:selected': 'xsmeOnDateSelected',
       'time:selected': 'xsmeOnTimeSelected',
       'widget:restart': 'xsmeOnWidgetRestart',
@@ -435,34 +623,7 @@
   }
 
   /**
-   * Handle booking completion
-   */
-  function handleBookingComplete(booking) {
-    triggerWidgetEvent('booking:complete', booking);
-  }
-
-  /**
-   * Format date as YYYY-MM-DD in local timezone (avoids UTC conversion issues)
-   */
-  function formatLocalDateString(date) {
-    try {
-      if (!date || isNaN(date.getTime())) {
-        throw new Error("Invalid date provided");
-      }
-
-      const year = date.getFullYear();
-      const month = (date.getMonth() + 1).toString().padStart(2, "0");
-      const day = date.getDate().toString().padStart(2, "0");
-      
-      return `${year}-${month}-${day}`;
-    } catch (error) {
-      console.error("Error formatting local date string:", error);
-      return "";
-    }
-  }
-
-  /**
-   * Show success notification
+   * Show success notification - matching BookingWidget confirmation UI
    */
   function showSuccessNotification(booking) {
     // Create notification element
@@ -481,11 +642,13 @@
       direction: rtl;
       text-align: right;
       max-width: 300px;
+      animation: slideInRight 0.3s ease;
     `;
     
     notification.innerHTML = `
       <div style="font-weight: bold; margin-bottom: 4px;">✅ رزرو تایید شد</div>
       <div style="font-size: 14px; opacity: 0.9;">شماره رزرو: ${booking.id}</div>
+      ${booking.serviceName ? `<div style="font-size: 12px; opacity: 0.8;">سرویس: ${booking.serviceName}</div>` : ''}
     `;
     
     document.body.appendChild(notification);
@@ -493,20 +656,30 @@
     // Auto remove after 5 seconds
     setTimeout(() => {
       if (notification.parentNode) {
+        notification.style.animation = 'slideOutRight 0.3s ease';
+    setTimeout(() => {
+      if (notification.parentNode) {
         notification.parentNode.removeChild(notification);
+          }
+        }, 300);
       }
     }, 5000);
     
     // Click to close
     notification.addEventListener('click', () => {
       if (notification.parentNode) {
+        notification.style.animation = 'slideOutRight 0.3s ease';
+        setTimeout(() => {
+      if (notification.parentNode) {
         notification.parentNode.removeChild(notification);
+          }
+        }, 300);
       }
     });
   }
 
   /**
-   * Show refresh notification
+   * Show refresh notification - matching BookingWidget refresh feedback
    */
   function showRefreshNotification(message) {
     // Create notification element
@@ -575,7 +748,7 @@
   }
 
   /**
-   * Add required CSS for Persian support and widget styling
+   * Add required CSS for Persian support and widget styling - matching BookingWidget design
    */
   function addRequiredCSS() {
     if (document.getElementById('xsme-widget-css')) return;
@@ -592,13 +765,13 @@
         text-align: right;
       }
       
-      /* CSS Variables Support */
+      /* CSS Variables Support - matching BookingWidget styling */
       [id^="xsme-booking-widget"] {
         --primary-color: #3b82f6;
         --border-radius: 8px;
       }
       
-      /* Responsive design */
+      /* Responsive design - matching BookingWidget responsive layout */
       @media (min-width: 768px) {
         [id^="xsme-booking-widget"] iframe {
           min-height: 480px;
@@ -652,23 +825,44 @@
         }
       }
       
-      /* Widget container styling */
+      /* Widget container styling - matching BookingWidget container */
       [id^="xsme-booking-widget"] {
         display: block;
         overflow: hidden;
       }
       
-      /* Enhanced visual feedback support */
+      /* Enhanced visual feedback support - matching BookingWidget interactions */
       [id^="xsme-booking-widget"] iframe {
-        /* Ensure visual feedback elements like shadows and rings are visible */
         overflow: visible !important;
       }
       
       /* Prevent layout shifts from enhanced visual feedback */
       [id^="xsme-booking-widget"] {
-        /* Add extra margin for hover effects and rings */
         margin: 8px;
         padding: 4px;
+      }
+      
+      /* Animation keyframes for notifications */
+      @keyframes slideInRight {
+        from {
+          opacity: 0;
+          transform: translateX(100%);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+      
+      @keyframes slideOutRight {
+        from {
+          opacity: 1;
+          transform: translateX(0);
+        }
+        to {
+          opacity: 0;
+          transform: translateX(100%);
+        }
       }
     `;
     
@@ -676,7 +870,7 @@
   }
 
   /**
-   * Update widget configuration
+   * Update widget configuration - matching BookingWidget prop updates
    */
   function updateWidgetConfig(containerId, newConfig) {
     const container = document.getElementById(containerId);
@@ -693,7 +887,7 @@
   }
 
   /**
-   * Refresh widget
+   * Refresh widget - matching BookingWidget refresh functionality
    */
   function refreshWidget(containerId) {
     const container = document.getElementById(containerId);
@@ -704,7 +898,7 @@
     
     // Send refresh message to iframe
     iframe.contentWindow.postMessage({
-      type: 'REFRESH'
+      type: 'FORCE_REFRESH_DATA'
     }, '*');
   }
 
@@ -724,13 +918,18 @@
   // Auto-initialize
   init();
 
-  // Expose global API (matching Widget.tsx functionality)
+  // Expose global API - matching BookingWidget functionality
   window.XSME = {
     version: WIDGET_CONFIG.version,
     init: initXSMEWidget,
     config: WIDGET_CONFIG,
+    events: WIDGET_EVENTS,
     updateConfig: updateWidgetConfig,
-    refresh: refreshWidget
+    refresh: refreshWidget,
+    // Helper functions
+    showSuccessNotification,
+    showRefreshNotification,
+    triggerWidgetEvent
   };
 
   console.log(`🚀 X-SME Booking Widget v${WIDGET_CONFIG.version} loaded`);

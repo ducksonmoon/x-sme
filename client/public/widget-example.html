@@ -1,809 +1,430 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fa" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نمونه ویجت رزرو X-SME</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>X-SME Widget Examples - Custom Logo & Colors</title>
     <style>
-        body {
-            font-family: 'Vazirmatn', 'Tahoma', 'Arial', sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f8fafc;
-            direction: rtl;
-            text-align: right;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 2rem;
-            border-radius: 12px;
-            margin-bottom: 2rem;
-            text-align: center;
-        }
-        .demo-section {
-            background: white;
-            padding: 2rem;
-            border-radius: 12px;
-            margin-bottom: 2rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-        .code-block {
-            background: #1e1e1e;
-            color: #d4d4d4;
-            padding: 1.25rem;
-            border-radius: 12px;
-            font-family: 'Fira Code', 'Monaco', 'Consolas', 'Courier New', monospace;
-            font-size: 14px;
-            line-height: 1.6;
-            overflow-x: auto;
-            margin: 1rem 0;
-            border: 1px solid #333;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-            direction: ltr;
-            text-align: left;
-        }
-        
-        .code-block::-webkit-scrollbar {
-            height: 8px;
-        }
-        
-        .code-block::-webkit-scrollbar-track {
-            background: #2d2d2d;
-            border-radius: 4px;
-        }
-        
-        .code-block::-webkit-scrollbar-thumb {
-            background: #555;
-            border-radius: 4px;
-        }
-        
-        .code-block::-webkit-scrollbar-thumb:hover {
-            background: #777;
-        }
-        
-        .code-container {
-            position: relative;
-            margin: 1rem 0;
-        }
-        
-        .copy-button {
-            position: absolute;
-            top: 12px;
-            right: 12px;
-            background: #444;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 12px;
-            cursor: pointer;
-            opacity: 0.7;
-            transition: all 0.2s ease;
-            z-index: 10;
-        }
-        
-        .copy-button:hover {
-            opacity: 1;
-            background: #555;
-        }
-        
-        .copy-button.copied {
-            background: #10b981;
-            color: white;
-        }
-        
-        .widget-container {
-            background: white;
-            padding: 1rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        .features {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-        .feature-card {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-        .feature-card h3 {
-            color: #4f46e5;
-            margin-top: 0;
-        }
-        .business-types {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            margin: 1rem 0;
-        }
-        .business-tag {
-            background: #e0e7ff;
-            color: #4338ca;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.875rem;
-        }
-        .pricing {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            color: white;
-            padding: 2rem;
-            border-radius: 12px;
-            margin: 2rem 0;
-        }
-        .price-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.5rem 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        .price-item:last-child {
-            border-bottom: none;
-        }
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #10b981;
-            color: white;
-            padding: 1rem 1.5rem;
-            border-radius: 8px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-            z-index: 10000;
-            display: none;
-        }
-        .config-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 1rem 0;
-        }
-        .config-table th,
-        .config-table td {
-            padding: 0.75rem;
-            text-align: right;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        .config-table th {
-            background-color: #f9fafb;
-            font-weight: 600;
-        }
-        .config-table code {
-            background: #f3f4f6;
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            font-size: 0.875rem;
-        }
+      body {
+        font-family: "Vazirmatn", "Tahoma", sans-serif;
+        margin: 0;
+        padding: 20px;
+        background: #f8fafc;
+        direction: rtl;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 40px;
+      }
+
+      .header h1 {
+        color: #1e293b;
+        margin-bottom: 10px;
+      }
+
+      .header p {
+        color: #64748b;
+        font-size: 18px;
+      }
+
+      .examples-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 30px;
+        margin-bottom: 40px;
+      }
+
+      .example-card {
+        background: white;
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e2e8f0;
+      }
+
+      .example-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .example-description {
+        color: #64748b;
+        margin-bottom: 20px;
+        line-height: 1.6;
+      }
+
+      .code-block {
+        background: #f1f5f9;
+        border-radius: 8px;
+        padding: 16px;
+        font-family: "Monaco", "Menlo", monospace;
+        font-size: 14px;
+        color: #334155;
+        margin-bottom: 20px;
+        overflow-x: auto;
+      }
+
+      .widget-container {
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        overflow: hidden;
+        margin-top: 16px;
+      }
+
+      .color-palette {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+
+      .color-swatch {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        border: 2px solid white;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .feature-badge {
+        background: #3b82f6;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 500;
+      }
+
+      .new-feature {
+        background: #10b981;
+      }
+
+      .usage-section {
+        background: white;
+        border-radius: 16px;
+        padding: 32px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e2e8f0;
+        margin-bottom: 30px;
+      }
+
+      .usage-section h2 {
+        color: #1e293b;
+        margin-bottom: 20px;
+        font-size: 24px;
+      }
+
+      .parameter-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 16px;
+      }
+
+      .parameter-table th,
+      .parameter-table td {
+        padding: 12px;
+        text-align: right;
+        border-bottom: 1px solid #e2e8f0;
+      }
+
+      .parameter-table th {
+        background: #f8fafc;
+        font-weight: 600;
+        color: #374151;
+      }
+
+      .parameter-table td {
+        color: #6b7280;
+      }
+
+      .parameter-name {
+        font-family: "Monaco", "Menlo", monospace;
+        color: #059669;
+        font-weight: 500;
+      }
+
+      .parameter-type {
+        font-family: "Monaco", "Menlo", monospace;
+        color: #dc2626;
+        font-size: 12px;
+      }
     </style>
-    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-</head>
-<body>
+  </head>
+  <body>
     <div class="container">
-        <!-- Header -->
-        <div class="header">
-            <h1>🚀 ویجت رزرو و پرداخت X-SME</h1>
-            <p>راه‌حل رزرو آنلاین و پرداخت محلی برای کسب‌وکارهای کوچک ایرانی</p>
-            <div class="business-types">
-                <span class="business-tag">سالن‌های زیبایی</span>
-                <span class="business-tag">کلینیک‌ها</span>
-                <span class="business-tag">آموزشگاه‌های زبان</span>
-                <span class="business-tag">مراکز ماساژ و فیزیوتراپی</span>
-                <span class="business-tag">دندانپزشکی</span>
-                <span class="business-tag">مشاوره</span>
-            </div>
+      <div class="header">
+        <h1>🎨 X-SME Widget - Custom Logo & Colors</h1>
+        <p>نمونه‌های استفاده از قابلیت‌های جدید لوگو و رنگ سفارشی</p>
+      </div>
+
+      <div class="usage-section">
+        <h2>📋 پارامترهای جدید</h2>
+        <p>پارامترهای جدید برای شخصی‌سازی لوگو و رنگ‌ها:</p>
+
+        <table class="parameter-table">
+          <thead>
+            <tr>
+              <th>نام پارامتر</th>
+              <th>نوع</th>
+              <th>پیش‌فرض</th>
+              <th>توضیحات</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="parameter-name">customLogo</span></td>
+              <td><span class="parameter-type">string</span></td>
+              <td>null</td>
+              <td>URL لوگوی سفارشی (جایگزین لوگوی کسب‌وکار)</td>
+            </tr>
+            <tr>
+              <td><span class="parameter-name">primaryColor</span></td>
+              <td><span class="parameter-type">string</span></td>
+              <td>#3b82f6</td>
+              <td>رنگ اصلی برای دکمه‌ها و عناصر مهم</td>
+            </tr>
+            <tr>
+              <td><span class="parameter-name">secondaryColor</span></td>
+              <td><span class="parameter-type">string</span></td>
+              <td>null</td>
+              <td>رنگ ثانویه برای گرادیان‌ها و افکت‌ها</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="examples-grid">
+        <!-- Example 1: Basic Custom Colors -->
+        <div class="example-card">
+          <div class="example-title">
+            🎨 رنگ‌های سفارشی پایه
+            <span class="feature-badge new-feature">جدید</span>
+          </div>
+          <div class="example-description">
+            استفاده از رنگ‌های سفارشی برای شخصی‌سازی ظاهر ویجت
+          </div>
+          <div class="color-palette">
+            <div class="color-swatch" style="background: #8b5cf6"></div>
+            <div class="color-swatch" style="background: #a855f7"></div>
+          </div>
+          <div class="code-block">
+            &lt;div id="xsme-booking-widget" data-business-id="your-business-id"
+            data-primary-color="#8b5cf6" data-secondary-color="#a855f7"&gt;
+            &lt;/div&gt;
+          </div>
+          <div class="widget-container">
+            <div
+              id="xsme-booking-widget-1"
+              data-business-id="demo-business"
+              data-primary-color="#8b5cf6"
+              data-secondary-color="#a855f7"
+            ></div>
+          </div>
         </div>
 
-        <!-- Features -->
-        <div class="features">
-            <div class="feature-card">
-                <h3>💳 پرداخت محلی</h3>
-                <p>پشتیبانی از درگاه‌های پرداخت ایرانی: زرین‌پال، پاسارگاد، و سامان</p>
-            </div>
-            <div class="feature-card">
-                <h3>📱 یادآوری هوشمند</h3>
-                <p>ارسال پیامک و تلگرام یادآوری برای مشتریان</p>
-            </div>
-            <div class="feature-card">
-                <h3>⏰ موجودی زنده</h3>
-                <p>نمایش ساعات موجود به‌روزرسانی شده و مدیریت ساعات شلوغ</p>
-            </div>
-            <div class="feature-card">
-                <h3>💰 پیش‌پرداخت انعطاف‌پذیر</h3>
-                <p>امکان دریافت پیش‌پرداخت یا پرداخت کامل</p>
-            </div>
+        <!-- Example 2: Custom Logo -->
+        <div class="example-card">
+          <div class="example-title">
+            🖼️ لوگوی سفارشی
+            <span class="feature-badge new-feature">جدید</span>
+          </div>
+          <div class="example-description">
+            استفاده از لوگوی سفارشی به جای لوگوی پیش‌فرض کسب‌وکار
+          </div>
+          <div class="code-block">
+            &lt;div id="xsme-booking-widget" data-business-id="your-business-id"
+            data-custom-logo="https://example.com/logo.png"&gt; &lt;/div&gt;
+          </div>
+          <div class="widget-container">
+            <div
+              id="xsme-booking-widget-2"
+              data-business-id="demo-business"
+              data-custom-logo="https://via.placeholder.com/100x100/10b981/ffffff?text=LOGO"
+            ></div>
+          </div>
         </div>
 
-        <!-- Pricing -->
-        <div class="pricing">
-            <h2>💎 قیمت‌گذاری شفاف</h2>
-            <div class="price-item">
-                <span>نصب و راه‌اندازی یکبار</span>
-                <strong>۱۵ میلیون تومان</strong>
-            </div>
-            <div class="price-item">
-                <span>کارمزد تراکنش (اختیاری)</span>
-                <strong>۱۰٪ از هر رزرو</strong>
-            </div>
-            <div class="price-item">
-                <span>هاست و سرور</span>
-                <strong>رایگان سال اول</strong>
-            </div>
+        <!-- Example 3: Brand Colors -->
+        <div class="example-card">
+          <div class="example-title">
+            🏢 رنگ‌های برند
+            <span class="feature-badge new-feature">جدید</span>
+          </div>
+          <div class="example-description">
+            استفاده از رنگ‌های برند برای هماهنگی با هویت بصری
+          </div>
+          <div class="color-palette">
+            <div class="color-swatch" style="background: #dc2626"></div>
+            <div class="color-swatch" style="background: #ef4444"></div>
+          </div>
+          <div class="code-block">
+            &lt;div id="xsme-booking-widget" data-business-id="your-business-id"
+            data-primary-color="#dc2626" data-secondary-color="#ef4444"
+            data-custom-logo="https://example.com/brand-logo.png"&gt;
+            &lt;/div&gt;
+          </div>
+          <div class="widget-container">
+            <div
+              id="xsme-booking-widget-3"
+              data-business-id="demo-business"
+              data-primary-color="#dc2626"
+              data-secondary-color="#ef4444"
+              data-custom-logo="https://via.placeholder.com/100x100/dc2626/ffffff?text=BRAND"
+            ></div>
+          </div>
         </div>
 
-        <!-- Integration Guide -->
-        <div class="demo-section">
-            <h2>🔧 نحوه استفاده (فقط ۲ خط کد!)</h2>
-            <p>برای اضافه کردن ویجت رزرو به سایت خود، فقط کافی است این کدها را کپی کنید:</p>
-            
-            <h3>مرحله ۱: اضافه کردن اسکریپت</h3>
-            <div class="code-container">
-                <button class="copy-button" onclick="copyCode(this, 'script')">📋 کپی</button>
-                <div class="code-block" id="script">
-<span style="color: #e06c75;">&lt;script</span> <span style="color: #d19a66;">src</span>=<span style="color: #98c379;">"https://widget.x-sme.ir/widget.js"</span><span style="color: #e06c75;">&gt;&lt;/script&gt;</span>
-                </div>
-            </div>
-
-            <h3>مرحله ۲: اضافه کردن ویجت (حداقل)</h3>
-            <div class="code-container">
-                <button class="copy-button" onclick="copyCode(this, 'basic-widget')">📋 کپی</button>
-                <div class="code-block" id="basic-widget">
-<span style="color: #e06c75;">&lt;div</span> <span style="color: #d19a66;">id</span>=<span style="color: #98c379;">"xsme-booking-widget"</span> 
-     <span style="color: #d19a66;">data-business-id</span>=<span style="color: #98c379;">"YOUR_BUSINESS_ID"</span><span style="color: #e06c75;">&gt;</span>
-<span style="color: #e06c75;">&lt;/div&gt;</span>
-                </div>
-            </div>
-
-            <h3>تنظیمات کامل (اختیاری)</h3>
-            <div class="code-container">
-                <button class="copy-button" onclick="copyCode(this, 'full-config')">📋 کپی</button>
-                <div class="code-block" id="full-config">
-<span style="color: #e06c75;">&lt;div</span> <span style="color: #d19a66;">id</span>=<span style="color: #98c379;">"xsme-booking-widget"</span> 
-     <span style="color: #d19a66;">data-business-id</span>=<span style="color: #98c379;">"demo-business-123"</span>
-     <span style="color: #d19a66;">data-theme</span>=<span style="color: #98c379;">"light"</span>                        <span style="color: #5c6370;">/* light, dark */</span>
-     <span style="color: #d19a66;">data-language</span>=<span style="color: #98c379;">"fa"</span>                        <span style="color: #5c6370;">/* fa, en */</span>
-     <span style="color: #d19a66;">data-primary-color</span>=<span style="color: #98c379;">"#ec4899"</span>              <span style="color: #5c6370;">/* رنگ اصلی */</span>
-     <span style="color: #d19a66;">data-border-radius</span>=<span style="color: #98c379;">"12"</span>                   <span style="color: #5c6370;">/* گردی گوشه‌ها */</span>
-     <span style="color: #d19a66;">data-show-logo</span>=<span style="color: #98c379;">"true"</span>                     <span style="color: #5c6370;">/* نمایش لوگو */</span>
-     <span style="color: #d19a66;">data-show-business-info</span>=<span style="color: #98c379;">"true"</span>            <span style="color: #5c6370;">/* نمایش اطلاعات کسب‌وکار */</span>
-     <span style="color: #d19a66;">data-allow-notes</span>=<span style="color: #98c379;">"true"</span>                   <span style="color: #5c6370;">/* امکان افزودن یادداشت */</span>
-     <span style="color: #d19a66;">data-require-email</span>=<span style="color: #98c379;">"false"</span>                <span style="color: #5c6370;">/* الزامی بودن ایمیل */</span>
-     <span style="color: #d19a66;">data-max-advance-booking</span>=<span style="color: #98c379;">"30"</span>             <span style="color: #5c6370;">/* حداکثر روز رزرو از قبل */</span>
-     <span style="color: #d19a66;">data-min-advance-booking</span>=<span style="color: #98c379;">"2"</span><span style="color: #e06c75;">&gt;</span>             <span style="color: #5c6370;">/* حداقل ساعت رزرو از قبل */</span>
-<span style="color: #e06c75;">&lt;/div&gt;</span>
-                </div>
-            </div>
-
-            <h3>جدول تنظیمات کامل</h3>
-            <table class="config-table">
-                <thead>
-                    <tr>
-                        <th>پارامتر</th>
-                        <th>نوع</th>
-                        <th>مقدار پیش‌فرض</th>
-                        <th>توضیحات</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><code>data-business-id</code></td>
-                        <td>متن</td>
-                        <td>-</td>
-                        <td><strong>الزامی:</strong> شناسه کسب‌وکار</td>
-                    </tr>
-                    <tr>
-                        <td><code>data-theme</code></td>
-                        <td>متن</td>
-                        <td>light</td>
-                        <td>تم رنگی: light، dark</td>
-                    </tr>
-                    <tr>
-                        <td><code>data-language</code></td>
-                        <td>متن</td>
-                        <td>fa</td>
-                        <td>زبان: fa (فارسی)، en (انگلیسی)</td>
-                    </tr>
-                    <tr>
-                        <td><code>data-primary-color</code></td>
-                        <td>رنگ</td>
-                        <td>#3b82f6</td>
-                        <td>رنگ اصلی ویجت (HEX)</td>
-                    </tr>
-                    <tr>
-                        <td><code>data-border-radius</code></td>
-                        <td>عدد</td>
-                        <td>8</td>
-                        <td>گردی گوشه‌ها (پیکسل)</td>
-                    </tr>
-                    <tr>
-                        <td><code>data-show-logo</code></td>
-                        <td>منطقی</td>
-                        <td>true</td>
-                        <td>نمایش لوگو کسب‌وکار</td>
-                    </tr>
-                    <tr>
-                        <td><code>data-show-business-info</code></td>
-                        <td>منطقی</td>
-                        <td>true</td>
-                        <td>نمایش اطلاعات کسب‌وکار</td>
-                    </tr>
-                    <tr>
-                        <td><code>data-allow-notes</code></td>
-                        <td>منطقی</td>
-                        <td>true</td>
-                        <td>امکان افزودن یادداشت توسط مشتری</td>
-                    </tr>
-                    <tr>
-                        <td><code>data-require-email</code></td>
-                        <td>منطقی</td>
-                        <td>false</td>
-                        <td>الزامی بودن ایمیل</td>
-                    </tr>
-                    <tr>
-                        <td><code>data-max-advance-booking</code></td>
-                        <td>عدد</td>
-                        <td>30</td>
-                        <td>حداکثر تعداد روز رزرو از قبل</td>
-                    </tr>
-                    <tr>
-                        <td><code>data-min-advance-booking</code></td>
-                        <td>عدد</td>
-                        <td>2</td>
-                        <td>حداقل تعداد ساعت رزرو از قبل</td>
-                    </tr>
-                </tbody>
-            </table>
-
-            <h3>جدول رویدادهای کامل</h3>
-            <table class="config-table">
-                <thead>
-                    <tr>
-                        <th>رویداد</th>
-                        <th>تابع Callback</th>
-                        <th>Event Listener</th>
-                        <th>دیتای ارسالی</th>
-                        <th>توضیحات</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>ایجاد ویجت</td>
-                        <td><code>xsmeOnCreated</code></td>
-                        <td><code>xsme:created</code></td>
-                        <td>containerId, businessId, config</td>
-                        <td>هنگام ایجاد ویجت</td>
-                    </tr>
-                    <tr>
-                        <td>بارگذاری ویجت</td>
-                        <td><code>xsmeOnLoaded</code></td>
-                        <td><code>xsme:loaded</code></td>
-                        <td>containerId, businessId, config</td>
-                        <td>هنگام بارگذاری کامل ویجت</td>
-                    </tr>
-                    <tr>
-                        <td>آماده شدن ویجت</td>
-                        <td><code>xsmeOnReady</code></td>
-                        <td><code>xsme:ready</code></td>
-                        <td>containerId, businessId, config</td>
-                        <td>هنگام آماده شدن ویجت برای استفاده</td>
-                    </tr>
-                    <tr>
-                        <td>شروع رزرو</td>
-                        <td><code>xsmeOnBookingStarted</code></td>
-                        <td><code>xsme:booking:started</code></td>
-                        <td>businessId, timestamp</td>
-                        <td>هنگام شروع فرآیند رزرو</td>
-                    </tr>
-                    <tr>
-                        <td>انتخاب سرویس</td>
-                        <td><code>xsmeOnServiceSelected</code></td>
-                        <td><code>xsme:service:selected</code></td>
-                        <td>serviceId, serviceName, price</td>
-                        <td>هنگام انتخاب سرویس توسط مشتری</td>
-                    </tr>
-                    <tr>
-                        <td>انتخاب تاریخ</td>
-                        <td><code>xsmeOnDateSelected</code></td>
-                        <td><code>xsme:date:selected</code></td>
-                        <td>date, dayOfWeek</td>
-                        <td>هنگام انتخاب تاریخ رزرو</td>
-                    </tr>
-                    <tr>
-                        <td>انتخاب زمان</td>
-                        <td><code>xsmeOnTimeSelected</code></td>
-                        <td><code>xsme:time:selected</code></td>
-                        <td>time, slot</td>
-                        <td>هنگام انتخاب زمان رزرو</td>
-                    </tr>
-                    <tr>
-                        <td>تکمیل رزرو</td>
-                        <td><code>xsmeOnBookingComplete</code></td>
-                        <td><code>xsme:booking:complete</code></td>
-                        <td>id, businessId, serviceName, amount, date, time</td>
-                        <td>هنگام تکمیل موفق رزرو</td>
-                    </tr>
-                    <tr>
-                        <td>لغو رزرو</td>
-                        <td><code>xsmeOnBookingCancelled</code></td>
-                        <td><code>xsme:booking:cancelled</code></td>
-                        <td>reason, step</td>
-                        <td>هنگام لغو رزرو توسط مشتری</td>
-                    </tr>
-                    <tr>
-                        <td>خطا</td>
-                        <td><code>xsmeOnError</code></td>
-                        <td><code>xsme:error</code></td>
-                        <td>type, error, containerId</td>
-                        <td>هنگام بروز خطا در ویجت</td>
-                    </tr>
-                </tbody>
-            </table>
-
-            <h3>رویدادهای JavaScript (اختیاری)</h3>
-            
-            <h4>روش ۱: Callback Functions (ساده)</h4>
-            <div class="code-container">
-                <button class="copy-button" onclick="copyCode(this, 'callback-functions')">📋 کپی</button>
-                <div class="code-block" id="callback-functions">
-<span style="color: #e06c75;">&lt;script&gt;</span>
-<span style="color: #5c6370;">// رویداد تکمیل رزرو</span>
-<span style="color: #61afef;">window</span>.<span style="color: #e06c75;">xsmeOnBookingComplete</span> = <span style="color: #c678dd;">function</span>(<span style="color: #e06c75;">booking</span>) {
-    <span style="color: #61afef;">console</span>.<span style="color: #56b6c2;">log</span>(<span style="color: #98c379;">'✅ رزرو تکمیل شد:'</span>, <span style="color: #e06c75;">booking</span>);
-    <span style="color: #56b6c2;">alert</span>(<span style="color: #98c379;">`رزرو شما با شماره ${<span style="color: #e06c75;">booking</span>.<span style="color: #e06c75;">id</span>} ثبت شد!`</span>);
-};
-
-<span style="color: #5c6370;">// رویداد شروع رزرو</span>
-<span style="color: #61afef;">window</span>.<span style="color: #e06c75;">xsmeOnBookingStarted</span> = <span style="color: #c678dd;">function</span>(<span style="color: #e06c75;">data</span>) {
-    <span style="color: #61afef;">console</span>.<span style="color: #56b6c2;">log</span>(<span style="color: #98c379;">'🎬 شروع فرآیند رزرو:'</span>, <span style="color: #e06c75;">data</span>);
-    <span style="color: #5c6370;">// کد دلخواه شما</span>
-};
-
-<span style="color: #5c6370;">// رویداد انتخاب سرویس</span>
-<span style="color: #61afef;">window</span>.<span style="color: #e06c75;">xsmeOnServiceSelected</span> = <span style="color: #c678dd;">function</span>(<span style="color: #e06c75;">service</span>) {
-    <span style="color: #61afef;">console</span>.<span style="color: #56b6c2;">log</span>(<span style="color: #98c379;">'🔧 سرویس انتخاب شد:'</span>, <span style="color: #e06c75;">service</span>);
-    <span style="color: #5c6370;">// به‌روزرسانی UI یا ارسال آمار</span>
-};
-
-<span style="color: #5c6370;">// رویداد انتخاب تاریخ</span>
-<span style="color: #61afef;">window</span>.<span style="color: #e06c75;">xsmeOnDateSelected</span> = <span style="color: #c678dd;">function</span>(<span style="color: #e06c75;">date</span>) {
-    <span style="color: #61afef;">console</span>.<span style="color: #56b6c2;">log</span>(<span style="color: #98c379;">'📅 تاریخ انتخاب شد:'</span>, <span style="color: #e06c75;">date</span>);
-};
-
-<span style="color: #5c6370;">// رویداد انتخاب زمان</span>
-<span style="color: #61afef;">window</span>.<span style="color: #e06c75;">xsmeOnTimeSelected</span> = <span style="color: #c678dd;">function</span>(<span style="color: #e06c75;">time</span>) {
-    <span style="color: #61afef;">console</span>.<span style="color: #56b6c2;">log</span>(<span style="color: #98c379;">'⏰ زمان انتخاب شد:'</span>, <span style="color: #e06c75;">time</span>);
-};
-
-<span style="color: #5c6370;">// رویداد خطا</span>
-<span style="color: #61afef;">window</span>.<span style="color: #e06c75;">xsmeOnError</span> = <span style="color: #c678dd;">function</span>(<span style="color: #e06c75;">error</span>) {
-    <span style="color: #61afef;">console</span>.<span style="color: #e06c75;">error</span>(<span style="color: #98c379;">'❌ خطا در ویجت:'</span>, <span style="color: #e06c75;">error</span>);
-    <span style="color: #5c6370;">// نمایش پیام خطای سفارشی</span>
-};
-
-<span style="color: #5c6370;">// رویداد آماده شدن ویجت</span>
-<span style="color: #61afef;">window</span>.<span style="color: #e06c75;">xsmeOnReady</span> = <span style="color: #c678dd;">function</span>(<span style="color: #e06c75;">data</span>) {
-    <span style="color: #61afef;">console</span>.<span style="color: #56b6c2;">log</span>(<span style="color: #98c379;">'🚀 ویجت آماده است:'</span>, <span style="color: #e06c75;">data</span>);
-};
-<span style="color: #e06c75;">&lt;/script&gt;</span>
-                </div>
-            </div>
-
-            <h4>روش ۲: Event Listeners (پیشرفته)</h4>
-            <div class="code-container">
-                <button class="copy-button" onclick="copyCode(this, 'event-listeners')">📋 کپی</button>
-                <div class="code-block" id="event-listeners">
-<span style="color: #e06c75;">&lt;script&gt;</span>
-<span style="color: #5c6370;">// استفاده از Event Listeners برای کنترل بهتر</span>
-<span style="color: #61afef;">document</span>.<span style="color: #56b6c2;">addEventListener</span>(<span style="color: #98c379;">'xsme:booking:complete'</span>, <span style="color: #c678dd;">function</span>(<span style="color: #e06c75;">event</span>) {
-    <span style="color: #c678dd;">const</span> <span style="color: #e06c75;">booking</span> = <span style="color: #e06c75;">event</span>.<span style="color: #e06c75;">detail</span>;
-    <span style="color: #61afef;">console</span>.<span style="color: #56b6c2;">log</span>(<span style="color: #98c379;">'رزرو تکمیل شد:'</span>, <span style="color: #e06c75;">booking</span>);
-    
-    <span style="color: #5c6370;">// ارسال به گوگل آنالیتیکس</span>
-    <span style="color: #c678dd;">if</span> (<span style="color: #61afef;">window</span>.<span style="color: #e06c75;">gtag</span>) {
-        <span style="color: #56b6c2;">gtag</span>(<span style="color: #98c379;">'event'</span>, <span style="color: #98c379;">'booking_complete'</span>, {
-            <span style="color: #e06c75;">booking_id</span>: <span style="color: #e06c75;">booking</span>.<span style="color: #e06c75;">id</span>,
-            <span style="color: #e06c75;">business_id</span>: <span style="color: #e06c75;">booking</span>.<span style="color: #e06c75;">businessId</span>,
-            <span style="color: #e06c75;">service_name</span>: <span style="color: #e06c75;">booking</span>.<span style="color: #e06c75;">serviceName</span>,
-            <span style="color: #e06c75;">amount</span>: <span style="color: #e06c75;">booking</span>.<span style="color: #e06c75;">amount</span>
-        });
-    }
-    
-    <span style="color: #5c6370;">// ارسال به فیسبوک پیکسل</span>
-    <span style="color: #c678dd;">if</span> (<span style="color: #61afef;">window</span>.<span style="color: #e06c75;">fbq</span>) {
-        <span style="color: #56b6c2;">fbq</span>(<span style="color: #98c379;">'track'</span>, <span style="color: #98c379;">'Purchase'</span>, {
-            <span style="color: #e06c75;">value</span>: <span style="color: #e06c75;">booking</span>.<span style="color: #e06c75;">amount</span>,
-            <span style="color: #e06c75;">currency</span>: <span style="color: #98c379;">'IRR'</span>
-        });
-    }
-    
-    <span style="color: #5c6370;">// نمایش modal تأیید سفارشی</span>
-    <span style="color: #56b6c2;">showCustomSuccessModal</span>(<span style="color: #e06c75;">booking</span>);
-});
-
-<span style="color: #5c6370;">// گوش دادن به رویدادهای مختلف</span>
-<span style="color: #c678dd;">const</span> <span style="color: #e06c75;">events</span> = [
-    <span style="color: #98c379;">'xsme:booking:started'</span>,
-    <span style="color: #98c379;">'xsme:booking:cancelled'</span>, 
-    <span style="color: #98c379;">'xsme:service:selected'</span>,
-    <span style="color: #98c379;">'xsme:date:selected'</span>,
-    <span style="color: #98c379;">'xsme:time:selected'</span>,
-    <span style="color: #98c379;">'xsme:error'</span>,
-    <span style="color: #98c379;">'xsme:ready'</span>
-];
-
-<span style="color: #e06c75;">events</span>.<span style="color: #56b6c2;">forEach</span>(<span style="color: #e06c75;">eventName</span> <span style="color: #c678dd;">=&gt;</span> {
-    <span style="color: #61afef;">document</span>.<span style="color: #56b6c2;">addEventListener</span>(<span style="color: #e06c75;">eventName</span>, <span style="color: #c678dd;">function</span>(<span style="color: #e06c75;">event</span>) {
-        <span style="color: #61afef;">console</span>.<span style="color: #56b6c2;">log</span>(<span style="color: #98c379;">`رویداد ${<span style="color: #e06c75;">eventName</span>}:`</span>, <span style="color: #e06c75;">event</span>.<span style="color: #e06c75;">detail</span>);
-        
-        <span style="color: #5c6370;">// آمارگیری</span>
-        <span style="color: #c678dd;">if</span> (<span style="color: #61afef;">window</span>.<span style="color: #e06c75;">dataLayer</span>) {
-            <span style="color: #e06c75;">dataLayer</span>.<span style="color: #56b6c2;">push</span>({
-                <span style="color: #e06c75;">event</span>: <span style="color: #e06c75;">eventName</span>.<span style="color: #56b6c2;">replace</span>(<span style="color: #98c379;">':'</span>, <span style="color: #98c379;">'_'</span>),
-                <span style="color: #e06c75;">widget_data</span>: <span style="color: #e06c75;">event</span>.<span style="color: #e06c75;">detail</span>
-            });
-        }
-    });
-});
-
-<span style="color: #5c6370;">// گوش دادن به رویدادهای یک ویجت خاص</span>
-<span style="color: #c678dd;">const</span> <span style="color: #e06c75;">widget</span> = <span style="color: #61afef;">document</span>.<span style="color: #56b6c2;">getElementById</span>(<span style="color: #98c379;">'xsme-booking-widget'</span>);
-<span style="color: #e06c75;">widget</span>.<span style="color: #56b6c2;">addEventListener</span>(<span style="color: #98c379;">'xsme:booking:complete'</span>, <span style="color: #c678dd;">function</span>(<span style="color: #e06c75;">event</span>) {
-    <span style="color: #61afef;">console</span>.<span style="color: #56b6c2;">log</span>(<span style="color: #98c379;">'رزرو در این ویجت تکمیل شد:'</span>, <span style="color: #e06c75;">event</span>.<span style="color: #e06c75;">detail</span>);
-});
-<span style="color: #e06c75;">&lt;/script&gt;</span>
-                </div>
-            </div>
-
-            <h4>تنظیمات دینامیک ویجت</h4>
-            <div class="code-container">
-                <button class="copy-button" onclick="copyCode(this, 'dynamic-config')">📋 کپی</button>
-                <div class="code-block" id="dynamic-config">
-<span style="color: #e06c75;">&lt;script&gt;</span>
-<span style="color: #5c6370;">// تنظیم مجدد ویجت</span>
-<span style="color: #61afef;">XSME</span>.<span style="color: #56b6c2;">updateConfig</span>(<span style="color: #98c379;">'xsme-booking-widget'</span>, {
-    <span style="color: #e06c75;">primaryColor</span>: <span style="color: #98c379;">'#ff6b6b'</span>,
-    <span style="color: #e06c75;">theme</span>: <span style="color: #98c379;">'dark'</span>,
-    <span style="color: #e06c75;">borderRadius</span>: <span style="color: #d19a66;">16</span>
-});
-
-<span style="color: #5c6370;">// رفرش ویجت</span>
-<span style="color: #61afef;">XSME</span>.<span style="color: #56b6c2;">refresh</span>(<span style="color: #98c379;">'xsme-booking-widget'</span>);
-
-<span style="color: #5c6370;">// بررسی وضعیت ویجت</span>
-<span style="color: #61afef;">console</span>.<span style="color: #56b6c2;">log</span>(<span style="color: #98c379;">'نسخه ویجت:'</span>, <span style="color: #61afef;">XSME</span>.<span style="color: #e06c75;">version</span>);
-<span style="color: #61afef;">console</span>.<span style="color: #56b6c2;">log</span>(<span style="color: #98c379;">'تنظیمات ویجت:'</span>, <span style="color: #61afef;">XSME</span>.<span style="color: #e06c75;">config</span>);
-<span style="color: #e06c75;">&lt;/script&gt;</span>
-                </div>
-            </div>
+        <!-- Example 4: Green Theme -->
+        <div class="example-card">
+          <div class="example-title">
+            🌿 تم سبز
+            <span class="feature-badge new-feature">جدید</span>
+          </div>
+          <div class="example-description">
+            استفاده از رنگ‌های سبز برای حس آرامش و طبیعت
+          </div>
+          <div class="color-palette">
+            <div class="color-swatch" style="background: #059669"></div>
+            <div class="color-swatch" style="background: #10b981"></div>
+          </div>
+          <div class="code-block">
+            &lt;div id="xsme-booking-widget" data-business-id="your-business-id"
+            data-primary-color="#059669" data-secondary-color="#10b981"&gt;
+            &lt;/div&gt;
+          </div>
+          <div class="widget-container">
+            <div
+              id="xsme-booking-widget-4"
+              data-business-id="demo-business"
+              data-primary-color="#059669"
+              data-secondary-color="#10b981"
+            ></div>
+          </div>
         </div>
 
-        <!-- Live Demo -->
-        <div class="demo-section">
-            <h2>🎯 نمونه زنده</h2>
-            <p>این یک نمونه زنده از ویجت رزرو برای یک سالن زیبایی است:</p>
-            
-            <div class="widget-container">
-                <!-- Widget will be loaded here -->
-                <div id="xsme-booking-widget" 
-                     data-business-id="demo-business-123"
-                     data-theme="light"
-                     data-primary-color="#ec4899"
-                     data-border-radius="12"
-                     data-show-business-info="true"
-                     data-allow-notes="true"
-                     data-require-email="false"
-                     data-max-advance-booking="60"
-                     data-min-advance-booking="1">
-                    <div style="text-align: center; padding: 2rem; color: #6b7280;">
-                        <div style="font-size: 2rem; margin-bottom: 1rem;">⏳</div>
-                        <p>در حال بارگذاری ویجت رزرو...</p>
-                        <small>اگر ویجت بارگذاری نشد، لطفاً صفحه را رفرش کنید</small>
-                    </div>
-                </div>
-            </div>
+        <!-- Example 5: Orange Theme -->
+        <div class="example-card">
+          <div class="example-title">
+            🧡 تم نارنجی
+            <span class="feature-badge new-feature">جدید</span>
+          </div>
+          <div class="example-description">
+            استفاده از رنگ‌های نارنجی برای انرژی و خلاقیت
+          </div>
+          <div class="color-palette">
+            <div class="color-swatch" style="background: #ea580c"></div>
+            <div class="color-swatch" style="background: #f97316"></div>
+          </div>
+          <div class="code-block">
+            &lt;div id="xsme-booking-widget" data-business-id="your-business-id"
+            data-primary-color="#ea580c" data-secondary-color="#f97316"&gt;
+            &lt;/div&gt;
+          </div>
+          <div class="widget-container">
+            <div
+              id="xsme-booking-widget-5"
+              data-business-id="demo-business"
+              data-primary-color="#ea580c"
+              data-secondary-color="#f97316"
+            ></div>
+          </div>
         </div>
 
-        <!-- Benefits for SMEs -->
-        <div class="demo-section">
-            <h2>✨ مزایای ویژه برای کسب‌وکارهای کوچک</h2>
-            <ul style="line-height: 2;">
-                <li><strong>بدون نیاز به برنامه‌نویس:</strong> فقط کپی و پیست کنید</li>
-                <li><strong>سازگار با موبایل:</strong> روی تمام دستگاه‌ها کار می‌کند</li>
-                <li><strong>پشتیبانی فارسی کامل:</strong> راست‌چین و با فونت زیبا</li>
-                <li><strong>پرداخت محلی:</strong> درگاه‌های معتبر ایرانی</li>
-                <li><strong>مدیریت ساعت شلوغ:</strong> بهینه‌سازی هوشمند برای ساعات پرترافیک</li>
-                <li><strong>یادآوری خودکار:</strong> کاهش no-show تا ۸۰٪</li>
-                <li><strong>گزارش‌گیری:</strong> آمار کامل رزروها و درآمد</li>
-                <li><strong>پیش‌پرداخت:</strong> تضمین درآمد با دریافت علی‌الحساب</li>
-                <li><strong>تنظیمات انعطاف‌پذیر:</strong> شخصی‌سازی کامل ظاهر و عملکرد</li>
-                <li><strong>API قدرتمند:</strong> ادغام با سیستم‌های موجود</li>
-            </ul>
+        <!-- Example 6: Pink Theme -->
+        <div class="example-card">
+          <div class="example-title">
+            💖 تم صورتی
+            <span class="feature-badge new-feature">جدید</span>
+          </div>
+          <div class="example-description">
+            استفاده از رنگ‌های صورتی برای زیبایی و لطافت
+          </div>
+          <div class="color-palette">
+            <div class="color-swatch" style="background: #be185d"></div>
+            <div class="color-swatch" style="background: #ec4899"></div>
+          </div>
+          <div class="code-block">
+            &lt;div id="xsme-booking-widget" data-business-id="your-business-id"
+            data-primary-color="#be185d" data-secondary-color="#ec4899"&gt;
+            &lt;/div&gt;
+          </div>
+          <div class="widget-container">
+            <div
+              id="xsme-booking-widget-6"
+              data-business-id="demo-business"
+              data-primary-color="#be185d"
+              data-secondary-color="#ec4899"
+            ></div>
+          </div>
         </div>
+      </div>
 
-        <!-- Contact -->
-        <div class="demo-section" style="text-align: center;">
-            <h2>📞 آماده شروع هستید؟</h2>
-            <p>برای راه‌اندازی ویجت رزرو برای کسب‌وکار خود تماس بگیرید</p>
-            <div style="margin: 2rem 0;">
-                <a href="tel:+989123456789" style="display: inline-block; background: #4f46e5; color: white; padding: 1rem 2rem; text-decoration: none; border-radius: 8px; margin: 0.5rem;">
-                    📱 ۰۹۱۲-۳۴۵-۶۷۸۹
-                </a>
-                <a href="mailto:info@x-sme.ir" style="display: inline-block; background: #059669; color: white; padding: 1rem 2rem; text-decoration: none; border-radius: 8px; margin: 0.5rem;">
-                    ✉️ info@x-sme.ir
-                </a>
-            </div>
+      <div class="usage-section">
+        <h2>🔧 نحوه استفاده</h2>
+        <p>
+          برای استفاده از قابلیت‌های جدید، کافی است پارامترهای زیر را به تگ HTML
+          اضافه کنید:
+        </p>
+
+        <div class="code-block">
+          &lt;!-- مثال کامل با تمام قابلیت‌ها --&gt; &lt;div
+          id="xsme-booking-widget" data-business-id="your-business-id"
+          data-custom-logo="https://your-domain.com/logo.png"
+          data-primary-color="#3b82f6" data-secondary-color="#6366f1"
+          data-theme="auto" data-show-logo="true" data-border-radius="12"&gt;
+          &lt;/div&gt; &lt;script
+          src="https://your-domain.com/widget.js"&gt;&lt;/script&gt;
         </div>
+      </div>
+
+      <div class="usage-section">
+        <h2>🎯 نکات مهم</h2>
+        <ul style="color: #64748b; line-height: 1.8">
+          <li>
+            <strong>لوگوی سفارشی:</strong> باید URL معتبر و قابل دسترس باشد
+          </li>
+          <li>
+            <strong>رنگ‌ها:</strong> از فرمت HEX استفاده کنید (مثل #3b82f6)
+          </li>
+          <li>
+            <strong>رنگ ثانویه:</strong> اختیاری است و برای گرادیان‌ها استفاده
+            می‌شود
+          </li>
+          <li><strong>سازگاری:</strong> با تمام مرورگرهای مدرن سازگار است</li>
+          <li>
+            <strong>عملکرد:</strong> تغییر رنگ‌ها تأثیری بر عملکرد ویجت ندارد
+          </li>
+        </ul>
+      </div>
     </div>
-
-    <!-- Success Notification -->
-    <div id="success-notification" class="notification">
-        <div style="font-weight: bold;">✅ رزرو تایید شد!</div>
-        <div style="font-size: 14px; opacity: 0.9;">ویجت با موفقیت کار می‌کند</div>
-    </div>
-
-    <!-- Copy functionality for code blocks -->
-    <script>
-        function copyCode(button, elementId) {
-            const codeElement = document.getElementById(elementId);
-            const textToCopy = codeElement.textContent || codeElement.innerText;
-            
-            navigator.clipboard.writeText(textToCopy.trim()).then(function() {
-                const originalText = button.textContent;
-                button.textContent = '✅ کپی شد!';
-                button.classList.add('copied');
-                
-                setTimeout(function() {
-                    button.textContent = originalText;
-                    button.classList.remove('copied');
-                }, 2000);
-            }).catch(function(err) {
-                console.error('خطا در کپی کردن: ', err);
-                button.textContent = '❌ خطا';
-                setTimeout(function() {
-                    button.textContent = '📋 کپی';
-                }, 2000);
-            });
-        }
-    </script>
 
     <!-- Load the widget script -->
-    <script src="./widget.js"></script>
-    
-    <!-- Custom booking completion handler -->
+    <script src="widget.js"></script>
+
     <script>
-        // تمام رویدادهای ویجت
-        
-        // رویداد ایجاد ویجت
-        window.xsmeOnCreated = function(data) {
-            console.log('🏗️ ویجت ایجاد شد:', data);
-        };
-        
-        // رویداد آماده شدن ویجت
-        window.xsmeOnReady = function(data) {
-            console.log('🚀 ویجت آماده است:', data);
-        };
-        
-        // رویداد شروع فرآیند رزرو
-        window.xsmeOnBookingStarted = function(data) {
-            console.log('🎬 شروع فرآیند رزرو:', data);
-        };
-        
-        // رویداد انتخاب سرویس
-        window.xsmeOnServiceSelected = function(service) {
-            console.log('🔧 سرویس انتخاب شد:', service);
-            
-            // نمایش اطلاعات سرویس در کنسول
-            if (service.serviceName) {
-                console.log(`انتخاب شده: ${service.serviceName} - ${service.price?.toLocaleString()} تومان`);
-            }
-        };
-        
-        // رویداد انتخاب تاریخ
-        window.xsmeOnDateSelected = function(date) {
-            console.log('📅 تاریخ انتخاب شد:', date);
-        };
-        
-        // رویداد انتخاب زمان
-        window.xsmeOnTimeSelected = function(time) {
-            console.log('⏰ زمان انتخاب شد:', time);
-        };
+      // Example callbacks
+      window.xsmeOnBookingComplete = function (booking) {
+        console.log("Booking completed:", booking);
+        alert(`رزرو با موفقیت انجام شد! شماره رزرو: ${booking.id}`);
+      };
 
-        // رویداد تکمیل رزرو
-        window.xsmeOnBookingComplete = function(booking) {
-            console.log('✅ رزرو تکمیل شد:', booking);
-            
-            // نمایش نوتیفیکیشن موفقیت
-            const notification = document.getElementById('success-notification');
-            notification.innerHTML = `
-                <div style="font-weight: bold;">✅ رزرو تایید شد!</div>
-                <div style="font-size: 14px; opacity: 0.9;">
-                    شماره رزرو: ${booking.id}<br>
-                    سرویس: ${booking.serviceName}<br>
-                    مبلغ: ${booking.amount?.toLocaleString()} تومان
-                </div>
-            `;
-            notification.style.display = 'block';
-            
-            // مخفی کردن بعد از 7 ثانیه
-            setTimeout(() => {
-                notification.style.display = 'none';
-            }, 7000);
-            
-            // ارسال به گوگل آنالیتیکس
-            if (window.gtag) {
-                gtag('event', 'booking_complete', {
-                    business_type: 'beauty_salon',
-                    service_type: booking.serviceName,
-                    booking_amount: booking.amount,
-                    payment_required: booking.paymentRequired
-                });
-            }
+      window.xsmeOnServiceSelected = function (service) {
+        console.log("Service selected:", service);
+      };
 
-            // ارسال به فیسبوک پیکسل
-            if (window.fbq) {
-                fbq('track', 'Purchase', {
-                    value: booking.amount,
-                    currency: 'IRR'
-                });
-            }
-        };
-        
-        // رویداد لغو رزرو
-        window.xsmeOnBookingCancelled = function(data) {
-            console.log('❌ رزرو لغو شد:', data);
-        };
-        
-        // رویداد خطا
-        window.xsmeOnError = function(error) {
-            console.error('⚠️ خطا در ویجت:', error);
-            
-            // نمایش پیام خطا به کاربر
-            alert(`خطا: ${error.error}`);
-        };
-
-        // استفاده از Event Listeners (روش پیشرفته)
-        document.addEventListener('xsme:service:selected', function(event) {
-            console.log('Event Listener - سرویس انتخاب شد:', event.detail);
-        });
-        
-        document.addEventListener('xsme:booking:complete', function(event) {
-            console.log('Event Listener - رزرو تکمیل شد:', event.detail);
-            
-            // ارسال دیتا به سیستم مدیریت مشتری
-            // CRM Integration example
-            if (window.crmIntegration) {
-                crmIntegration.addCustomer(event.detail);
-            }
-        });
-
-        // آمادگی دمو
-        setTimeout(() => {
-            console.log('🎯 X-SME Widget Demo آماده است');
-            console.log('💡 تمام رویدادها در کنسول نمایش داده می‌شوند');
-            
-            // نمونه تغییر تنظیمات
-            setTimeout(() => {
-                if (window.XSME && XSME.updateConfig) {
-                    console.log('📝 به‌روزرسانی تنظیمات ویجت...');
-                }
-            }, 3000);
-        }, 1000);
+      window.xsmeOnError = function (error) {
+        console.error("Widget error:", error);
+      };
     </script>
-
-    <!-- Google Analytics (Example) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=GA_MEASUREMENT_ID"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'GA_MEASUREMENT_ID');
-    </script>
-</body>
+  </body>
 </html>

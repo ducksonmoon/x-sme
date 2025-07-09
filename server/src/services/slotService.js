@@ -9,16 +9,22 @@ class SlotService {
     this.maxBookingDays = 90; // days ahead
   }
 
-  // Generate available time slots for a business on a specific date
+  /**
+   * Generate available time slots following Bookly's hierarchy:
+   * 1. Staff Working Hours (highest priority)
+   * 2. Service Working Hours (medium priority)
+   * 3. Business Working Hours (lowest priority)
+   */
   async generateAvailableSlots(businessId, serviceId, date, options = {}) {
     try {
       const {
         interval = this.defaultInterval,
         includeBooked = false,
-        maxSlots = 50
+        maxSlots = 50,
+        staffId = null
       } = options;
 
-      // Get business with working hours and holidays
+      // Get business with all related data
       const business = await prisma.business.findUnique({
         where: { id: businessId },
         include: {
@@ -49,18 +55,6 @@ class SlotService {
         };
       }
 
-      // Get working hours for the day
-      const dayOfWeek = new Date(date).getDay();
-      const workingHour = business.workingHours.find(wh => wh.dayOfWeek === dayOfWeek);
-
-      if (!workingHour) {
-        return {
-          available: false,
-          reason: 'Closed',
-          slots: []
-        };
-      }
-
       // Get service details
       const service = await prisma.service.findUnique({
         where: { id: serviceId }
@@ -70,22 +64,82 @@ class SlotService {
         throw new Error('Service not found or does not belong to this business');
       }
 
-      // Generate all possible slots
-      const allSlots = this.generateTimeSlots(
-        workingHour.startTime,
-        workingHour.endTime,
-        interval,
-        service.duration
-      );
+      // Get staff members assigned to this service
+      const staff = await this.getAvailableStaffForService(serviceId, date, staffId);
 
-      // Get booked slots for this date and service
-      const bookedSlots = await this.getBookedSlots(businessId, serviceId, date);
+      // If specific staff requested, use only that staff member
+      let availableStaff = staff;
+      if (staffId) {
+        availableStaff = staff.filter(s => s.id === staffId);
+        if (availableStaff.length === 0) {
+          return {
+            available: false,
+            reason: 'Requested staff member not available',
+            slots: []
+          };
+        }
+      }
 
-      // Filter out conflicting slots
-      const availableSlots = this.filterAvailableSlots(allSlots, bookedSlots, service.duration);
+      // Generate slots for each available staff member
+      const allSlots = [];
+      
+      for (const staffMember of availableStaff) {
+        const staffSlots = await this.generateStaffSlots(
+          businessId,
+          serviceId,
+          date,
+          staffMember,
+          service,
+          business,
+          { interval, includeBooked }
+        );
+        
+        // Add staff information to each slot
+        staffSlots.forEach(slot => {
+          slot.staffId = staffMember.id;
+          slot.staffName = `${staffMember.firstName} ${staffMember.lastName}`;
+          slot.staffSpecialization = staffMember.specialization;
+        });
+        
+        allSlots.push(...staffSlots);
+      }
 
-      // Limit number of slots if specified
-      const limitedSlots = maxSlots ? availableSlots.slice(0, maxSlots) : availableSlots;
+      // If no slots were generated for any staff member, try to generate default slots
+      if (allSlots.length === 0) {
+        console.warn('No slots generated for any staff member, generating default slots');
+        
+        // Generate default slots using business working hours
+        const dayOfWeek = new Date(date).getDay();
+        const businessWorkingHour = business.workingHours.find(wh => 
+          wh.dayOfWeek === dayOfWeek && wh.isActive
+        );
+        
+        if (businessWorkingHour) {
+          const defaultSlots = this.generateTimeSlots(
+            businessWorkingHour.startTime,
+            businessWorkingHour.endTime,
+            interval,
+            service.duration
+          );
+          
+          // Add default staff information
+          defaultSlots.forEach(slot => {
+            slot.staffId = 'default';
+            slot.staffName = 'Any Staff';
+            slot.staffSpecialization = 'General';
+            slot.workingHoursSource = 'business';
+          });
+          
+          allSlots.push(...defaultSlots);
+        }
+      }
+
+      // Sort slots by start time
+      const sortedSlots = allSlots.sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+      // Remove duplicates and limit slots
+      const uniqueSlots = this.removeDuplicateSlots(sortedSlots);
+      const limitedSlots = maxSlots ? uniqueSlots.slice(0, maxSlots) : uniqueSlots;
 
       return {
         available: limitedSlots.length > 0,
@@ -101,16 +155,14 @@ class SlotService {
           price: service.price
         },
         date: date,
-        workingHours: {
-          startTime: workingHour.startTime,
-          endTime: workingHour.endTime
-        },
-        slots: includeBooked ? {
-          available: limitedSlots,
-          booked: bookedSlots
-        } : limitedSlots,
-        totalAvailable: availableSlots.length,
-        totalBooked: bookedSlots.length
+        slots: limitedSlots,
+        totalAvailable: limitedSlots.filter(s => s.isAvailable).length,
+        totalBooked: limitedSlots.filter(s => !s.isAvailable).length,
+        staffOptions: availableStaff.map(s => ({
+          id: s.id,
+          name: `${s.firstName} ${s.lastName}`,
+          specialization: s.specialization
+        }))
       };
     } catch (error) {
       console.error('Error generating available slots:', error);
@@ -118,42 +170,187 @@ class SlotService {
     }
   }
 
-  // Generate time slots between start and end time
-  generateTimeSlots(startTime, endTime, intervalMinutes, serviceDuration) {
-    const slots = [];
-    const start = new Date(`2000-01-01T${startTime}`);
-    const end = new Date(`2000-01-01T${endTime}`);
-
-    while (start < end) {
-      const slotStart = start.toTimeString().slice(0, 5);
-      
-      // Calculate slot end time
-      const slotEnd = new Date(start.getTime() + (serviceDuration * 60 * 1000));
-      const slotEndTime = slotEnd.toTimeString().slice(0, 5);
-
-      // Check if slot fits within working hours
-      if (slotEnd <= end) {
-        slots.push({
-          startTime: slotStart,
-          endTime: slotEndTime,
-          duration: serviceDuration
-        });
-      }
-
-      // Move to next slot
-      start.setMinutes(start.getMinutes() + intervalMinutes);
+  /**
+   * Generate time slots for a specific staff member following Bookly's hierarchy
+   */
+  async generateStaffSlots(businessId, serviceId, date, staff, service, business, options = {}) {
+    const { interval = this.defaultInterval, includeBooked = false } = options;
+    
+    const dayOfWeek = new Date(date).getDay();
+    
+    // Step 1: Determine working hours using Bookly's hierarchy
+    const workingHours = this.getWorkingHoursHierarchy(staff, service, business, dayOfWeek);
+    
+    if (!workingHours) {
+      return []; // No working hours defined for this day
     }
 
+    // Step 2: Generate all possible time slots
+    const allSlots = this.generateTimeSlots(
+      workingHours.startTime,
+      workingHours.endTime,
+      interval,
+      service.duration
+    );
+      
+    // Step 3: Apply staff breaks
+    const slotsWithBreaks = this.applyStaffBreaks(allSlots, staff.staff_breaks, dayOfWeek);
+
+    // Step 4: Get booked slots for this staff member
+    const bookedSlots = await this.getStaffBookedSlots(businessId, serviceId, date, staff.id);
+
+    // Step 5: Filter out conflicting slots
+    const availableSlots = this.filterAvailableSlots(slotsWithBreaks, bookedSlots, service.duration);
+
+    return availableSlots.map(slot => ({
+      ...slot,
+      price: this.getStaffServicePrice(staff, serviceId, service.price),
+      duration: service.duration,
+      workingHoursSource: workingHours.source
+    }));
+  }
+
+  /**
+   * Get working hours following Bookly's hierarchy:
+   * 1. Staff Working Hours (highest priority)
+   * 2. Service Working Hours (medium priority)
+   * 3. Business Working Hours (lowest priority)
+   */
+  getWorkingHoursHierarchy(staff, service, business, dayOfWeek) {
+    // Priority 1: Staff Working Hours
+    const staffWorkingHour = staff.staff_working_hours.find(wh => 
+      wh.dayOfWeek === dayOfWeek && wh.isActive
+    );
+    
+    if (staffWorkingHour) {
+      return {
+        startTime: staffWorkingHour.startTime,
+        endTime: staffWorkingHour.endTime,
+        source: 'staff'
+      };
+    }
+
+    // Priority 2: Service Working Hours (skipped - not implemented in current schema)
+    // Services inherit working hours from business level
+
+    // Priority 3: Business Working Hours
+    const businessWorkingHour = business.workingHours.find(wh => 
+      wh.dayOfWeek === dayOfWeek && wh.isActive
+    );
+    
+    if (businessWorkingHour) {
+      return {
+        startTime: businessWorkingHour.startTime,
+        endTime: businessWorkingHour.endTime,
+        source: 'business'
+      };
+    }
+
+    // If no working hours found, return default business hours for the day
+    // This ensures we always have some working hours to generate slots
+    console.warn(`No working hours found for day ${dayOfWeek}, using default business hours`);
+    
+    // Default business hours (9 AM to 6 PM)
+    const defaultHours = {
+      0: { startTime: '09:00', endTime: '18:00' }, // Sunday
+      1: { startTime: '09:00', endTime: '18:00' }, // Monday
+      2: { startTime: '09:00', endTime: '18:00' }, // Tuesday
+      3: { startTime: '09:00', endTime: '18:00' }, // Wednesday
+      4: { startTime: '09:00', endTime: '18:00' }, // Thursday
+      5: { startTime: '09:00', endTime: '18:00' }, // Friday
+      6: { startTime: '09:00', endTime: '16:00' }  // Saturday
+    };
+
+    const defaultHour = defaultHours[dayOfWeek];
+    if (defaultHour) {
+      return {
+        startTime: defaultHour.startTime,
+        endTime: defaultHour.endTime,
+        source: 'default'
+      };
+    }
+
+    return null; // No working hours found
+  }
+
+  /**
+   * Get available staff for a service on a specific date
+   */
+  async getAvailableStaffForService(serviceId, date, specificStaffId = null) {
+    const whereClause = {
+      isActive: true,
+      staff_services: {
+        some: {
+          serviceId: serviceId
+        }
+      }
+    };
+
+    if (specificStaffId) {
+      whereClause.id = specificStaffId;
+      }
+
+    const staff = await prisma.staff.findMany({
+      where: whereClause,
+      include: {
+        staff_services: {
+          where: {
+            serviceId: serviceId
+          }
+        },
+        staff_working_hours: {
+          where: { isActive: true },
+          orderBy: { dayOfWeek: 'asc' }
+        },
+        staff_breaks: {
+          where: { isActive: true }
+        },
+        staff_time_off: {
+          where: {
+            startDate: { lte: new Date(date) },
+            endDate: { gte: new Date(date) }
+          }
+        }
+      },
+      orderBy: { firstName: 'asc' }
+    });
+
+    // Filter out staff who are on time off
+    return staff.filter(member => member.staff_time_off.length === 0);
+  }
+
+  /**
+   * Apply staff breaks to time slots
+   */
+  applyStaffBreaks(slots, breaks, dayOfWeek) {
+    const dayBreaks = breaks.filter(b => b.dayOfWeek === dayOfWeek && b.isActive);
+    
+    if (dayBreaks.length === 0) {
     return slots;
   }
 
-  // Get booked slots for a specific date and service
-  async getBookedSlots(businessId, serviceId, date) {
+    return slots.filter(slot => {
+      return !dayBreaks.some(breakTime => {
+        const slotStart = moment(slot.startTime, 'HH:mm');
+        const slotEnd = moment(slot.endTime, 'HH:mm');
+        const breakStart = moment(breakTime.startTime, 'HH:mm');
+        const breakEnd = moment(breakTime.endTime, 'HH:mm');
+
+        // Check if slot overlaps with break time
+        return slotStart.isBefore(breakEnd) && slotEnd.isAfter(breakStart);
+      });
+    });
+  }
+
+  /**
+   * Get booked slots for a specific staff member
+   */
+  async getStaffBookedSlots(businessId, serviceId, date, staffId) {
     try {
       const bookings = await prisma.booking.findMany({
         where: {
           businessId,
-          serviceId,
+          staffId,
           date: new Date(date),
           status: { in: ['PENDING', 'CONFIRMED'] }
         },
@@ -171,29 +368,184 @@ class SlotService {
         status: booking.status
       }));
     } catch (error) {
-      console.error('Error getting booked slots:', error);
+      console.error('Error getting staff booked slots:', error);
       return [];
     }
   }
 
-  // Filter available slots by removing conflicting ones
+  /**
+   * Get staff-specific service price
+   */
+  getStaffServicePrice(staff, serviceId, defaultPrice) {
+    const staffService = staff.staff_services.find(s => s.serviceId === serviceId);
+    return staffService?.customPrice || defaultPrice;
+  }
+
+  /**
+   * Generate time slots between start and end time
+   */
+  generateTimeSlots(startTime, endTime, intervalMinutes, serviceDuration) {
+    const slots = [];
+    const start = moment(startTime, 'HH:mm');
+    const end = moment(endTime, 'HH:mm');
+
+    while (start.isBefore(end)) {
+      const slotStart = start.format('HH:mm');
+      
+      // Calculate slot end time based on service duration
+      const slotEnd = start.clone().add(serviceDuration, 'minutes');
+      const slotEndTime = slotEnd.format('HH:mm');
+
+      // Check if slot fits within working hours
+      if (slotEnd.isSameOrBefore(end)) {
+        slots.push({
+          startTime: slotStart,
+          endTime: slotEndTime,
+          duration: serviceDuration,
+          isAvailable: true
+        });
+      }
+
+      // Move to next slot based on interval
+      start.add(intervalMinutes, 'minutes');
+    }
+
+    return slots;
+  }
+
+  /**
+   * Filter available slots by removing conflicts
+   */
   filterAvailableSlots(allSlots, bookedSlots, serviceDuration) {
-    return allSlots.filter(slot => {
-      // Check if slot conflicts with any booked slot
-      return !bookedSlots.some(booked => {
-        return this.slotsOverlap(slot, booked);
+    return allSlots.map(slot => {
+      const isBooked = bookedSlots.some(booked => {
+        const slotStart = moment(slot.startTime, 'HH:mm');
+        const slotEnd = moment(slot.endTime, 'HH:mm');
+        const bookedStart = moment(booked.startTime, 'HH:mm');
+        const bookedEnd = moment(booked.endTime, 'HH:mm');
+
+        // Check for time overlap
+        return slotStart.isBefore(bookedEnd) && slotEnd.isAfter(bookedStart);
       });
+
+      return {
+        ...slot,
+        isAvailable: !isBooked,
+        isBooked: isBooked
+      };
     });
   }
 
-  // Check if two time slots overlap
-  slotsOverlap(slot1, slot2) {
-    const slot1Start = new Date(`2000-01-01T${slot1.startTime}`);
-    const slot1End = new Date(`2000-01-01T${slot1.endTime}`);
-    const slot2Start = new Date(`2000-01-01T${slot2.startTime}`);
-    const slot2End = new Date(`2000-01-01T${slot2.endTime}`);
+  /**
+   * Remove duplicate time slots
+   */
+  removeDuplicateSlots(slots) {
+    const seen = new Set();
+    return slots.filter(slot => {
+      const key = `${slot.startTime}-${slot.endTime}`;
+      if (seen.has(key)) {
+        return false;
+      }
+      seen.add(key);
+      return true;
+    });
+  }
 
-    return slot1Start < slot2End && slot1End > slot2Start;
+  /**
+   * Get detailed availability for a specific service and date
+   */
+  async getDetailedAvailability(businessId, serviceId, date, options = {}) {
+    const { staffId = null, includeUnavailable = false } = options;
+    
+    try {
+      const result = await this.generateAvailableSlots(businessId, serviceId, date, {
+        staffId,
+        includeBooked: includeUnavailable,
+        maxSlots: 100
+      });
+
+      // Group slots by staff if multiple staff members
+      const slotsByStaff = {};
+      result.slots.forEach(slot => {
+        if (!slotsByStaff[slot.staffId]) {
+          slotsByStaff[slot.staffId] = {
+            staffId: slot.staffId,
+            staffName: slot.staffName,
+            staffSpecialization: slot.staffSpecialization,
+            slots: []
+          };
+        }
+        slotsByStaff[slot.staffId].slots.push(slot);
+      });
+
+      return {
+        ...result,
+        slotsByStaff: Object.values(slotsByStaff),
+        summary: {
+          totalSlots: result.slots.length,
+          availableSlots: result.totalAvailable,
+          bookedSlots: result.totalBooked,
+          staffCount: Object.keys(slotsByStaff).length
+        }
+      };
+    } catch (error) {
+      console.error('Error getting detailed availability:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Book a time slot for a specific staff member
+   */
+  async bookTimeSlot(businessId, serviceId, staffId, date, startTime, endTime, bookingData) {
+    try {
+      // Validate that the slot is available
+      const availability = await this.generateAvailableSlots(businessId, serviceId, date, {
+        staffId,
+        maxSlots: 1000
+      });
+
+      const requestedSlot = availability.slots.find(slot => 
+        slot.startTime === startTime && 
+        slot.endTime === endTime && 
+        slot.staffId === staffId
+      );
+
+      if (!requestedSlot) {
+        throw new Error('Requested time slot not found');
+      }
+
+      if (!requestedSlot.isAvailable) {
+        throw new Error('Requested time slot is not available');
+      }
+
+      // Create the booking
+      const booking = await prisma.booking.create({
+        data: {
+          businessId,
+          serviceId,
+          staffId,
+          date: new Date(date),
+          startTime,
+          endTime,
+          ...bookingData
+        },
+        include: {
+          business: { select: { name: true } },
+          service: { select: { name: true, duration: true } },
+          staff: { select: { firstName: true, lastName: true } }
+        }
+      });
+
+      return {
+        success: true,
+        booking,
+        slot: requestedSlot
+      };
+    } catch (error) {
+      console.error('Error booking time slot:', error);
+      throw error;
+    }
   }
 
   // Get weekly availability for a business

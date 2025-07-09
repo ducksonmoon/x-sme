@@ -16,9 +16,12 @@ const Widget: React.FC = () => {
     const widgetConfig: WidgetConfig = {
       businessId:
         searchParams.get("businessId") || searchParams.get("business") || "",
-      theme: (searchParams.get("theme") as "light" | "dark") || "light",
+      theme: (searchParams.get("theme") as "light" | "dark" | "auto") || "auto",
       language: "fa",
-      primaryColor: searchParams.get("primaryColor") || "#3b82f6",
+      primaryColor:
+        searchParams.get("primaryColor") ||
+        searchParams.get("accentColor") ||
+        "#3b82f6",
       borderRadius: parseInt(searchParams.get("borderRadius") || "8"),
       showLogo: searchParams.get("showLogo") !== "false",
       showBusinessInfo: searchParams.get("showBusinessInfo") !== "false",
@@ -28,12 +31,27 @@ const Widget: React.FC = () => {
         searchParams.get("maxAdvanceBooking") || "30"
       ),
       minAdvanceBooking: parseInt(searchParams.get("minAdvanceBooking") || "2"),
+      // New custom properties - only add if they have values
+      ...(searchParams.get("customLogo") || searchParams.get("logo")
+        ? {
+            customLogo:
+              searchParams.get("customLogo") || searchParams.get("logo") || "",
+          }
+        : {}),
+      ...(searchParams.get("secondaryColor")
+        ? {
+            secondaryColor: searchParams.get("secondaryColor") || "",
+          }
+        : {}),
+      embedMode: searchParams.get("embedMode") !== "false",
     };
 
     setConfig(widgetConfig);
 
     // Apply theme and language
-    setTheme(widgetConfig.theme || "light");
+    setTheme(
+      widgetConfig.theme === "auto" ? "light" : widgetConfig.theme || "light"
+    );
     setLanguage(widgetConfig.language || "fa");
 
     // Apply custom CSS variables for theming
@@ -120,7 +138,35 @@ const Widget: React.FC = () => {
       }
     >
       <div className="w-full max-w-none">
-        <BookingWidget businessId={config.businessId} />
+        <BookingWidget
+          businessId={config.businessId}
+          {...(config.embedMode !== undefined && {
+            embedMode: config.embedMode,
+          })}
+          {...(config.theme && { theme: config.theme })}
+          {...(config.showLogo !== undefined && { showLogo: config.showLogo })}
+          {...(config.primaryColor && { accentColor: config.primaryColor })}
+          {...(config.customLogo && { customLogo: config.customLogo })}
+          {...(config.primaryColor && { primaryColor: config.primaryColor })}
+          {...(config.secondaryColor && {
+            secondaryColor: config.secondaryColor,
+          })}
+          {...(config.allowNotes !== undefined && {
+            allowNotes: config.allowNotes,
+          })}
+          {...(config.requireEmail !== undefined && {
+            requireEmail: config.requireEmail,
+          })}
+          {...(config.maxAdvanceBooking !== undefined && {
+            maxAdvanceBooking: config.maxAdvanceBooking,
+          })}
+          {...(config.minAdvanceBooking !== undefined && {
+            minAdvanceBooking: config.minAdvanceBooking,
+          })}
+          {...(config.borderRadius !== undefined && {
+            borderRadius: config.borderRadius,
+          })}
+        />
       </div>
     </div>
   );

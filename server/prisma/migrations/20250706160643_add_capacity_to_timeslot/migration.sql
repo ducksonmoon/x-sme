@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "TimeSlot" ADD COLUMN     "capacity" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "isPeakHour" BOOLEAN NOT NULL DEFAULT false,
+ADD COLUMN     "maxCapacity" INTEGER NOT NULL DEFAULT 1,
+ADD COLUMN     "notes" TEXT;
