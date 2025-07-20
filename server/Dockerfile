@@ -4,6 +4,10 @@ FROM node:20-alpine
 # Set working directory
 WORKDIR /app
 
+# Set environment variables for Prisma
+ENV PRISMA_QUERY_ENGINE_TYPE=binary
+ENV PRISMA_QUERY_ENGINE_BINARY=linux-musl
+
 # Install system dependencies including OpenSSL for Prisma
 RUN apk add --no-cache \
     curl \
