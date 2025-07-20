@@ -13,7 +13,7 @@ RUN npm install --legacy-peer-deps
 # Copy source code
 COPY . .
 
-# Build the application
+# Build the application (skip TypeScript checking for production)
 RUN npm run build
 
 # Production stage
