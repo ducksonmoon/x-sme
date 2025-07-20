@@ -4,10 +4,12 @@ FROM node:20-alpine
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies including OpenSSL for Prisma
 RUN apk add --no-cache \
     curl \
     postgresql-client \
+    openssl \
+    libc6-compat \
     && rm -rf /var/cache/apk/*
 
 # Copy package files
