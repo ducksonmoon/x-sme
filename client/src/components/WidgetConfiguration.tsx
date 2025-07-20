@@ -134,6 +134,45 @@ const WidgetConfiguration: React.FC = () => {
     return `${window.location.origin}/widget-preview?${params.toString()}`;
   };
 
+  const getHostedWidgetUrl = () => {
+    const params = new URLSearchParams();
+
+    if (safeConfig.theme !== "auto") {
+      params.set("theme", safeConfig.theme);
+    }
+
+    if (safeConfig.primaryColor !== "#3b82f6") {
+      params.set("primaryColor", safeConfig.primaryColor);
+    }
+
+    if (safeConfig.secondaryColor) {
+      params.set("secondaryColor", safeConfig.secondaryColor);
+    }
+
+    if (safeConfig.customLogo) {
+      params.set("customLogo", safeConfig.customLogo);
+    }
+
+    if (safeConfig.borderRadius !== 8) {
+      params.set("borderRadius", safeConfig.borderRadius.toString());
+    }
+
+    if (!safeConfig.showLogo) {
+      params.set("showLogo", "false");
+    }
+
+    if (!safeConfig.allowNotes) {
+      params.set("allowNotes", "false");
+    }
+
+    if (safeConfig.requireEmail) {
+      params.set("requireEmail", "true");
+    }
+
+    const baseUrl = `${window.location.origin}/w/${safeConfig.businessId}`;
+    return params.toString() ? `${baseUrl}?${params.toString()}` : baseUrl;
+  };
+
   if (isLoading || businessLoading || !businessId) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -263,6 +302,180 @@ const WidgetConfiguration: React.FC = () => {
                   <Eye className="w-4 h-4" />
                 </Button>
               </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Hosted Widget Section */}
+      <Card className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border-emerald-200/50 dark:border-emerald-800/50">
+        <CardHeader>
+          <CardTitle className="flex items-center text-emerald-900 dark:text-emerald-100">
+            <svg
+              className="w-5 h-5 ml-2 text-emerald-600 dark:text-emerald-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
+              />
+            </svg>
+            صفحه رزرو اختصاصی
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-4">
+            <div className="flex items-start space-x-3 space-x-reverse">
+              <svg
+                className="w-5 h-5 text-emerald-600 dark:text-emerald-400 mt-0.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <div>
+                <h4 className="font-medium text-emerald-900 dark:text-emerald-100">
+                  صفحه رزرو برای کسب‌وکارهای بدون وب‌سایت
+                </h4>
+                <p className="mt-1 text-sm text-emerald-800 dark:text-emerald-200">
+                  اگر وب‌سایت ندارید، می‌توانید از لینک زیر به عنوان صفحه رزرو
+                  اختصاصی استفاده کنید و آن را با مشتریان خود به اشتراک بگذارید.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Hosted Widget URL */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              لینک صفحه رزرو شما
+            </label>
+            <div className="relative">
+              <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg border border-gray-200 dark:border-gray-600">
+                <code className="text-sm text-gray-700 dark:text-gray-300 break-all">
+                  {getHostedWidgetUrl()}
+                </code>
+              </div>
+              <div className="absolute top-1 left-1 flex space-x-1 space-x-reverse">
+                <Button
+                  onClick={() =>
+                    copyToClipboard(getHostedWidgetUrl(), "لینک کپی شد")
+                  }
+                  size="sm"
+                  variant="secondary"
+                >
+                  <Copy className="w-3 h-3" />
+                </Button>
+                <Button
+                  onClick={() => window.open(getHostedWidgetUrl(), "_blank")}
+                  size="sm"
+                  variant="secondary"
+                >
+                  <Eye className="w-3 h-3" />
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* QR Code */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              کد QR برای اشتراک‌گذاری
+            </label>
+            <div className="flex items-center space-x-4 space-x-reverse">
+              <div className="w-32 h-32 bg-white border-2 border-gray-200 rounded-lg flex items-center justify-center">
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(
+                    getHostedWidgetUrl()
+                  )}`}
+                  alt="QR Code"
+                  className="w-28 h-28"
+                />
+              </div>
+              <div className="flex-1">
+                <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">
+                  راه‌های استفاده از کد QR:
+                </h4>
+                <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                  <li>• چاپ روی کارت ویزیت</li>
+                  <li>• نمایش در مغازه یا دفتر</li>
+                  <li>• استفاده در بروشور و تبلیغات</li>
+                  <li>• اشتراک‌گذاری در شبکه‌های اجتماعی</li>
+                </ul>
+                <Button
+                  onClick={() => {
+                    const link = document.createElement("a");
+                    link.href = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(
+                      getHostedWidgetUrl()
+                    )}`;
+                    link.download = `qr-code-${safeConfig.businessId}.png`;
+                    link.click();
+                  }}
+                  size="sm"
+                  variant="outline"
+                  className="mt-2"
+                >
+                  دانلود کد QR
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Usage Examples */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+              <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">
+                🔗 اشتراک‌گذاری لینک
+              </h4>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                این لینک را در شبکه‌های اجتماعی، پیام‌ها یا ایمیل‌ها به اشتراک
+                بگذارید.
+              </p>
+              <Button
+                onClick={() => {
+                  const text = `رزرو آنلاین خدمات ما: ${getHostedWidgetUrl()}`;
+                  copyToClipboard(text, "متن برای اشتراک‌گذاری کپی شد");
+                }}
+                size="sm"
+                variant="outline"
+                className="w-full"
+              >
+                کپی متن برای اشتراک‌گذاری
+              </Button>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+              <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">
+                📱 لینک کوتاه
+              </h4>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                برای استفاده راحت‌تر، از سرویس‌های کوتاه‌سازی لینک استفاده کنید.
+              </p>
+              <Button
+                onClick={() => {
+                  window.open(
+                    `https://tinyurl.com/create.php?url=${encodeURIComponent(
+                      getHostedWidgetUrl()
+                    )}`,
+                    "_blank"
+                  );
+                }}
+                size="sm"
+                variant="outline"
+                className="w-full"
+              >
+                کوتاه‌سازی لینک
+              </Button>
             </div>
           </div>
         </CardContent>

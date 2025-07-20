@@ -156,7 +156,8 @@ export const StaffScheduler: React.FC<StaffSchedulerProps> = ({
   };
 
   const getStaffWorkingHours = (staff: Staff, dayOfWeek: number) => {
-    return staff.workingHours?.find((wh) => wh.dayOfWeek === dayOfWeek);
+    const workingHours = staff.workingHours || staff.staff_working_hours || [];
+    return workingHours.find((wh) => wh.dayOfWeek === dayOfWeek);
   };
 
   const hasTimeOff = (staffId: string, date: Date) => {
@@ -382,122 +383,154 @@ export const StaffScheduler: React.FC<StaffSchedulerProps> = ({
 
       {/* Time Off Request Modal */}
       {isTimeOffModalOpen && (
-        <Modal
-          onClose={() => setIsTimeOffModalOpen(false)}
-          title="درخواست مرخصی"
-        >
-          <form onSubmit={handleTimeOffSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                کارمند
-              </label>
-              <select
-                value={timeOffForm.staffId}
-                onChange={(e) =>
-                  setTimeOffForm((prev) => ({
-                    ...prev,
-                    staffId: e.target.value,
-                  }))
-                }
-                className="w-full p-2 border border-gray-300 rounded-md"
-                required
-              >
-                <option value="">انتخاب کارمند</option>
-                {staff.map((staffMember) => (
-                  <option key={staffMember.id} value={staffMember.id}>
-                    {staffMember.firstName} {staffMember.lastName}
-                  </option>
-                ))}
-              </select>
-            </div>
+        <Modal onClose={() => setIsTimeOffModalOpen(false)} size="lg">
+          <div className="sticky top-0 z-10 bg-white pb-2 mb-4 border-b">
+            <h2 className="text-xl font-bold text-gray-900 text-center py-3">
+              درخواست مرخصی جدید
+            </h2>
+          </div>
 
-            <div className="grid grid-cols-2 gap-4">
+          <form onSubmit={handleTimeOffSubmit} className="space-y-4px-4">
+            {/* Staff Selection */}
+            <div className="bg-gray-50 p-3 rounded-lg">
+              <h3 className="text-base font-medium text-gray-900 mb-3">
+                {" "}
+                انتخاب کارمند
+              </h3>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  تاریخ شروع
+                  کارمند <span className="text-red-500">*</span>
                 </label>
-                <Input
-                  type="date"
-                  value={timeOffForm.startDate}
+                <select
+                  value={timeOffForm.staffId}
                   onChange={(e) =>
                     setTimeOffForm((prev) => ({
                       ...prev,
-                      startDate: e.target.value,
+                      staffId: e.target.value,
                     }))
                   }
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2ocus:ring-blue-500 focus:border-blue-500 transition-colors"
                   required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  تاریخ پایان
-                </label>
-                <Input
-                  type="date"
-                  value={timeOffForm.endDate}
-                  onChange={(e) =>
-                    setTimeOffForm((prev) => ({
-                      ...prev,
-                      endDate: e.target.value,
-                    }))
-                  }
-                  required
-                />
+                >
+                  <option value="خاب کارمند">انتخاب کارمند</option>
+                  {staff.map((staffMember) => (
+                    <option key={staffMember.id} value={staffMember.id}>
+                      {staffMember.firstName} {staffMember.lastName}
+                      {staffMember.specialization &&
+                        ` - ${staffMember.specialization}`}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                نوع مرخصی
-              </label>
-              <select
-                value={timeOffForm.type}
-                onChange={(e) =>
-                  setTimeOffForm((prev) => ({
-                    ...prev,
-                    type: e.target.value as any,
-                  }))
-                }
-                className="w-full p-2 border border-gray-300 rounded-md"
-                required
-              >
-                {TIME_OFF_TYPES.map((type) => (
-                  <option key={type.value} value={type.value}>
-                    {type.label}
-                  </option>
-                ))}
-              </select>
+            {/* Date Range */}
+            <div className="bg-gray-50 p-3 rounded-lg">
+              <h3 className="text-base font-medium text-gray-900 mb-3">
+                {" "}
+                بازه زمانی
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    تاریخ شروع <span className="text-red-500">*</span>
+                  </label>
+                  <Input
+                    type="date"
+                    value={timeOffForm.startDate}
+                    onChange={(e) =>
+                      setTimeOffForm((prev) => ({
+                        ...prev,
+                        startDate: e.target.value,
+                      }))
+                    }
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2ocus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    تاریخ پایان <span className="text-red-500">*</span>
+                  </label>
+                  <Input
+                    type="date"
+                    value={timeOffForm.endDate}
+                    onChange={(e) =>
+                      setTimeOffForm((prev) => ({
+                        ...prev,
+                        endDate: e.target.value,
+                      }))
+                    }
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2ocus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    required
+                  />
+                </div>
+              </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                دلیل
-              </label>
-              <textarea
-                value={timeOffForm.reason}
-                onChange={(e) =>
-                  setTimeOffForm((prev) => ({
-                    ...prev,
-                    reason: e.target.value,
-                  }))
-                }
-                className="w-full p-2 border border-gray-300 rounded-md"
-                rows={3}
-                placeholder="دلیل درخواست مرخصی..."
-              />
+            {/* Time Off Details */}
+            <div className="bg-gray-50 p-3 rounded-lg">
+              <h3 className="text-base font-medium text-gray-900 mb-3">
+                {" "}
+                جزئیات مرخصی
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    نوع مرخصی <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={timeOffForm.type}
+                    onChange={(e) =>
+                      setTimeOffForm((prev) => ({
+                        ...prev,
+                        type: e.target.value as any,
+                      }))
+                    }
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2ocus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    required
+                  >
+                    {TIME_OFF_TYPES.map((type) => (
+                      <option key={type.value} value={type.value}>
+                        {type.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    دلیل مرخصی
+                  </label>
+                  <textarea
+                    value={timeOffForm.reason}
+                    onChange={(e) =>
+                      setTimeOffForm((prev) => ({
+                        ...prev,
+                        reason: e.target.value,
+                      }))
+                    }
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2ocus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
+                    rows={3}
+                    placeholder="دلیل درخواست مرخصی را وارد کنید..."
+                  />
+                </div>
+              </div>
             </div>
 
-            <div className="flex justify-end space-x-4">
+            {/* Form Actions */}
+            <div className="bg-white py-4 px-4 border-t border-gray-100 rounded-b-lg flex flex-row-reverse gap-3">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setIsTimeOffModalOpen(false)}
+                className="px-6 py-2 rounded-lg font-medium"
               >
                 لغو
               </Button>
               <Button
                 type="submit"
-                className="bg-blue-600 hover:bg-blue-700 text-white"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium"
               >
                 ثبت درخواست
               </Button>

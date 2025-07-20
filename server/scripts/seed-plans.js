@@ -3,63 +3,90 @@ const prisma = new PrismaClient();
 
 const plans = [
   {
-    name: 'استارتر',
+    name: 'پایه',
     nameEn: 'starter',
-    description: 'مناسب برای کسب‌وکارهای کوچک و شروع کننده',
-    setupFee: 1000000, // 1M IRR
+    description: 'مناسب برای تست‌کنندگان و کسب‌وکارهای انفرادی',
+    setupFee: 0, // Free setup
     monthlyFee: 0, // Free monthly
     yearlyFee: 0, // Free yearly
-    commissionRate: 0.15, // 15% commission
-    bookingsLimit: 50,
-    servicesLimit: 3,
-    smsLimit: 100,
+    commissionRate: 0, // No commission
+    bookingsLimit: 60, 
+    servicesLimit: 1, 
+    smsLimit: 0, 
     features: [
       'BASIC_WIDGET',
       'SINGLE_BUSINESS',
       'EMAIL_SUPPORT',
       'BASIC_ANALYTICS',
-      'PAYMENT_GATEWAY_INTEGRATION',
-      'PERSIAN_CALENDAR'
+      'ZARINPAL_GATEWAY',
+      'PERSIAN_CALENDAR',
+      'POWERED_BY_BRANDING'
     ],
     sortOrder: 1
   },
   {
-    name: 'حرفه‌ای',
-    nameEn: 'professional',
-    description: 'بهترین انتخاب برای اکثر کسب‌وکارها',
-    setupFee: 2500000, // 2.5M IRR
-    monthlyFee: 599000, // 599K IRR monthly
-    yearlyFee: 5990000, // 5.99M IRR yearly (2 months free)
-    commissionRate: 0.05, // 5% commission
-    bookingsLimit: 500,
-    servicesLimit: 20,
-    smsLimit: 1000,
+    name: 'رشد',
+    nameEn: 'growth',
+    description: 'مناسب برای کسب‌وکارهای شلوغ و میکرو SME',
+    setupFee: 500000, 
+    monthlyFee: 500000,
+    yearlyFee: 5000000,
+    commissionRate: 0.05,
+    bookingsLimit: null,
+    servicesLimit: 3,
+    smsLimit: 0,
     features: [
       'ADVANCED_WIDGET',
-      'UNLIMITED_BUSINESSES',
-      'SMS_TELEGRAM_NOTIFICATIONS',
-      'PRIORITY_SUPPORT',
-      'ADVANCED_ANALYTICS',
-      'API_ACCESS',
-      'CUSTOM_BRANDING',
-      'DETAILED_REPORTS',
+      'SINGLE_BUSINESS',
+      'EMAIL_SUPPORT',
+      'BASIC_ANALYTICS',
+      'TWO_PAYMENT_GATEWAYS',
       'PERSIAN_CALENDAR',
-      'MULTI_PAYMENT_GATEWAYS',
-      'STAFF_MANAGEMENT'
+      'SMS_TELEGRAM_NOTIFICATIONS',
+      'STAFF_MANAGEMENT',
+      'MINIMAL_BRANDING'
     ],
     sortOrder: 2
   },
   {
+    name: 'حرفه‌ای',
+    nameEn: 'pro',
+    description: 'مناسب برای کلینیک‌ها و زنجیره‌ها',
+    setupFee: 1000000,
+    monthlyFee: 1000000,
+    yearlyFee: 10000000,
+    commissionRate: 0,
+    bookingsLimit: null, 
+    servicesLimit: null,
+    smsLimit: null,
+    features: [
+      'ENTERPRISE_WIDGET',
+      'UNLIMITED_BUSINESSES',
+      'PRIORITY_SUPPORT',
+      'ADVANCED_ANALYTICS',
+      'ALL_PAYMENT_GATEWAYS',
+      'PERSIAN_CALENDAR',
+      'SMS_TELEGRAM_NOTIFICATIONS',
+      'STAFF_MANAGEMENT',
+      'WHITE_LABEL_BRANDING',
+      'API_ACCESS',
+      'DETAILED_REPORTS',
+      'MULTI_LOCATION',
+      'ADVANCED_API'
+    ],
+    sortOrder: 3
+  },
+  {
     name: 'سازمانی',
     nameEn: 'enterprise',
-    description: 'راه‌حل سفارشی برای شرکت‌های بزرگ',
-    setupFee: 10000000, // 10M IRR
-    monthlyFee: 2000000, // 2M IRR monthly
-    yearlyFee: 20000000, // 20M IRR yearly (2 months free)
-    commissionRate: 0.02, // 2% commission
-    bookingsLimit: null, // Unlimited
-    servicesLimit: null, // Unlimited
-    smsLimit: null, // Unlimited
+    description: 'مناسب برای SaaS و آژانس‌های توسعه',
+    setupFee: 0, // Quote-based
+    monthlyFee: 0, // Quote-based
+    yearlyFee: 0, // Quote-based
+    commissionRate: 0.01, // 1% commission
+    bookingsLimit: null,
+    servicesLimit: null,
+    smsLimit: null,
     features: [
       'ENTERPRISE_WIDGET',
       'UNLIMITED_BUSINESSES',
@@ -70,13 +97,14 @@ const plans = [
       'DEDICATED_TRAINING',
       'DEDICATED_SERVER',
       'ADVANCED_SECURITY',
-      'WHITE_LABEL',
+      'WHITE_LABEL_SDK',
       'CUSTOM_DEVELOPMENT',
       'MULTI_LOCATION',
       'ADVANCED_API',
-      'PRIORITY_FEATURES'
+      'PRIORITY_FEATURES',
+      'NO_BRANDING'
     ],
-    sortOrder: 3
+    sortOrder: 4
   }
 ];
 
@@ -84,19 +112,87 @@ async function seedPlans() {
   try {
     console.log('🌱 Starting plan seeding...');
 
-    // Clear existing plans
-    await prisma.plan.deleteMany({});
-    console.log('🗑️ Cleared existing plans');
+    // First, let's check for any existing plans with conflicting names
+    const existingPlans = await prisma.plan.findMany();
+    console.log(`Found ${existingPlans.length} existing plans`);
 
-    // Create new plans
+    // Update existing plans or create new ones
     for (const planData of plans) {
-      const plan = await prisma.plan.create({
-        data: planData
+      const existingPlan = await prisma.plan.findFirst({
+        where: { nameEn: planData.nameEn }
       });
-      console.log(`✅ Created plan: ${plan.name} (${plan.nameEn})`);
+
+      if (existingPlan) {
+        // Check if there's a name conflict with another plan
+        const nameConflict = await prisma.plan.findFirst({
+          where: { 
+            name: planData.name,
+            nameEn: { not: planData.nameEn }
+          }
+        });
+
+        if (nameConflict) {
+          console.log(`⚠️ Name conflict detected: ${planData.name} already exists with nameEn: ${nameConflict.nameEn}`);
+          // Update the conflicting plan's name to avoid conflict
+          await prisma.plan.update({
+            where: { id: nameConflict.id },
+            data: { name: `${nameConflict.name} (Old)` }
+          });
+          console.log(`✅ Renamed conflicting plan: ${nameConflict.name} -> ${nameConflict.name} (Old)`);
+        }
+
+        // Update existing plan
+        const plan = await prisma.plan.update({
+          where: { id: existingPlan.id },
+          data: planData
+        });
+        console.log(`✅ Updated plan: ${plan.name} (${plan.nameEn})`);
+      } else {
+        // Check if there's a name conflict before creating
+        const nameConflict = await prisma.plan.findFirst({
+          where: { name: planData.name }
+        });
+
+        if (nameConflict) {
+          console.log(`⚠️ Name conflict detected: ${planData.name} already exists`);
+          // Update the conflicting plan's name to avoid conflict
+          await prisma.plan.update({
+            where: { id: nameConflict.id },
+            data: { name: `${nameConflict.name} (Old)` }
+          });
+          console.log(`✅ Renamed conflicting plan: ${nameConflict.name} -> ${nameConflict.name} (Old)`);
+        }
+
+        // Create new plan
+        const plan = await prisma.plan.create({
+          data: planData
+        });
+        console.log(`✅ Created plan: ${plan.name} (${plan.nameEn})`);
+      }
     }
 
     console.log('🎉 Plan seeding completed successfully!');
+    
+    // Clean up old plans that are no longer needed (but don't delete if they have subscriptions)
+    const oldProfessionalPlan = await prisma.plan.findFirst({
+      where: { nameEn: 'professional' }
+    });
+    
+    if (oldProfessionalPlan) {
+      // Check if this plan has any subscriptions
+      const subscriptionCount = await prisma.subscription.count({
+        where: { planId: oldProfessionalPlan.id }
+      });
+      
+      if (subscriptionCount === 0) {
+        await prisma.plan.delete({
+          where: { id: oldProfessionalPlan.id }
+        });
+        console.log('🗑️ Removed old professional plan');
+      } else {
+        console.log(`⚠️ Keeping old professional plan (${subscriptionCount} subscriptions reference it)`);
+      }
+    }
     
     // Display created plans
     const createdPlans = await prisma.plan.findMany({

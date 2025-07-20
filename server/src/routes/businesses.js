@@ -700,6 +700,91 @@ router.put("/:id/settings", authenticate, authorize("BUSINESS_OWNER", "STAFF"), 
   }
 });
 
+// @desc    Get widget configuration (Public for hosted widgets)
+// @route   GET /api/businesses/:id/widget-config/public
+// @access  Public
+router.get("/:id/widget-config/public", async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    // Verify business exists and is active
+    const business = await prisma.business.findUnique({
+      where: { id },
+      select: { 
+        id: true, 
+        isActive: true,
+        name: true,
+        description: true,
+        phone: true,
+        address: true,
+        logo: true
+      },
+    });
+
+    if (!business || !business.isActive) {
+      return res.status(404).json({
+        success: false,
+        error: "Business not found or inactive",
+      });
+    }
+
+    const settings = await prisma.businessSettings.findUnique({
+      where: { businessId: id },
+    });
+
+    // Default widget configuration
+    const defaultWidgetConfig = {
+      businessId: id,
+      theme: "auto",
+      language: "fa",
+      primaryColor: "#3b82f6",
+      secondaryColor: "#1e40af",
+      borderRadius: 8,
+      showLogo: true,
+      allowNotes: true,
+      requireEmail: false,
+      maxAdvanceBooking: 30,
+      minAdvanceBooking: 2,
+      embedMode: false, // Always false for hosted widgets
+      showBusinessInfo: true,
+      version: "1.0.0",
+      lastUpdated: new Date().toISOString(),
+    };
+
+    // If settings exist and have widget config, merge with defaults
+    if (settings && settings.widgetConfig) {
+      const widgetConfig = typeof settings.widgetConfig === 'string' 
+        ? JSON.parse(settings.widgetConfig) 
+        : settings.widgetConfig;
+      
+      const mergedConfig = { 
+        ...defaultWidgetConfig, 
+        ...widgetConfig,
+        embedMode: false, // Always false for hosted widgets
+      };
+      mergedConfig.lastUpdated = new Date().toISOString();
+      
+      return res.json({
+        success: true,
+        data: {
+          widgetConfig: mergedConfig,
+          business: business
+        },
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        widgetConfig: defaultWidgetConfig,
+        business: business
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // @desc    Get widget configuration
 // @route   GET /api/businesses/:id/widget-config
 // @access  Private (Business owners and staff only)

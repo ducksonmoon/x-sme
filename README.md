@@ -1,159 +1,289 @@
-# X-SME Booking & Payment Widget
+# X-SME - Booking Widget Platform
 
-A localized booking and payment widget designed specifically for Iranian SMEs (beauty salons, clinics, language institutes) with integrated domestic payment gateways.
+A comprehensive booking and appointment management platform designed for small and medium enterprises (SMEs) in Iran, featuring a customizable widget that can be embedded on any website.
 
-## Features
+## 🚀 Features
 
-- **Real-time Availability**: Show available time slots dynamically
-- **Local Payment Gateways**: Integrated support for Pasargad, Saman, and Zarinpal
-- **Multi-channel Reminders**: SMS and Telegram notifications
-- **Embeddable Widget**: Simple script tag integration
+- **Multi-business Support**: Manage multiple businesses from a single dashboard
+- **Customizable Widget**: Embed booking widget on any website
+- **Payment Integration**: Support for Iranian payment gateways (Pasargad, Saman, Zarinpal)
+- **Staff Management**: Role-based access control and staff scheduling
+- **Real-time Notifications**: SMS and email notifications
+- **Analytics Dashboard**: Comprehensive business insights
+- **Persian Calendar**: Full support for Persian (Jalali) calendar
 - **Responsive Design**: Works on all devices
-- **Multi-language Support**: Persian and English
+- **API-First Architecture**: RESTful API for integrations
 
-## Tech Stack
+## 🏗️ Architecture
 
-- **Frontend**: React.js with TypeScript
-- **Backend**: Node.js with Express
-- **Database**: PostgreSQL with Prisma ORM
-- **Payment**: Pasargad, Saman, Zarinpal APIs
-- **Notifications**: SMS and Telegram APIs
+- **Frontend**: React 19 + TypeScript + Vite
+- **Backend**: Node.js + Express + Prisma
+- **Database**: PostgreSQL
+- **Cache**: Redis
+- **Real-time**: Socket.IO
+- **Styling**: Tailwind CSS + Radix UI
+- **Deployment**: Docker + Docker Compose
 
-## Quick Start
+## 📋 Prerequisites
 
-### Prerequisites
+- Docker (version 20.10 or higher)
+- Docker Compose (version 2.0 or higher)
+- Git
+- At least 4GB RAM and 20GB disk space
 
-- Node.js 18+
-- PostgreSQL 14+
-- npm or yarn
+## 🚀 Quick Start (Development)
 
-### Installation
+1. **Clone the repository**
 
-1. Clone the repository:
+   ```bash
+   git clone <your-repo-url>
+   cd x-sme
+   ```
 
-```bash
-git clone <repository-url>
-cd x-sme
-```
+2. **Set up environment variables**
 
-2. Install dependencies:
+   ```bash
+   cp server/env.example server/.env
+   # Edit server/.env with your configuration
+   ```
 
-```bash
-npm run install:all
-```
+3. **Start development servers**
 
-3. Set up environment variables:
+   ```bash
+   # Start backend
+   cd server
+   npm install
+   npm run db:migrate
+   npm run db:seed
+   npm run dev
 
-```bash
-cp .env.example .env
-# Edit .env with your configuration
-```
+   # Start frontend (in another terminal)
+   cd client
+   npm install
+   npm run dev
+   ```
 
-4. Set up the database:
+4. **Access the application**
+   - Frontend: http://localhost:3000
+   - Backend API: http://localhost:3001
+   - Database Studio: http://localhost:5555
 
-```bash
-npm run db:generate
-npm run db:migrate
-```
+## 🚀 Production Deployment
 
-5. Start development servers:
+For production deployment, see the comprehensive [Production Guide](PRODUCTION.md).
 
-```bash
-npm run dev
-```
+### Quick Production Setup
 
-## Widget Integration
+1. **Configure environment**
 
-Add this script tag to your website:
+   ```bash
+   cp env.production .env
+   # Edit .env with your production values
+   ```
 
-```html
-<script src="https://your-domain.com/widget.js"></script>
-<div
-  id="x-sme-booking-widget"
-  data-business-id="your-business-id"
-  data-theme="light"
-></div>
-```
+2. **Deploy with Docker**
 
-## Configuration
+   ```bash
+   chmod +x scripts/deploy.sh
+   ./scripts/deploy.sh
+   ```
 
-### Environment Variables
+3. **Monitor the application**
+   ```bash
+   chmod +x scripts/monitor.sh
+   ./scripts/monitor.sh
+   ```
 
-```env
-# Database
-DATABASE_URL="postgresql://user:password@localhost:5432/xsme_db"
-
-# Payment Gateways
-PASARGAD_MERCHANT_ID="your-pasargad-id"
-PASARGAD_PRIVATE_KEY="your-private-key"
-SAMAN_MERCHANT_ID="your-saman-id"
-ZARINPAL_MERCHANT_ID="your-zarinpal-id"
-
-# SMS Gateway
-SMS_API_KEY="your-sms-api-key"
-SMS_API_URL="https://api.sms-gateway.com"
-
-# Telegram Bot
-TELEGRAM_BOT_TOKEN="your-bot-token"
-
-# JWT Secret
-JWT_SECRET="your-jwt-secret"
-
-# Server
-PORT=3001
-NODE_ENV=development
-```
-
-## API Documentation
-
-### Business Endpoints
-
-- `POST /api/businesses` - Register new business
-- `GET /api/businesses/:id` - Get business details
-- `PUT /api/businesses/:id` - Update business settings
-
-### Booking Endpoints
-
-- `GET /api/businesses/:id/availability` - Get available slots
-- `POST /api/bookings` - Create new booking
-- `GET /api/bookings/:id` - Get booking details
-- `PUT /api/bookings/:id/cancel` - Cancel booking
-
-### Payment Endpoints
-
-- `POST /api/payments/initiate` - Start payment process
-- `POST /api/payments/verify` - Verify payment
-- `GET /api/payments/:id/status` - Get payment status
-
-## Project Structure
+## 📁 Project Structure
 
 ```
 x-sme/
 ├── client/                 # React frontend
 │   ├── src/
-│   │   ├── components/     # Widget components
+│   │   ├── components/     # Reusable components
+│   │   ├── pages/         # Page components
 │   │   ├── hooks/         # Custom hooks
 │   │   ├── services/      # API services
-│   │   └── utils/         # Utilities
+│   │   ├── store/         # State management
+│   │   └── utils/         # Utility functions
+│   └── public/            # Static assets
 ├── server/                # Node.js backend
 │   ├── src/
-│   │   ├── controllers/   # Route controllers
-│   │   ├── middleware/    # Express middleware
-│   │   ├── models/        # Prisma models
 │   │   ├── routes/        # API routes
+│   │   ├── middleware/    # Express middleware
 │   │   ├── services/      # Business logic
-│   │   └── utils/         # Utilities
-├── shared/                # Shared types and utilities
+│   │   └── utils/         # Utility functions
+│   ├── prisma/            # Database schema
+│   └── scripts/           # Database scripts
+├── nginx/                 # Nginx configuration
+├── scripts/               # Deployment scripts
+├── docker-compose.yml     # Docker services
 └── docs/                  # Documentation
 ```
 
-## Monetization
+## 🔧 Configuration
 
-- **One-time Installation**: 10-20M IRR setup fee
-- **Transaction Fee**: Optional 10% on booking fees
-- **Premium Features**: Advanced analytics, custom branding
+### Environment Variables
 
-## Contributing
+Key environment variables for production:
+
+```bash
+# Database
+DATABASE_URL=postgresql://user:password@host:5432/db
+
+# JWT Secrets (generate strong secrets)
+JWT_SECRET=your-super-secret-jwt-key
+JWT_REFRESH_SECRET=your-refresh-token-secret
+
+# CORS
+ALLOWED_ORIGINS=https://your-domain.com
+
+# Payment Gateways
+PASARGAD_MERCHANT_ID=your-merchant-id
+SAMAN_MERCHANT_ID=your-merchant-id
+ZARINPAL_MERCHANT_ID=your-merchant-id
+
+# SMS Service
+SMS_PROVIDER=melipayamak
+MELIPAYAMAK_USERNAME=your-username
+MELIPAYAMAK_PASSWORD=your-password
+
+# Email
+SMTP_HOST=smtp.gmail.com
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-password
+```
+
+### Payment Gateway Setup
+
+The platform supports multiple Iranian payment gateways:
+
+1. **Pasargad Bank**: Requires merchant ID, terminal ID, and private key
+2. **Saman Bank**: Requires merchant ID
+3. **Zarinpal**: Requires merchant ID
+
+### SMS Service Setup
+
+Configure SMS notifications with:
+
+- **Melipayamak**: Username/password authentication
+- **Kavenegar**: API key authentication
+- **Ghasedak**: API key authentication
+
+## 🛠️ Development
+
+### Available Scripts
+
+**Frontend (client/)**
+
+```bash
+npm run dev              # Start development server
+npm run build            # Build for production
+npm run build:production # Build with production optimizations
+npm run preview          # Preview production build
+npm run lint             # Run ESLint
+npm run test             # Run tests
+npm run analyze          # Analyze bundle size
+```
+
+**Backend (server/)**
+
+```bash
+npm run dev              # Start development server
+npm run start            # Start production server
+npm run db:migrate       # Run database migrations
+npm run db:seed          # Seed database
+npm run test             # Run tests
+npm run lint             # Run ESLint
+npm run health-check     # Check API health
+```
+
+### Database Management
+
+```bash
+# Generate Prisma client
+npm run db:generate
+
+# Run migrations
+npm run db:migrate
+
+# Open Prisma Studio
+npm run db:studio
+
+# Seed database
+npm run db:seed
+```
+
+## 🔒 Security
+
+- JWT-based authentication with refresh tokens
+- Role-based access control (RBAC)
+- Rate limiting on API endpoints
+- CORS protection
+- Input validation and sanitization
+- SQL injection prevention with Prisma
+- XSS protection with helmet
+- CSRF protection
+
+## 📊 Monitoring
+
+The application includes comprehensive monitoring:
+
+- Health check endpoints
+- Application logging with Winston
+- Error tracking and reporting
+- Performance monitoring
+- Automated backups
+- Resource usage tracking
+
+### Monitoring Commands
+
+```bash
+# Check system health
+./scripts/monitor.sh
+
+# View logs
+docker-compose logs -f
+
+# Generate system report
+./scripts/monitor.sh report
+
+# Check resource usage
+./scripts/monitor.sh resources
+```
+
+## 🔄 Backup and Recovery
+
+Automated backups are configured to run daily:
+
+```bash
+# Manual backup
+./scripts/deploy.sh backup
+
+# Backup files are stored in server/backups/
+```
+
+## 🚀 Deployment Options
+
+### Docker Compose (Recommended)
+
+The easiest way to deploy with all services included:
+
+```bash
+docker-compose up -d
+```
+
+### Manual Deployment
+
+For custom deployment scenarios:
+
+1. **Database**: Set up PostgreSQL
+2. **Backend**: Deploy Node.js application
+3. **Frontend**: Build and serve static files
+4. **Cache**: Set up Redis
+5. **Reverse Proxy**: Configure Nginx
+
+## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch
@@ -161,13 +291,53 @@ x-sme/
 4. Add tests
 5. Submit a pull request
 
-## License
+## 📝 License
 
-MIT License - see LICENSE file for details
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Support
+## 🆘 Support
 
-For support and questions, please contact:
+For support and questions:
 
-- Email: support@x-sme.com
-- Telegram: @xsme_support
+1. Check the [Production Guide](PRODUCTION.md)
+2. Review the [Troubleshooting](PRODUCTION.md#troubleshooting) section
+3. Check application logs
+4. Create an issue on GitHub
+
+## 🔄 Updates
+
+To update the application:
+
+```bash
+# Pull latest changes
+git pull
+
+# Rebuild and restart
+docker-compose down
+docker-compose up -d --build
+
+# Run migrations if needed
+docker-compose exec server npm run db:migrate:deploy
+```
+
+## 📈 Performance
+
+The application is optimized for performance:
+
+- Code splitting and lazy loading
+- Static asset optimization
+- Database query optimization
+- Redis caching
+- Gzip compression
+- CDN-ready static assets
+
+## 🌐 Internationalization
+
+- Persian (Farsi) language support
+- Jalali calendar integration
+- RTL layout support
+- Localized date/time formatting
+
+---
+
+**X-SME** - Empowering Iranian SMEs with modern booking solutions.

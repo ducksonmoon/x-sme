@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/store/authStore";
+import { usePermissions } from "@/hooks/usePermissions";
 import { useLanguage } from "@/providers/LanguageProvider";
 import { BusinessProvider } from "@/contexts/BusinessContext";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,13 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import axios from "axios";
+
+interface NavItem {
+  to: string;
+  label: string;
+  icon: React.ComponentType;
+  disabled?: boolean;
+}
 
 // Navigation icons using inline SVG for better performance
 const DashboardIcon = () => (
@@ -166,6 +174,22 @@ const UsersIcon = () => (
   </svg>
 );
 
+const DomainIcon = () => (
+  <svg
+    className="w-5 h-5"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9m0 9c-5 0-9-4-9-9s4-9 9-9"
+    />
+  </svg>
+);
+
 const SearchIcon = () => (
   <svg
     className="w-5 h-5"
@@ -246,18 +270,34 @@ const HomeIcon = () => (
   </svg>
 );
 
-const navItems = [
+const navItems: NavItem[] = [
   { to: "/dashboard", label: "داشبورد", icon: DashboardIcon },
   { to: "/dashboard/bookings", label: "رزروها", icon: BookingIcon },
   { to: "/dashboard/services", label: "سرویس‌ها", icon: ServicesIcon },
   { to: "/dashboard/staff", label: "کارکنان", icon: UsersIcon },
   { to: "/dashboard/timeslots", label: "ساعات کاری", icon: TimeIcon },
-  { to: "/dashboard/analytics", label: "تحلیل‌ها", icon: AnalyticsIcon },
+  {
+    to: "/dashboard/analytics",
+    label: "تحلیل‌ها",
+    icon: AnalyticsIcon,
+    disabled: true,
+  },
+  {
+    to: "/dashboard/domains",
+    label: "دامنه‌ها",
+    icon: DomainIcon,
+    disabled: true,
+  },
   { to: "/dashboard/settings", label: "تنظیمات", icon: SettingsIcon },
-  { to: "/dashboard/profile", label: "پروفایل", icon: ProfileIcon },
+  {
+    to: "/dashboard/profile",
+    label: "پروفایل",
+    icon: ProfileIcon,
+    disabled: true,
+  },
 ];
 
-const adminNavItems = [
+const adminNavItems: NavItem[] = [
   { to: "/admin", label: "داشبورد مدیر", icon: DashboardIcon },
   { to: "/admin/businesses", label: "کسب‌وکارها", icon: BusinessIcon },
   {
@@ -273,6 +313,7 @@ const DashboardLayout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
+  const { canView } = usePermissions();
   const { t } = useLanguage();
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -280,7 +321,31 @@ const DashboardLayout: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
 
   const isAdmin = user?.role === "ADMIN";
-  const currentNavItems = isAdmin ? adminNavItems : navItems;
+
+  // Filter navigation items based on permissions for staff
+  const getFilteredNavItems = () => {
+    if (isAdmin) return adminNavItems;
+
+    return navItems.filter((item) => {
+      // Map routes to permissions
+      const permissionMap: Record<string, string> = {
+        "/dashboard": "dashboard",
+        "/dashboard/bookings": "bookings",
+        "/dashboard/services": "services",
+        "/dashboard/staff": "staff",
+        "/dashboard/timeslots": "timeslots",
+        "/dashboard/analytics": "analytics",
+        "/dashboard/domains": "domains",
+        "/dashboard/settings": "settings",
+        "/dashboard/profile": "profile",
+      };
+
+      const requiredPermission = permissionMap[item.to];
+      return !requiredPermission || canView(requiredPermission);
+    });
+  };
+
+  const currentNavItems = getFilteredNavItems();
   const isBusinessOwnerRoute =
     location.pathname.startsWith("/dashboard") && !isAdmin;
 
@@ -407,6 +472,26 @@ const DashboardLayout: React.FC = () => {
                 {filteredNavItems.map((item) => {
                   const Icon = item.icon;
                   const isActive = location.pathname === item.to;
+
+                  if (item.disabled) {
+                    return (
+                      <div
+                        key={item.to}
+                        className={`
+                        group relative flex items-center space-x-3 space-x-reverse px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 cursor-not-allowed
+                        text-gray-400 dark:text-gray-500 bg-gray-50/50 dark:bg-gray-800/50
+                      `}
+                      >
+                        <Icon />
+                        <span className="flex-1">{item.label}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs bg-orange-100 text-orange-600 dark:bg-orange-900/20 dark:text-orange-400 px-2 py-1 rounded-full">
+                            به زودی
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  }
 
                   return (
                     <Link

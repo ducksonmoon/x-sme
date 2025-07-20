@@ -6,6 +6,7 @@ import { useAuthStore } from "@/store/authStore";
 import { useBusiness } from "@/contexts/BusinessContext";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import BookingForm from "@/components/BookingForm";
+import UsageLimitWarning from "@/components/UsageLimitWarning";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -148,6 +149,43 @@ const Bookings: React.FC = () => {
     subscribeToBusinessUpdates,
     requestLiveBookings,
   ]);
+
+  // Fetch subscription data for usage limits
+  const { data: subscription } = useQuery({
+    queryKey: ["subscription", businessId],
+    queryFn: async () => {
+      if (businessId) {
+        const response = await fetch(
+          `/api/subscriptions/business/${businessId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+        const data = await response.json();
+        if (!data.success) throw new Error(data.error);
+        return data.data;
+      }
+      return Promise.resolve(null);
+    },
+    enabled: !!businessId,
+  });
+
+  // Fetch available plans for upgrade
+  const { data: plans } = useQuery({
+    queryKey: ["subscription-plans"],
+    queryFn: async () => {
+      const response = await fetch("/api/subscriptions/plans", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      const data = await response.json();
+      if (!data.success) throw new Error(data.error);
+      return data.data;
+    },
+  });
 
   // Fetch bookings with enhanced filtering
   const { data: bookings, isLoading: loadingBookings } = useQuery({
@@ -378,6 +416,18 @@ const Bookings: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Usage Limit Warning */}
+        {subscription?.plan && plans && (
+          <UsageLimitWarning
+            type="bookings"
+            current={subscription.usage?.bookingsThisMonth || 0}
+            limit={subscription.plan.bookingsLimit}
+            plan={subscription.plan}
+            availablePlans={plans}
+            billingCycle={subscription.billingCycle as "MONTHLY" | "YEARLY"}
+          />
+        )}
 
         {/* Enhanced Summary Stats Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-8">

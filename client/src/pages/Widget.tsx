@@ -129,7 +129,7 @@ const Widget: React.FC = () => {
 
   return (
     <div
-      className="w-full bg-white"
+      className="w-full bg-white overflow-hidden"
       style={
         {
           "--primary-color": config.primaryColor,
@@ -137,7 +137,7 @@ const Widget: React.FC = () => {
         } as React.CSSProperties
       }
     >
-      <div className="w-full max-w-none">
+      <div className="w-full max-w-none overflow-hidden">
         <BookingWidget
           businessId={config.businessId}
           {...(config.embedMode !== undefined && {

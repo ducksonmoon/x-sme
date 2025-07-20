@@ -209,6 +209,19 @@ const Login: React.FC = () => {
             </Link>
           </p>
         </div>
+
+        {/* Staff Login Link */}
+        <div className="text-center">
+          <p className="text-sm text-gray-600">
+            کارمند هستید؟{" "}
+            <Link
+              to="/auth/staff-login"
+              className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
+            >
+              ورود به عنوان کارمند
+            </Link>
+          </p>
+        </div>
       </motion.form>
 
       {/* Demo Credentials */}

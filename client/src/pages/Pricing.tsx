@@ -74,6 +74,7 @@ const Pricing: React.FC = () => {
     PERSIAN_CALENDAR: "تقویم فارسی",
     STAFF_MANAGEMENT: "مدیریت کارکنان",
     WHITE_LABEL: "برچسب سفید",
+    WHITE_LABEL_SDK: "SDK برچسب سفید",
     CUSTOM_INTEGRATIONS: "یکپارچگی‌های سفارشی",
     DEDICATED_ACCOUNT_MANAGER: "مدیر اختصاصی حساب",
     SLA_GUARANTEE: "تضمین SLA",
@@ -85,6 +86,13 @@ const Pricing: React.FC = () => {
     ADVANCED_API: "API پیشرفته",
     PRIORITY_FEATURES: "ویژگی‌های اولویت‌دار",
     DETAILED_REPORTS: "گزارش‌های تفصیلی",
+    ZARINPAL_GATEWAY: "درگاه زرین‌پال",
+    TWO_PAYMENT_GATEWAYS: "هر ۲ درگاه پرداخت",
+    ALL_PAYMENT_GATEWAYS: "تمام درگاه‌های پرداخت",
+    POWERED_BY_BRANDING: "برندینگ 'powered by'",
+    MINIMAL_BRANDING: "برندینگ حداقلی",
+    WHITE_LABEL_BRANDING: "برندینگ سفید",
+    NO_BRANDING: "بدون برندینگ",
   };
 
   // Fetch plans from API
@@ -128,7 +136,9 @@ const Pricing: React.FC = () => {
     switch (planNameEn) {
       case "starter":
         return Zap;
-      case "professional":
+      case "growth":
+        return TrendingUp;
+      case "pro":
         return Crown;
       case "enterprise":
         return Building2;
@@ -190,9 +200,9 @@ const Pricing: React.FC = () => {
         "بله، می‌توانید در هر زمان پلن خود را ارتقا دهید یا تغییر دهید. تفاوت هزینه متناسب با زمان باقی‌مانده محاسبه می‌شود.",
     },
     {
-      question: "آیا دوره آزمایشی رایگان دارید؟",
+      question: "آیا پلن رایگان دارید؟",
       answer:
-        "بله، ۱۴ روز دوره آزمایشی رایگان برای همه پلن‌ها ارائه می‌دهیم تا بتوانید سیستم را کاملاً تست کنید.",
+        "بله، پلن پایه کاملاً رایگان است و می‌توانید بدون محدودیت زمانی از آن استفاده کنید. برای ارتقاء به پلن‌های بالاتر، هر زمان که آماده باشید می‌توانید اقدام کنید.",
     },
   ];
 
@@ -200,41 +210,82 @@ const Pricing: React.FC = () => {
     {
       name: "مریم احمدی",
       business: "سالن زیبایی گل",
-      planNameEn: "professional",
+      planNameEn: "pro",
       comment:
-        "با استفاده از پلن حرفه‌ای، درآمدم ۴۰٪ افزایش یافت و مشتریانم راضی‌تر شدند.",
+        "با استفاده از پلن پرو، درآمدم ۴۰٪ افزایش یافت و مشتریانم راضی‌تر شدند.",
     },
     {
       name: "دکتر علی رضایی",
       business: "کلینیک دندانپزشکی",
       planNameEn: "starter",
-      comment: "پلن استارتر برای شروع عالی بود. حالا به حرفه‌ای ارتقا داده‌ام.",
+      comment: "پلن استارتر برای شروع عالی بود. حالا به گروت ارتقا داده‌ام.",
     },
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       {/* Hero Section */}
-      <section className="py-20">
-        <div className="container mx-auto px-4 max-w-7xl">
+      <section className="relative py-24 lg:py-32 overflow-hidden">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 via-purple-600/5 to-indigo-600/5"></div>
+
+        <div className="container mx-auto px-4 max-w-7xl relative">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-16"
+            transition={{ duration: 0.8 }}
+            className="text-center mb-20"
           >
-            <Badge className="mb-4 bg-blue-100 text-blue-700 border-blue-200">
-              <CreditCard className="w-3 h-3 mr-2" />
-              قیمت‌گذاری شفاف
+            {/* Badge */}
+            <Badge className="mb-6 bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200 transition-colors px-4 py-2 text-sm font-medium">
+              <CreditCard className="w-4 h-4 mr-2" />
+              قیمت‌گذاری شفاف برای کسب‌وکارهای ایرانی
             </Badge>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
-              قیمت‌گذاری
-              <span className="text-blue-600 block">ساده و منصفانه</span>
+
+            {/* Main Heading */}
+            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-8 leading-tight">
+              <span className="block">قیمت‌گذاری</span>
+              <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                ساده و منصفانه
+              </span>
             </h1>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              بدون هزینه‌های پنهان، بدون قرارداد بلندمدت. فقط پرداخت کنید و شروع
-              کنید. هر پلنی که انتخاب کنید، پشتیبانی کامل ما را خواهید داشت.
+
+            {/* Subtitle */}
+            <p className="text-xl md:text-2xl text-gray-600 max-w-4xl mx-auto leading-relaxed mb-12">
+              ویجت رزرو آنلاین مخصوص کسب‌وکارهای ایرانی با درگاه‌های پرداخت
+              داخلی.
+              <span className="font-semibold text-blue-600">
+                {" "}
+                بدون هزینه‌های پنهان
+              </span>
+              ،
+              <span className="font-semibold text-purple-600">
+                {" "}
+                بدون قرارداد بلندمدت
+              </span>
+              .
             </p>
+
+            {/* Trust Indicators */}
+            <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-600">
+              <div className="flex items-center gap-2">
+                <Check className="w-4 h-4 text-green-500" />
+                <span>پلن رایگان برای شروع</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Check className="w-4 h-4 text-green-500" />
+                <span>نصب ۵ دقیقه‌ای</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Check className="w-4 h-4 text-green-500" />
+                <span>پشتیبانی فارسی</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Check className="w-4 h-4 text-green-500" />
+                <span>درگاه‌های پرداخت ایرانی</span>
+              </div>
+            </div>
           </motion.div>
 
           {/* Billing Toggle */}
@@ -242,30 +293,30 @@ const Pricing: React.FC = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="flex justify-center mb-12"
+            className="flex justify-center mb-16"
           >
-            <div className="bg-gray-100 rounded-lg p-1 inline-flex">
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-2 shadow-lg border border-gray-200/50 inline-flex">
               <button
                 onClick={() => setBillingPeriod("monthly")}
-                className={`px-6 py-3 rounded-md text-sm font-medium transition-all ${
+                className={`px-8 py-4 rounded-xl text-sm font-semibold transition-all duration-300 ${
                   billingPeriod === "monthly"
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-600 hover:text-gray-900"
+                    ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg transform scale-105"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                 }`}
               >
                 ماهانه
               </button>
               <button
                 onClick={() => setBillingPeriod("yearly")}
-                className={`px-6 py-3 rounded-md text-sm font-medium transition-all ${
+                className={`px-8 py-4 rounded-xl text-sm font-semibold transition-all duration-300 relative ${
                   billingPeriod === "yearly"
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-600 hover:text-gray-900"
+                    ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg transform scale-105"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                 }`}
               >
                 سالانه
                 {plans.some((p) => getDiscountPercentage(p) > 0) && (
-                  <Badge className="mr-2 text-xs bg-green-100 text-green-700 border-green-200">
+                  <Badge className="absolute -top-2 -right-2 text-xs bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0 px-2 py-1 font-bold shadow-lg">
                     تا {Math.max(...plans.map((p) => getDiscountPercentage(p)))}
                     ٪ تخفیف
                   </Badge>
@@ -275,64 +326,83 @@ const Pricing: React.FC = () => {
           </motion.div>
 
           {/* Pricing Cards */}
-          <div className="grid lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          <div className="grid lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
             {plans.map((plan, index) => {
               const PlanIcon = getPlanIcon(plan.nameEn);
-              const isPopular = plan.nameEn === "professional";
+              const isPopular = plan.nameEn === "pro";
               const discount = getDiscountPercentage(plan);
 
               return (
                 <motion.div
                   key={plan.id}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.1 * index }}
+                  transition={{ duration: 0.8, delay: 0.1 * index }}
+                  className={`relative ${isPopular ? "lg:col-span-1 lg:row-span-1" : ""}`}
                 >
                   <Card
-                    className={`relative h-full border-0 shadow-lg hover:shadow-xl transition-all duration-300 ${
-                      isPopular ? "ring-2 ring-blue-500 scale-105" : ""
+                    className={`relative h-full border-0 transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 ${
+                      isPopular
+                        ? "bg-gradient-to-br from-blue-50 via-white to-purple-50 shadow-2xl ring-2 ring-blue-500/20 scale-105"
+                        : "bg-white/80 backdrop-blur-sm shadow-lg hover:shadow-xl"
                     }`}
                   >
                     {isPopular && (
-                      <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white">
-                        <Star className="w-3 h-3 mr-1" />
-                        محبوب‌ترین
-                      </Badge>
+                      <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                        <Badge className="bg-gradient-to-r from-blue-600 to-purple-600 text-white border-0 px-4 py-2 text-sm font-bold shadow-lg">
+                          <Star className="w-4 h-4 mr-2" />
+                          محبوب‌ترین
+                        </Badge>
+                      </div>
                     )}
 
-                    <CardHeader className="text-center pb-8">
+                    <CardHeader className="text-center pb-6 pt-8">
                       <div
-                        className={`w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center ${isPopular ? "bg-blue-100" : "bg-gray-100"}`}
+                        className={`w-20 h-20 rounded-2xl mx-auto mb-6 flex items-center justify-center ${
+                          isPopular
+                            ? "bg-gradient-to-br from-blue-100 to-purple-100 shadow-lg"
+                            : "bg-gradient-to-br from-gray-100 to-slate-100"
+                        }`}
                       >
                         <PlanIcon
-                          className={`w-8 h-8 ${isPopular ? "text-blue-600" : "text-gray-600"}`}
+                          className={`w-10 h-10 ${
+                            isPopular ? "text-blue-600" : "text-gray-600"
+                          }`}
                         />
                       </div>
-                      <CardTitle className="text-2xl text-gray-900">
+                      <CardTitle className="text-2xl font-bold text-gray-900 mb-2">
                         {plan.name}
                       </CardTitle>
-                      <CardDescription className="text-base text-gray-600">
+                      <CardDescription className="text-sm text-gray-600 leading-relaxed">
                         {plan.description}
                       </CardDescription>
                     </CardHeader>
 
-                    <CardContent className="space-y-6">
+                    <CardContent className="space-y-8">
                       {/* Pricing */}
                       <div className="text-center">
-                        <div className="text-sm text-gray-500 mb-2">
+                        <div className="text-xs text-gray-500 mb-3 font-medium uppercase tracking-wide">
                           هزینه راه‌اندازی
                         </div>
-                        <div className="text-3xl font-bold text-gray-900 mb-2">
+                        <div className="text-4xl font-bold text-gray-900 mb-3">
                           {plan.nameEn === "enterprise"
                             ? "تماس بگیرید"
                             : formatPrice(plan.setupFee)}
                           {plan.nameEn !== "enterprise" && (
-                            <span className="text-sm font-normal text-gray-500 mr-1">
+                            <span className="text-lg font-normal text-gray-500 mr-1">
                               تومان
                             </span>
                           )}
                         </div>
-                        <div className="text-sm text-gray-500">
+                        <div
+                          className={`text-sm font-medium ${
+                            plan.nameEn === "enterprise"
+                              ? "text-purple-600"
+                              : plan.monthlyFee === 0
+                                ? "text-green-600"
+                                : "text-gray-600"
+                          }`}
+                        >
                           {plan.nameEn === "enterprise"
                             ? "قیمت ویژه"
                             : billingPeriod === "monthly"
@@ -349,76 +419,137 @@ const Pricing: React.FC = () => {
                         </div>
                       </div>
 
-                      <Separator />
+                      <Separator className="bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
 
                       {/* Limits */}
-                      <div className="space-y-3">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-500">رزروهای ماهانه:</span>
-                          <span className="font-medium text-gray-900">
-                            {plan.bookingsLimit
-                              ? formatPrice(plan.bookingsLimit)
-                              : "نامحدود"}
-                          </span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-500">خدمات:</span>
-                          <span className="font-medium text-gray-900">
-                            {plan.servicesLimit
-                              ? plan.servicesLimit
-                              : "نامحدود"}
-                          </span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-500">پیامک ماهانه:</span>
-                          <span className="font-medium text-gray-900">
-                            {plan.smsLimit
-                              ? formatPrice(plan.smsLimit)
-                              : "نامحدود"}
-                          </span>
-                        </div>
-                      </div>
-
-                      <Separator />
-
-                      {/* Features */}
-                      <div className="space-y-3">
-                        <h4 className="font-medium text-sm text-gray-500">
-                          ویژگی‌های اصلی:
+                      <div className="space-y-4">
+                        <h4 className="text-sm font-semibold text-gray-900 text-center mb-4">
+                          محدودیت‌ها و امکانات
                         </h4>
-                        {plan.features.slice(0, 6).map((feature, idx) => {
-                          const featureLabel =
-                            featureLabels[feature] || feature;
-                          return (
-                            <div key={idx} className="flex items-center gap-3">
-                              <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
-                              <span className="text-sm text-gray-700">
-                                {featureLabel}
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div className="flex items-center gap-2">
+                              <Users className="w-4 h-4 text-blue-600" />
+                              <span className="text-sm text-gray-600">
+                                {plan.nameEn === "enterprise"
+                                  ? "N/A"
+                                  : "کارکنان"}
                               </span>
                             </div>
-                          );
-                        })}
-                        {plan.features.length > 6 && (
-                          <div className="text-xs text-gray-500">
-                            + {plan.features.length - 6} ویژگی دیگر
+                            <span className="font-semibold text-gray-900">
+                              {plan.nameEn === "enterprise"
+                                ? "N/A"
+                                : plan.bookingsLimit
+                                  ? plan.bookingsLimit
+                                  : "نامحدود"}
+                            </span>
                           </div>
-                        )}
+                          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div className="flex items-center gap-2">
+                              <CreditCard className="w-4 h-4 text-green-600" />
+                              <span className="text-sm text-gray-600">
+                                خدمات
+                              </span>
+                            </div>
+                            <span className="font-semibold text-gray-900">
+                              {plan.servicesLimit
+                                ? plan.servicesLimit
+                                : "نامحدود"}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div className="flex items-center gap-2">
+                              <Shield className="w-4 h-4 text-purple-600" />
+                              <span className="text-sm text-gray-600">
+                                درگاه پرداخت
+                              </span>
+                            </div>
+                            <span className="font-semibold text-gray-900">
+                              {plan.features.includes("ZARINPAL_GATEWAY")
+                                ? "زرین‌پال"
+                                : plan.features.includes("TWO_PAYMENT_GATEWAYS")
+                                  ? "هر ۲"
+                                  : plan.features.includes(
+                                        "ALL_PAYMENT_GATEWAYS"
+                                      )
+                                    ? "همه"
+                                    : "سفارشی"}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div className="flex items-center gap-2">
+                              <Star className="w-4 h-4 text-yellow-600" />
+                              <span className="text-sm text-gray-600">
+                                برندینگ
+                              </span>
+                            </div>
+                            <span className="font-semibold text-gray-900">
+                              {plan.features.includes("POWERED_BY_BRANDING")
+                                ? '"powered by"'
+                                : plan.features.includes("MINIMAL_BRANDING")
+                                  ? "حداقلی"
+                                  : plan.features.includes(
+                                        "WHITE_LABEL_BRANDING"
+                                      )
+                                    ? "سفید"
+                                    : plan.features.includes("NO_BRANDING")
+                                      ? "هیچ"
+                                      : "پایه"}
+                            </span>
+                          </div>
+                        </div>
                       </div>
 
-                      <Button
-                        className={`w-full text-lg ${
-                          isPopular
-                            ? "bg-blue-600 hover:bg-blue-700 text-white"
-                            : "bg-gray-900 hover:bg-gray-800 text-white"
-                        }`}
-                        size="lg"
-                        onClick={() => handleGetStarted(plan.id)}
-                      >
-                        {plan.nameEn === "enterprise"
-                          ? "تماس با فروش"
-                          : "شروع کنید"}
-                        <ArrowRight className="w-4 h-4 mr-2" />
-                      </Button>
+                      <Separator className="bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
+
+                      {/* Features */}
+                      <div className="space-y-4">
+                        <h4 className="text-sm font-semibold text-gray-900 text-center mb-4">
+                          ویژگی‌های کلیدی
+                        </h4>
+                        <div className="space-y-2">
+                          {plan.features.slice(0, 5).map((feature, idx) => {
+                            const featureLabel =
+                              featureLabels[feature] || feature;
+                            return (
+                              <div
+                                key={idx}
+                                className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
+                              >
+                                <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
+                                <span className="text-sm text-gray-700 font-medium">
+                                  {featureLabel}
+                                </span>
+                              </div>
+                            );
+                          })}
+                          {plan.features.length > 5 && (
+                            <div className="text-center pt-2">
+                              <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                                + {plan.features.length - 5} ویژگی دیگر
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* CTA Button */}
+                      <div className="pt-4">
+                        <Button
+                          className={`w-full text-lg font-semibold py-6 transition-all duration-300 ${
+                            isPopular
+                              ? "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105"
+                              : "bg-gradient-to-r from-gray-900 to-slate-800 hover:from-gray-800 hover:to-slate-700 text-white shadow-lg hover:shadow-xl"
+                          }`}
+                          size="lg"
+                          onClick={() => handleGetStarted(plan.id)}
+                        >
+                          {plan.nameEn === "enterprise"
+                            ? "تماس با فروش"
+                            : "شروع کنید"}
+                          <ArrowRight className="w-5 h-5 mr-2" />
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 </motion.div>
@@ -552,7 +683,7 @@ const Pricing: React.FC = () => {
                       className="bg-blue-600 hover:bg-blue-700 text-white"
                       onClick={() => navigate("/auth/business-register")}
                     >
-                      شروع رایگان ۱۴ روزه
+                      شروع رایگان
                       <ArrowRight className="w-4 h-4 mr-2" />
                     </Button>
                   </div>
@@ -772,7 +903,7 @@ const Pricing: React.FC = () => {
                   آماده شروع هستید؟
                 </h2>
                 <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto leading-relaxed">
-                  ۱۴ روز رایگان تست کنید. بدون نیاز به کارت اعتباری.
+                  پلن رایگان برای شروع. بدون نیاز به کارت اعتباری.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Button

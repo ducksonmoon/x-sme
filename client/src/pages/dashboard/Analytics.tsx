@@ -8,6 +8,7 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import ComingSoon from "@/components/ComingSoon";
 
 const Analytics: React.FC = () => {
   const { user } = useAuthStore();
@@ -36,6 +37,16 @@ const Analytics: React.FC = () => {
   }
 
   const analyticsData = analytics?.data;
+
+  return (
+    <ComingSoon
+      title="تحلیل‌ها و آمار"
+      description="بخش تحلیل‌ها و آمار به زودی در دسترس خواهد بود. این بخش شامل داشبوردهای تحلیلی پیشرفته، گزارش‌های تفصیلی و نمودارهای تعاملی خواهد بود."
+      featureName="analytics"
+      onBack={() => navigate("/dashboard")}
+      estimatedRelease="آبان ۱۴۰۴"
+    />
+  );
 
   return (
     <div className="space-y-6">

@@ -20,6 +20,12 @@ import {
   Globe,
   BarChart3,
   Award,
+  Sparkles,
+  ArrowRight,
+  Building2,
+  Heart,
+  Target,
+  Rocket,
 } from "lucide-react";
 import { Button } from "@components/ui/button";
 import {
@@ -72,10 +78,18 @@ const Home: React.FC = () => {
     PERSIAN_CALENDAR: "تقویم فارسی",
     STAFF_MANAGEMENT: "مدیریت کارکنان",
     WHITE_LABEL: "برچسب سفید",
+    WHITE_LABEL_SDK: "SDK برچسب سفید",
     CUSTOM_INTEGRATIONS: "یکپارچگی‌های سفارشی",
     DEDICATED_ACCOUNT_MANAGER: "مدیر اختصاصی حساب",
     SLA_GUARANTEE: "تضمین SLA",
     ADVANCED_SECURITY: "امنیت پیشرفته",
+    ZARINPAL_GATEWAY: "درگاه زرین‌پال",
+    TWO_PAYMENT_GATEWAYS: "هر ۲ درگاه پرداخت",
+    ALL_PAYMENT_GATEWAYS: "تمام درگاه‌های پرداخت",
+    POWERED_BY_BRANDING: "برندینگ 'powered by'",
+    MINIMAL_BRANDING: "برندینگ حداقلی",
+    WHITE_LABEL_BRANDING: "برندینگ سفید",
+    NO_BRANDING: "بدون برندینگ",
   };
 
   // Fetch plans from API
@@ -229,55 +243,137 @@ const Home: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-gray-50 via-white to-blue-50">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 to-purple-600/5"></div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
+      {/* Hero Section - Redesigned */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50">
+        {/* Background Elements */}
+        <div className="absolute inset-0">
+          <div className="absolute top-0 left-0 w-72 h-72 bg-blue-400/10 rounded-full blur-3xl"></div>
+          <div className="absolute top-0 right-0 w-96 h-96 bg-purple-400/10 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 left-1/2 w-80 h-80 bg-indigo-400/10 rounded-full blur-3xl"></div>
+        </div>
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
             {/* Content */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="text-center lg:text-right"
+              transition={{ duration: 0.8 }}
+              className="text-center lg:text-right order-2 lg:order-1"
             >
-              <Badge className="inline-flex items-center gap-2 mb-6 bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 transition-colors">
-                <Globe className="w-4 h-4" />
-                ساخت ایران، برای کسب‌وکارهای ایرانی
-              </Badge>
+              {/* Trust Badge */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="inline-flex items-center gap-2 mb-8"
+              >
+                <Badge className="bg-gradient-to-r from-blue-600 to-purple-600 text-white border-0 px-4 py-2 text-sm font-medium">
+                  <Globe className="w-4 h-4" />
+                  راه‌حل اختصاصی کسب‌وکارهای ایرانی
+                </Badge>
+              </motion.div>
 
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight mb-6">
-                ویجت رزرو آنلاین
-                <br />
-                <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  برای کسب‌وکار شما
+              {/* Main Headline */}
+              <motion.h1
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.3 }}
+                className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight mb-6"
+              >
+                <span className="block">ویجت رزرو آنلاین</span>
+                <span className="block bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                  با درگاه‌های ایرانی
                 </span>
-              </h1>
+              </motion.h1>
 
-              <p className="text-xl text-gray-600 leading-relaxed mb-8 max-w-2xl mx-auto lg:mx-0">
-                سامانه کامل مدیریت رزرو که مشتریانتان را ۲۴ ساعته قادر به
-                نوبت‌گیری و پرداخت آنلاین می‌کند.
-                <span className="font-semibold text-blue-600">
-                  +۵۰۰ کسب‌وکار
+              {/* Subtitle */}
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.4 }}
+                className="text-xl text-gray-600 leading-relaxed mb-8 max-w-2xl mx-auto lg:mx-0"
+              >
+                برای سالن‌های زیبایی، کلینیک‌ها و موسسات آموزشی.
+                <span className="font-semibold text-blue-600"> رزرو ۲۴/۷</span>،
+                <span className="font-semibold text-purple-600">
+                  {" "}
+                  پرداخت امن
                 </span>{" "}
-                درآمدشان را با ما افزایش داده‌اند.
-              </p>
+                و
+                <span className="font-semibold text-indigo-600">
+                  {" "}
+                  یادآوری هوشمند
+                </span>
+                .
+              </motion.p>
 
-              <div className="flex flex-col sm:flex-row gap-4 mb-8 justify-center lg:justify-start">
+              {/* Key Benefits */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.5 }}
+                className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10"
+              >
+                {[
+                  {
+                    icon: Shield,
+                    text: "مخصوص ایران",
+                    subtext: "درگاه‌های پاسارگاد، سامان، زرین‌پال",
+                    color: "text-green-600",
+                    bgColor: "bg-green-50",
+                  },
+                  {
+                    icon: Zap,
+                    text: "نصب ۵ دقیقه‌ای",
+                    subtext: "فقط ۲ خط کد",
+                    color: "text-blue-600",
+                    bgColor: "bg-blue-50",
+                  },
+                  {
+                    icon: Award,
+                    text: "پشتیبانی ۲۴/۷",
+                    subtext: "تیم ایرانی",
+                    color: "text-purple-600",
+                    bgColor: "bg-purple-50",
+                  },
+                ].map((item, index) => (
+                  <div
+                    key={index}
+                    className={`${item.bgColor} rounded-xl p-4 border border-gray-100`}
+                  >
+                    <div className="flex items-center gap-3 mb-2">
+                      <item.icon className={`w-5 h-5 ${item.color}`} />
+                      <span className="font-semibold text-gray-900 text-sm">
+                        {item.text}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-600">{item.subtext}</p>
+                  </div>
+                ))}
+              </motion.div>
+
+              {/* CTA Buttons */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.6 }}
+                className="flex flex-col sm:flex-row gap-4 mb-8 justify-center lg:justify-start"
+              >
                 <Button
                   size="lg"
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 text-lg"
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
                   asChild
                 >
                   <Link to="/widget-demo" className="flex items-center gap-2">
                     <PlayCircle className="w-5 h-5" />
-                    مشاهده دمو زنده
+                    مشاهده دمو رایگان
                   </Link>
                 </Button>
                 <Button
                   variant="outline"
                   size="lg"
-                  className="border-2 border-gray-200 hover:border-blue-300 hover:bg-blue-50 px-8 py-4 text-lg"
+                  className="border-2 border-gray-200 hover:border-blue-300 hover:bg-blue-50 px-8 py-4 text-lg font-semibold"
                   asChild
                 >
                   <Link to="/contact" className="flex items-center gap-2">
@@ -285,99 +381,106 @@ const Home: React.FC = () => {
                     مشاوره رایگان
                   </Link>
                 </Button>
-              </div>
+              </motion.div>
 
-              {/* Trust Indicators */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {[
-                  {
-                    icon: CheckCircle,
-                    text: "۱۴ روز رایگان",
-                    color: "text-green-600",
-                  },
-                  {
-                    icon: Shield,
-                    text: "نصب ۵ دقیقه‌ای",
-                    color: "text-blue-600",
-                  },
-                  {
-                    icon: Award,
-                    text: "پشتیبانی ۲۴/۷",
-                    color: "text-purple-600",
-                  },
-                ].map((item, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center gap-2 bg-white/80 backdrop-blur rounded-lg p-3 border border-gray-100"
-                  >
-                    <item.icon className={`w-5 h-5 ${item.color}`} />
-                    <span className="text-sm font-medium text-gray-700">
-                      {item.text}
-                    </span>
+              {/* Social Proof */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.8, delay: 0.7 }}
+                className="flex items-center justify-center lg:justify-start gap-6 text-sm text-gray-500"
+              >
+                <div className="flex items-center gap-2">
+                  <div className="flex -space-x-2">
+                    {["👨‍⚕️", "👩‍💼", "🎵", "💇‍♀️"].map((emoji, idx) => (
+                      <div
+                        key={idx}
+                        className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm border-2 border-white"
+                      >
+                        {emoji}
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                  <span>+۵۰۰ کسب‌وکار فعال</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Star className="w-4 h-4 text-yellow-400 fill-current" />
+                  <span>۴.۹/۵ امتیاز</span>
+                </div>
+              </motion.div>
             </motion.div>
 
-            {/* Widget Preview */}
+            {/* Interactive Widget Preview */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              className="relative"
+              initial={{ opacity: 0, scale: 0.95, x: 30 }}
+              animate={{ opacity: 1, scale: 1, x: 0 }}
+              transition={{ duration: 1, delay: 0.4 }}
+              className="relative order-1 lg:order-2"
             >
-              <div className="relative bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
-                <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-3 h-3 bg-white/30 rounded-full"></div>
-                    <div className="w-3 h-3 bg-white/30 rounded-full"></div>
-                    <div className="w-3 h-3 bg-white/30 rounded-full"></div>
-                    <div className="flex items-center gap-2 text-white text-sm font-medium mr-auto">
+              <div className="relative bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden transform hover:scale-105 transition-transform duration-300">
+                {/* Browser Header */}
+                <div className="bg-gradient-to-r from-gray-100 to-gray-200 px-6 py-3 border-b border-gray-200">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-red-400 rounded-full"></div>
+                    <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
+                    <div className="w-3 h-3 bg-green-400 rounded-full"></div>
+                    <div className="flex items-center gap-2 text-gray-600 text-sm font-medium mr-auto">
                       <Calendar className="w-4 h-4" />
-                      نمونه ویجت
+                      کلینیک دندانپزشکی نور
                     </div>
                   </div>
                 </div>
+
+                {/* Widget Content */}
                 <div className="p-6">
                   <div className="text-center mb-6">
-                    <h3 className="font-bold text-lg text-gray-900">
-                      کلینیک دندانپزشکی نور
+                    <h3 className="font-bold text-lg text-gray-900 mb-1">
+                      رزرو آنلاین
                     </h3>
                     <p className="text-gray-600 text-sm">انتخاب خدمات و زمان</p>
                   </div>
 
+                  {/* Service Selection */}
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-3">
-                      <div className="p-4 border-2 border-blue-500 bg-blue-50 rounded-xl text-center cursor-pointer">
-                        <div className="font-semibold text-gray-900">
+                      <div className="p-4 border-2 border-blue-500 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl text-center cursor-pointer transform hover:scale-105 transition-all duration-200">
+                        <div className="font-semibold text-gray-900 mb-1">
                           جرم‌گیری
                         </div>
-                        <div className="text-blue-600 font-medium text-sm">
+                        <div className="text-blue-600 font-bold text-sm">
                           ۱۵۰,۰۰۰ تومان
                         </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          ۴۵ دقیقه
+                        </div>
                       </div>
-                      <div className="p-4 border-2 border-gray-200 bg-gray-50 rounded-xl text-center cursor-pointer hover:border-gray-300">
-                        <div className="font-semibold text-gray-700">
+                      <div className="p-4 border-2 border-gray-200 bg-gray-50 rounded-xl text-center cursor-pointer hover:border-gray-300 hover:bg-gray-100 transition-all duration-200">
+                        <div className="font-semibold text-gray-700 mb-1">
                           عصب‌کشی
                         </div>
-                        <div className="text-gray-600 font-medium text-sm">
+                        <div className="text-gray-600 font-bold text-sm">
                           ۸۰۰,۰۰۰ تومان
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          ۹۰ دقیقه
                         </div>
                       </div>
                     </div>
 
-                    <div className="bg-gray-50 rounded-xl p-4">
-                      <div className="text-sm font-medium mb-3 text-gray-700">
+                    {/* Time Selection */}
+                    <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4">
+                      <div className="text-sm font-semibold mb-3 text-gray-700 flex items-center gap-2">
+                        <Calendar className="w-4 h-4" />
                         انتخاب زمان:
                       </div>
                       <div className="grid grid-cols-3 gap-2">
                         {["۱۰:۰۰", "۱۲:۰۰", "۱۴:۰۰"].map((time, idx) => (
                           <button
                             key={time}
-                            className={`p-2 rounded-lg text-sm font-medium transition-all ${
+                            className={`p-3 rounded-lg text-sm font-semibold transition-all duration-200 ${
                               idx === 1
-                                ? "bg-blue-600 text-white shadow-md"
-                                : "bg-white border border-gray-200 text-gray-700 hover:border-blue-300"
+                                ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg transform scale-105"
+                                : "bg-white border border-gray-200 text-gray-700 hover:border-blue-300 hover:bg-blue-50"
                             }`}
                           >
                             {time}
@@ -386,26 +489,213 @@ const Home: React.FC = () => {
                       </div>
                     </div>
 
-                    <Button
-                      className="w-full bg-blue-600 hover:bg-blue-700"
-                      size="lg"
-                    >
-                      <span>ادامه رزرو</span>
-                      <ArrowLeft className="w-4 h-4 mr-2" />
-                    </Button>
-
-                    <div className="text-center bg-green-50 border border-green-200 rounded-lg p-3">
-                      <div className="text-xs text-green-700 flex items-center justify-center gap-2">
-                        <span>💳 بیعانه ۵۰ هزار تومان</span>
-                        <span>•</span>
-                        <span>🔄 لغو تا ۲ ساعت قبل</span>
+                    {/* Payment Preview */}
+                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 border border-green-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-semibold text-gray-700">
+                          مبلغ قابل پرداخت:
+                        </span>
+                        <span className="text-lg font-bold text-green-600">
+                          ۱۵۰,۰۰۰ تومان
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        <CreditCard className="w-3 h-3" />
+                        پرداخت امن با درگاه‌های ایرانی
                       </div>
                     </div>
+
+                    {/* CTA Button */}
+                    <Button
+                      className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 shadow-lg hover:shadow-xl transition-all duration-300"
+                      size="lg"
+                    >
+                      <CreditCard className="w-4 h-4 ml-2" />
+                      رزرو و پرداخت
+                    </Button>
                   </div>
                 </div>
               </div>
+
+              {/* Floating Elements */}
+              <div className="absolute -top-4 -right-4 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg">
+                زنده
+              </div>
+              <div className="absolute -bottom-4 -left-4 bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg">
+                نمونه واقعی
+              </div>
             </motion.div>
           </div>
+        </div>
+      </section>
+
+      {/* Target Audience Section */}
+      <section className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <Badge className="mb-4 bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 border-green-200">
+              <Target className="w-4 h-4 mr-2" />
+              مخصوص کسب‌وکارهای ایرانی
+            </Badge>
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
+              برای چه کسب‌وکارهایی طراحی شده؟
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              راه‌حل کامل رزرو آنلاین برای کسب‌وکارهایی که نیاز به مدیریت نوبت و
+              پرداخت دارند
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                icon: "💇‍♀️",
+                title: "سالن‌های زیبایی",
+                subtitle: "آرایشگاه، کاشت ناخن، میکاپ",
+                description:
+                  "مدیریت نوبت آرایش، کوتاهی مو، و سایر خدمات زیبایی با سیستم بیعانه و یادآوری",
+                features: [
+                  "رزرو خدمات متنوع",
+                  "مدیریت آرایشگران",
+                  "پکیج‌های خدمات",
+                  "یادآوری پیامکی",
+                ],
+                color: "from-pink-500 to-rose-500",
+                bgColor: "bg-gradient-to-br from-pink-50 to-rose-50",
+                borderColor: "border-pink-200",
+              },
+              {
+                icon: "👨‍⚕️",
+                title: "کلینیک‌ها و مطب‌ها",
+                subtitle: "دندانپزشکی، پزشکی، روانشناسی",
+                description:
+                  "سیستم نوبت‌دهی برای پزشکان و مراکز درمانی با تقویم فارسی و یادآوری دارو",
+                features: [
+                  "تقویم پزشک",
+                  "تاریخچه ویزیت",
+                  "یادآوری دارو",
+                  "پرداخت آنلاین",
+                ],
+                color: "from-blue-500 to-indigo-500",
+                bgColor: "bg-gradient-to-br from-blue-50 to-indigo-50",
+                borderColor: "border-blue-200",
+              },
+              {
+                icon: "🎵",
+                title: "موسسات آموزشی",
+                subtitle: "زبان، موسیقی، هنر",
+                description:
+                  "مدیریت کلاس‌ها، دوره‌ها و رزرو جلسات خصوصی با سیستم حضور و غیاب",
+                features: [
+                  "مدیریت دوره‌ها",
+                  "حضور و غیاب",
+                  "پرداخت شهریه",
+                  "گزارش‌گیری",
+                ],
+                color: "from-purple-500 to-violet-500",
+                bgColor: "bg-gradient-to-br from-purple-50 to-violet-50",
+                borderColor: "border-purple-200",
+              },
+            ].map((business, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: index * 0.2 }}
+                viewport={{ once: true }}
+              >
+                <Card
+                  className={`h-full border-2 ${business.borderColor} ${business.bgColor} hover:shadow-xl transition-all duration-300 group`}
+                >
+                  <CardContent className="p-8">
+                    {/* Icon */}
+                    <div
+                      className={`w-16 h-16 bg-gradient-to-r ${business.color} rounded-2xl flex items-center justify-center text-2xl mb-6 mx-auto group-hover:scale-110 transition-transform duration-300`}
+                    >
+                      {business.icon}
+                    </div>
+
+                    {/* Title */}
+                    <div className="text-center mb-4">
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">
+                        {business.title}
+                      </h3>
+                      <p className="text-sm text-gray-600 font-medium">
+                        {business.subtitle}
+                      </p>
+                    </div>
+
+                    {/* Description */}
+                    <p className="text-gray-700 leading-relaxed mb-6 text-center">
+                      {business.description}
+                    </p>
+
+                    {/* Features */}
+                    <div className="space-y-3">
+                      {business.features.map((feature, idx) => (
+                        <div key={idx} className="flex items-center gap-3">
+                          <div
+                            className={`w-2 h-2 bg-gradient-to-r ${business.color} rounded-full`}
+                          ></div>
+                          <span className="text-sm text-gray-700 font-medium">
+                            {feature}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* CTA */}
+                    <div className="mt-6 pt-6 border-t border-gray-200">
+                      <Button
+                        variant="outline"
+                        className={`w-full border-2 ${business.borderColor} hover:bg-gradient-to-r ${business.color} hover:text-white transition-all duration-300`}
+                        asChild
+                      >
+                        <Link to="/widget-demo">
+                          مشاهده دمو {business.title}
+                        </Link>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Bottom CTA */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.6 }}
+            viewport={{ once: true }}
+            className="text-center mt-12"
+          >
+            <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-2xl p-8 border border-gray-200">
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                کسب‌وکار شما در این لیست نیست؟
+              </h3>
+              <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
+                اگر کسب‌وکار شما نیاز به سیستم رزرو آنلاین دارد، با ما تماس
+                بگیرید. راه‌حل سفارشی برای شما طراحی می‌کنیم.
+              </p>
+              <Button
+                size="lg"
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4"
+                asChild
+              >
+                <Link to="/contact" className="flex items-center gap-2">
+                  <Phone className="w-5 h-5" />
+                  مشاوره رایگان
+                </Link>
+              </Button>
+            </div>
+          </motion.div>
         </div>
       </section>
 
@@ -1296,26 +1586,206 @@ const Home: React.FC = () => {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-20 bg-white">
+      {/* Core Features Section - Redesigned */}
+      <section className="py-20 bg-gradient-to-br from-gray-50 via-white to-blue-50/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.8 }}
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              ویژگی‌های کلیدی
+            <Badge className="mb-4 bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-700 border-blue-200">
+              <Sparkles className="w-4 h-4 mr-2" />
+              ویژگی‌های اصلی
+            </Badge>
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
+              چرا X-SME انتخاب کنید؟
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              امکاناتی که کسب‌وکار شما را به سطح بعدی می‌برد
+              سه ویژگی کلیدی که کسب‌وکار شما را متحول می‌کند
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {features.map((feature, index) => (
+          <div className="grid lg:grid-cols-3 gap-8 mb-16">
+            {[
+              {
+                icon: Calendar,
+                title: "رزرو ۲۴/۷ هوشمند",
+                subtitle: "مشتریان در هر ساعت رزرو کنند",
+                description:
+                  "سیستم پیشرفته رزرو با قابلیت تنظیم ساعات کاری، تعطیلات و مدیریت اتوماتیک اسلات‌های زمانی",
+                benefits: [
+                  "رزرو آنلاین ۲۴ ساعته",
+                  "مدیریت تعطیلات",
+                  "جلوگیری از تداخل",
+                  "تقویم فارسی",
+                ],
+                color: "from-blue-500 to-indigo-500",
+                bgColor: "bg-gradient-to-br from-blue-50 to-indigo-50",
+                borderColor: "border-blue-200",
+                stat: "+۵۰%",
+                statText: "افزایش رزرو",
+              },
+              {
+                icon: CreditCard,
+                title: "پرداخت امن ایرانی",
+                subtitle: "درگاه‌های معتبر داخلی",
+                description:
+                  "یکپارچگی با تمام درگاه‌های پرداخت معتبر ایران برای تجربه پرداخت سریع و ایمن",
+                benefits: [
+                  "پاسارگاد، سامان، زرین‌پال",
+                  "پرداخت آنلاین ایمن",
+                  "تسویه خودکار",
+                  "بیعانه اختیاری",
+                ],
+                color: "from-green-500 to-emerald-500",
+                bgColor: "bg-gradient-to-br from-green-50 to-emerald-50",
+                borderColor: "border-green-200",
+                stat: "۱۰۰%",
+                statText: "امنیت تضمینی",
+              },
+              {
+                icon: MessageSquare,
+                title: "یادآوری هوشمند",
+                subtitle: "کاهش غیبت مشتریان",
+                description:
+                  "سیستم یادآوری خودکار از طریق پیامک و تلگرام برای کاهش غیبت مشتریان",
+                benefits: [
+                  "یادآوری پیامکی",
+                  "اطلاع‌رسانی تلگرام",
+                  "کاهش ۷۰٪ غیبت",
+                  "مدیریت خودکار",
+                ],
+                color: "from-purple-500 to-violet-500",
+                bgColor: "bg-gradient-to-br from-purple-50 to-violet-50",
+                borderColor: "border-purple-200",
+                stat: "-۷۰%",
+                statText: "کاهش غیبت",
+              },
+            ].map((feature, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: index * 0.2 }}
+                viewport={{ once: true }}
+              >
+                <Card
+                  className={`h-full border-2 ${feature.borderColor} ${feature.bgColor} hover:shadow-xl transition-all duration-300 group relative overflow-hidden`}
+                >
+                  {/* Background Pattern */}
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-white/20 to-transparent rounded-full blur-2xl"></div>
+
+                  <CardContent className="p-8 relative">
+                    {/* Icon and Stats */}
+                    <div className="flex items-center justify-between mb-6">
+                      <div
+                        className={`w-16 h-16 bg-gradient-to-r ${feature.color} rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg`}
+                      >
+                        <feature.icon className="w-8 h-8 text-white" />
+                      </div>
+                      <div className="text-right">
+                        <div
+                          className={`text-2xl font-bold bg-gradient-to-r ${feature.color} bg-clip-text text-transparent`}
+                        >
+                          {feature.stat}
+                        </div>
+                        <div className="text-sm text-gray-600 font-medium">
+                          {feature.statText}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Title and Subtitle */}
+                    <div className="mb-4">
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">
+                        {feature.title}
+                      </h3>
+                      <p className="text-sm text-gray-600 font-medium">
+                        {feature.subtitle}
+                      </p>
+                    </div>
+
+                    {/* Description */}
+                    <p className="text-gray-700 leading-relaxed mb-6">
+                      {feature.description}
+                    </p>
+
+                    {/* Benefits */}
+                    <div className="space-y-3">
+                      {feature.benefits.map((benefit, idx) => (
+                        <div key={idx} className="flex items-center gap-3">
+                          <div
+                            className={`w-2 h-2 bg-gradient-to-r ${feature.color} rounded-full`}
+                          ></div>
+                          <span className="text-sm text-gray-700 font-medium">
+                            {benefit}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* CTA */}
+                    <div className="mt-6 pt-6 border-t border-gray-200">
+                      <Button
+                        variant="outline"
+                        className={`w-full border-2 ${feature.borderColor} hover:bg-gradient-to-r ${feature.color} hover:text-white transition-all duration-300`}
+                        asChild
+                      >
+                        <Link to="/widget-demo">
+                          مشاهده دمو
+                          <ArrowRight className="w-4 h-4 mr-2" />
+                        </Link>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Additional Features Grid */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.6 }}
+            viewport={{ once: true }}
+            className="text-center mb-12"
+          >
+            <h3 className="text-2xl font-bold text-gray-900 mb-8">
+              ویژگی‌های اضافی
+            </h3>
+          </motion.div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              {
+                icon: BarChart3,
+                title: "گزارش‌گیری پیشرفته",
+                description: "آمار و تحلیل کامل عملکرد کسب‌وکار شما",
+                color: "from-orange-500 to-red-500",
+              },
+              {
+                icon: Users,
+                title: "مدیریت تیم",
+                description: "سیستم دسترسی مبتنی بر نقش برای مدیران و کارکنان",
+                color: "from-teal-500 to-cyan-500",
+              },
+              {
+                icon: Globe,
+                title: "کار با هر پلتفرمی",
+                description: "ویجت قابل تعمیم که در هر وب‌سایتی کار می‌کند",
+                color: "from-indigo-500 to-purple-500",
+              },
+              {
+                icon: Shield,
+                title: "امنیت بالا",
+                description: "رمزگذاری پیشرفته و حفاظت از داده‌ها",
+                color: "from-emerald-500 to-green-500",
+              },
+            ].map((feature, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 20 }}
@@ -1326,7 +1796,7 @@ const Home: React.FC = () => {
                 <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 h-full bg-white group">
                   <CardContent className="p-6 text-center">
                     <div
-                      className={`w-12 h-12 ${feature.color} rounded-xl flex items-center justify-center mb-4 mx-auto group-hover:scale-110 transition-transform duration-300`}
+                      className={`w-12 h-12 bg-gradient-to-r ${feature.color} rounded-xl flex items-center justify-center mb-4 mx-auto group-hover:scale-110 transition-transform duration-300 shadow-lg`}
                     >
                       <feature.icon className="w-6 h-6 text-white" />
                     </div>
@@ -1344,71 +1814,201 @@ const Home: React.FC = () => {
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section className="py-20 bg-gray-50">
+      {/* Testimonials Section - Redesigned */}
+      <section className="py-20 bg-gradient-to-br from-gray-50 via-white to-blue-50/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.8 }}
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              نظرات مشتریان ما
+            <Badge className="mb-4 bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 border-green-200">
+              <Star className="w-4 h-4 mr-2" />
+              نظرات مشتریان
+            </Badge>
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
+              مشتریان ما چه می‌گویند؟
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              تجربه واقعی صاحبان کسب‌وکار با سامانه ما
+              تجربه واقعی صاحبان کسب‌وکار که درآمدشان را با X-SME افزایش
+              داده‌اند
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, index) => (
+          <div className="grid lg:grid-cols-3 gap-8 mb-12">
+            {[
+              {
+                name: "دکتر احمد رضایی",
+                business: "کلینیک دندانپزشکی نور",
+                businessType: "کلینیک دندانپزشکی",
+                comment:
+                  "درآمدم ۲ برابر شد و دیگه نگران غیبت مشتریان نیستم. سیستم عالیه!",
+                rating: 5,
+                image: "👨‍⚕️",
+                result: "+۸۵% درآمد",
+                resultColor: "from-green-500 to-emerald-500",
+                beforeAfter: {
+                  before: "روزانه ۵-۶ بیمار",
+                  after: "روزانه ۱۰-۱۲ بیمار",
+                },
+                timeSaved: "۳ ساعت در روز",
+                category: "medical",
+              },
+              {
+                name: "خانم مریم احمدی",
+                business: "سالن زیبایی گل",
+                businessType: "سالن زیبایی",
+                comment:
+                  "قبلاً ۱۰ ساعت پشت تلفن بودم، الان فقط ۲ ساعت! خیلی راحت شدم.",
+                rating: 5,
+                image: "👩‍💼",
+                result: "۸ ساعت صرفه‌جویی",
+                resultColor: "from-blue-500 to-indigo-500",
+                beforeAfter: {
+                  before: "۱۰ ساعت تماس",
+                  after: "۲ ساعت تماس",
+                },
+                timeSaved: "۸ ساعت در روز",
+                category: "beauty",
+              },
+              {
+                name: "استاد حسن محمدی",
+                business: "آموزشگاه موسیقی فردا",
+                businessType: "موسسه آموزشی",
+                comment:
+                  "دانش‌آموزها راحت رزرو می‌کنن و من وقتم رو صرف تدریس می‌کنم.",
+                rating: 5,
+                image: "🎵",
+                result: "+۶۰% رزرو",
+                resultColor: "from-purple-500 to-violet-500",
+                beforeAfter: {
+                  before: "۱۵ دانش‌آموز",
+                  after: "۲۴ دانش‌آموز",
+                },
+                timeSaved: "۴ ساعت در روز",
+                category: "education",
+              },
+            ].map((testimonial, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
+                transition={{ duration: 0.8, delay: index * 0.2 }}
                 viewport={{ once: true }}
               >
-                <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 h-full bg-white">
-                  <CardContent className="p-8">
-                    <div className="flex items-center gap-1 mb-4">
-                      {[...Array(testimonial.rating)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className="w-4 h-4 text-yellow-500 fill-current"
-                        />
-                      ))}
+                <Card className="border-0 shadow-xl hover:shadow-2xl transition-all duration-300 h-full bg-white group relative overflow-hidden">
+                  {/* Background Pattern */}
+                  <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-blue-50 to-transparent rounded-full blur-3xl opacity-50 group-hover:opacity-70 transition-opacity duration-300"></div>
+
+                  <CardContent className="p-8 relative">
+                    {/* Header with Rating and Result */}
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center gap-1">
+                        {[...Array(testimonial.rating)].map((_, i) => (
+                          <Star
+                            key={i}
+                            className="w-4 h-4 text-yellow-500 fill-current"
+                          />
+                        ))}
+                      </div>
+                      <Badge
+                        className={`bg-gradient-to-r ${testimonial.resultColor} text-white border-0 px-3 py-1 font-semibold`}
+                      >
+                        {testimonial.result}
+                      </Badge>
                     </div>
 
-                    <p className="text-gray-600 mb-6 leading-relaxed italic">
-                      "{testimonial.comment}"
-                    </p>
+                    {/* Quote */}
+                    <div className="mb-6">
+                      <div className="text-3xl text-gray-300 mb-2">"</div>
+                      <p className="text-gray-700 leading-relaxed italic text-lg">
+                        {testimonial.comment}
+                      </p>
+                    </div>
 
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-xl">
-                          {testimonial.image}
-                        </div>
-                        <div>
-                          <div className="font-semibold text-gray-900">
-                            {testimonial.name}
+                    {/* Before/After Comparison */}
+                    <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl p-4 mb-6 border border-gray-200">
+                      <div className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                        <TrendingUp className="w-4 h-4 text-green-600" />
+                        بهبود عملکرد:
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="text-center">
+                          <div className="text-xs text-gray-500 mb-1">قبل</div>
+                          <div className="text-sm font-semibold text-gray-600">
+                            {testimonial.beforeAfter.before}
                           </div>
-                          <div className="text-sm text-gray-600">
-                            {testimonial.business}
+                        </div>
+                        <div className="text-center">
+                          <div className="text-xs text-gray-500 mb-1">بعد</div>
+                          <div className="text-sm font-semibold text-green-600">
+                            {testimonial.beforeAfter.after}
                           </div>
                         </div>
                       </div>
-                      <Badge className="bg-green-100 text-green-700 border-green-200">
-                        {testimonial.result}
-                      </Badge>
+                    </div>
+
+                    {/* Profile and Time Saved */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center text-xl shadow-md">
+                          {testimonial.image}
+                        </div>
+                        <div>
+                          <div className="font-bold text-gray-900">
+                            {testimonial.name}
+                          </div>
+                          <div className="text-sm text-gray-600 font-medium">
+                            {testimonial.business}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {testimonial.businessType}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xs text-gray-500 mb-1">
+                          صرفه‌جویی زمانی
+                        </div>
+                        <div className="text-sm font-semibold text-blue-600">
+                          {testimonial.timeSaved}
+                        </div>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
               </motion.div>
             ))}
           </div>
+
+          {/* Bottom Stats */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.6 }}
+            viewport={{ once: true }}
+            className="text-center"
+          >
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 text-white">
+              <h3 className="text-2xl font-bold mb-4">آمار کلی مشتریان ما</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                {[
+                  { label: "کسب‌وکار فعال", value: "۵۰۰+", icon: "🏢" },
+                  { label: "رزرو ماهانه", value: "۱۵,۰۰۰+", icon: "📅" },
+                  { label: "رضایت مشتری", value: "۹۸٪", icon: "⭐" },
+                  { label: "صرفه‌جویی زمانی", value: "۵ ساعت/روز", icon: "⏰" },
+                ].map((stat, idx) => (
+                  <div key={idx} className="text-center">
+                    <div className="text-2xl mb-2">{stat.icon}</div>
+                    <div className="text-2xl font-bold mb-1">{stat.value}</div>
+                    <div className="text-sm text-blue-100">{stat.label}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
         </div>
       </section>
 
@@ -1437,7 +2037,7 @@ const Home: React.FC = () => {
               </div>
             ) : (
               plans.slice(0, 3).map((plan, index) => {
-                const isPopular = plan.nameEn === "professional";
+                const isPopular = plan.nameEn === "pro";
                 const displayPrice = getPlanDisplayPrice(plan);
                 const planFeatures = getPlanFeatures(plan);
 
@@ -1518,64 +2118,195 @@ const Home: React.FC = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-blue-600 to-blue-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-            className="max-w-4xl mx-auto"
-          >
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6">
-              آماده شروع هستید؟
-            </h2>
-            <p className="text-xl text-blue-100 mb-8 opacity-90">
-              همین امروز کسب‌وکارتان را متحول کنید و درآمدتان را ۲ برابر کنید
-            </p>
+      {/* Final CTA Section - Redesigned */}
+      <section className="py-20 bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 relative overflow-hidden">
+        {/* Background Elements */}
+        <div className="absolute inset-0">
+          <div className="absolute top-0 left-0 w-96 h-96 bg-white/5 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 right-0 w-96 h-96 bg-purple-400/10 rounded-full blur-3xl"></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-r from-white/5 to-purple-400/5 rounded-full blur-3xl"></div>
+        </div>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+            className="max-w-5xl mx-auto"
+          >
+            {/* Badge */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              viewport={{ once: true }}
+              className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-6 py-3 mb-8 border border-white/30"
+            >
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+              <span className="text-white/90 text-sm font-medium">
+                شروع رایگان - بدون نیاز به کارت اعتباری
+              </span>
+            </motion.div>
+
+            {/* Main Headline */}
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.3 }}
+              viewport={{ once: true }}
+              className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight"
+            >
+              کسب‌وکارتان را
+              <br />
+              <span className="bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent">
+                متحول کنید
+              </span>
+            </motion.h2>
+
+            {/* Subtitle */}
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+              viewport={{ once: true }}
+              className="text-xl text-white/90 mb-8 max-w-3xl mx-auto leading-relaxed"
+            >
+              همین امروز شروع کنید و در عرض ۵ دقیقه سیستم رزرو آنلاین داشته
+              باشید.
+              <span className="font-semibold text-yellow-300">
+                +۵۰۰ کسب‌وکار
+              </span>{" "}
+              قبلاً این کار را کرده‌اند.
+            </motion.p>
+
+            {/* Benefits Grid */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.5 }}
+              viewport={{ once: true }}
+              className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 max-w-4xl mx-auto"
+            >
+              {[
+                {
+                  icon: "⚡",
+                  title: "شروع فوری",
+                  description: "۵ دقیقه تا راه‌اندازی",
+                },
+                {
+                  icon: "💰",
+                  title: "پلن رایگان",
+                  description: "بدون هزینه شروع",
+                },
+                {
+                  icon: "🎯",
+                  title: "نتایج تضمینی",
+                  description: "+۵۰% افزایش رزرو",
+                },
+              ].map((benefit, index) => (
+                <div
+                  key={index}
+                  className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20"
+                >
+                  <div className="text-3xl mb-3">{benefit.icon}</div>
+                  <h3 className="text-lg font-bold text-white mb-2">
+                    {benefit.title}
+                  </h3>
+                  <p className="text-white/80 text-sm">{benefit.description}</p>
+                </div>
+              ))}
+            </motion.div>
+
+            {/* CTA Buttons */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.6 }}
+              viewport={{ once: true }}
+              className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-10"
+            >
               <Button
                 size="lg"
-                className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-4 text-lg"
+                className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black font-bold px-10 py-5 text-lg shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105"
                 asChild
               >
                 <Link
                   to="/auth/business-register"
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-3"
                 >
-                  <PlayCircle className="w-5 h-5" />
-                  شروع رایگان ۱۴ روزه
+                  <Rocket className="w-6 h-6" />
+                  شروع رایگان - همین الان
+                  <ArrowRight className="w-5 h-5" />
                 </Link>
               </Button>
               <Button
                 variant="outline"
                 size="lg"
-                className="border-2 border-white text-white hover:bg-white hover:text-blue-600 px-8 py-4 text-lg"
+                className="border-2 border-white/40 text-white hover:bg-white/20 backdrop-blur-sm px-10 py-5 text-lg font-semibold transition-all duration-300"
                 asChild
               >
-                <Link to="/contact" className="flex items-center gap-2">
+                <Link to="/contact" className="flex items-center gap-3">
                   <Phone className="w-5 h-5" />
-                  مشاوره تلفنی
+                  مشاوره رایگان
                 </Link>
               </Button>
-            </div>
+            </motion.div>
 
-            <div className="flex items-center justify-center gap-8 text-sm text-blue-100 opacity-80">
+            {/* Trust Indicators */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              transition={{ duration: 0.8, delay: 0.7 }}
+              viewport={{ once: true }}
+              className="flex flex-col sm:flex-row items-center justify-center gap-8 text-sm text-white/80"
+            >
               <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4" />
-                <span>بدون نیاز به کارت اعتباری</span>
+                <CheckCircle className="w-4 h-4 text-green-400" />
+                <span>۱۴ روز رایگان</span>
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4" />
+                <CheckCircle className="w-4 h-4 text-green-400" />
                 <span>لغو آسان</span>
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4" />
+                <CheckCircle className="w-4 h-4 text-green-400" />
                 <span>پشتیبانی ۲۴/۷</span>
               </div>
-            </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-green-400" />
+                <span>بدون کدنویسی</span>
+              </div>
+            </motion.div>
+
+            {/* Social Proof */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              transition={{ duration: 0.8, delay: 0.8 }}
+              viewport={{ once: true }}
+              className="mt-10 pt-8 border-t border-white/20"
+            >
+              <div className="flex items-center justify-center gap-6 text-white/60 text-sm">
+                <div className="flex items-center gap-2">
+                  <div className="flex -space-x-2">
+                    {["👨‍⚕️", "👩‍💼", "🎵", "💇‍♀️", "🏢", "🎨"].map((emoji, idx) => (
+                      <div
+                        key={idx}
+                        className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-sm border-2 border-white/30"
+                      >
+                        {emoji}
+                      </div>
+                    ))}
+                  </div>
+                  <span>+۵۰۰ کسب‌وکار فعال</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Star className="w-4 h-4 text-yellow-400 fill-current" />
+                  <span>۴.۹/۵ امتیاز</span>
+                </div>
+              </div>
+            </motion.div>
           </motion.div>
         </div>
       </section>

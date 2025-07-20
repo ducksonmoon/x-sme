@@ -4,6 +4,8 @@ const { PrismaClient } = require('@prisma/client');
 const moment = require('moment');
 const { checkBookingLimit, trackUsage } = require('../utils/planEnforcement');
 const realtimeService = require('../services/realtimeService');
+const { authenticate, authorize } = require('../middleware/auth');
+const { checkPermission } = require('../middleware/permissions');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -974,5 +976,156 @@ async function updateTimeSlotAvailability(booking, status) {
     console.error('Failed to update time slot availability:', error);
   }
 }
+
+// **STAFF-SPECIFIC ROUTES**
+
+// @desc    Get staff's bookings
+// @route   GET /api/bookings/staff/my-bookings
+// @access  Private (Staff only)
+router.get('/staff/my-bookings', authenticate, authorize('STAFF'), checkPermission('bookings', 'VIEW'), async (req, res, next) => {
+  try {
+    const { page = 1, limit = 10, status, date } = req.query;
+    const skip = (page - 1) * limit;
+
+    const where = {
+      businessId: req.staff.businessId,
+      staffId: req.staff.id
+    };
+    
+    if (status) where.status = status;
+    if (date) where.date = new Date(date);
+
+    const [bookings, total] = await Promise.all([
+      prisma.booking.findMany({
+        where,
+        skip: parseInt(skip),
+        take: parseInt(limit),
+        include: {
+          business: {
+            select: { id: true, name: true, phone: true }
+          },
+          service: {
+            select: { id: true, name: true, price: true }
+          },
+          payments: {
+            where: { status: 'SUCCESS' },
+            select: { id: true, amount: true, gateway: true }
+          }
+        },
+        orderBy: { createdAt: 'desc' }
+      }),
+      prisma.booking.count({ where })
+    ]);
+
+    res.json({
+      success: true,
+      data: bookings,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// @desc    Update booking status (staff can only update their own bookings)
+// @route   PUT /api/bookings/staff/:id/status
+// @access  Private (Staff only)
+router.put('/staff/:id/status', authenticate, authorize('STAFF'), checkPermission('bookings', 'EDIT'), async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!status || !['PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED', 'NO_SHOW'].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Valid status is required'
+      });
+    }
+
+    // Check if booking exists and belongs to this staff member
+    const booking = await prisma.booking.findFirst({
+      where: {
+        id,
+        staffId: req.staff.id,
+        businessId: req.staff.businessId
+      }
+    });
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        error: 'Booking not found or access denied'
+      });
+    }
+
+    // Update booking status
+    const updatedBooking = await prisma.booking.update({
+      where: { id },
+      data: { status },
+      include: {
+        business: {
+          select: { id: true, name: true, phone: true }
+        },
+        service: {
+          select: { id: true, name: true, price: true }
+        }
+      }
+    });
+
+    // Update time slot availability
+    await updateTimeSlotAvailability(updatedBooking, status);
+
+    // Send realtime notification
+    realtimeService.notifyBookingUpdate(updatedBooking.businessId, {
+      type: 'booking_status_updated',
+      booking: updatedBooking
+    });
+
+    res.json({
+      success: true,
+      data: updatedBooking,
+      message: 'Booking status updated successfully'
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// @desc    Get staff's today's schedule
+// @route   GET /api/bookings/staff/schedule/today
+// @access  Private (Staff only)
+router.get('/staff/schedule/today', authenticate, authorize('STAFF'), checkPermission('bookings', 'VIEW'), async (req, res, next) => {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const bookings = await prisma.booking.findMany({
+      where: {
+        businessId: req.staff.businessId,
+        staffId: req.staff.id,
+        date: today,
+        status: { in: ['PENDING', 'CONFIRMED'] }
+      },
+      include: {
+        service: {
+          select: { id: true, name: true, price: true, duration: true }
+        }
+      },
+      orderBy: { startTime: 'asc' }
+    });
+
+    res.json({
+      success: true,
+      data: bookings
+    });
+  } catch (error) {
+    next(error);
+  }
+});
 
 module.exports = router; 

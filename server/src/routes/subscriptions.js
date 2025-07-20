@@ -14,7 +14,15 @@ const prisma = new PrismaClient();
 router.get('/plans', async (req, res, next) => {
   try {
     const plans = await prisma.plan.findMany({
-      where: { isActive: true },
+      where: { 
+        isActive: true,
+        // Filter out old plans
+        name: {
+          not: {
+            contains: '(Old)'
+          }
+        }
+      },
       orderBy: { sortOrder: 'asc' }
     });
 
@@ -194,7 +202,7 @@ router.post('/', [
       where: { id: planId }
     });
 
-    if (!plan || !plan.isActive) {
+    if (!plan || !plan.isActive || plan.name.includes('(Old)')) {
       return res.status(404).json({
         success: false,
         error: 'Plan not found or inactive'
@@ -331,7 +339,7 @@ router.put('/plan', [
       where: { id: planId }
     });
 
-    if (!newPlan || !newPlan.isActive) {
+    if (!newPlan || !newPlan.isActive || newPlan.name.includes('(Old)')) {
       return res.status(404).json({
         success: false,
         error: 'Plan not found or inactive'

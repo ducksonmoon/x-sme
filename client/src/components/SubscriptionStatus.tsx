@@ -23,6 +23,7 @@ import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Separator } from "./ui/separator";
 import LoadingSpinner from "./LoadingSpinner";
+import PlanUpgradeModal from "./PlanUpgradeModal";
 
 interface SubscriptionStatusProps {
   businessId: string;
@@ -39,6 +40,7 @@ interface Subscription {
     id: string;
     name: string;
     nameEn: string;
+    description: string;
     setupFee: number;
     monthlyFee: number;
     yearlyFee: number;
@@ -46,6 +48,9 @@ interface Subscription {
     bookingsLimit: number | null;
     servicesLimit: number | null;
     smsLimit: number | null;
+    features: string[];
+    isActive: boolean;
+    sortOrder: number;
   };
   usage: {
     bookingsThisMonth: number;
@@ -61,6 +66,7 @@ const SubscriptionStatus: React.FC<SubscriptionStatusProps> = ({
 }) => {
   const navigate = useNavigate();
   const [showUsageDetails, setShowUsageDetails] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   // Fetch subscription data
   const {
@@ -83,6 +89,21 @@ const SubscriptionStatus: React.FC<SubscriptionStatusProps> = ({
       return data.data as Subscription;
     },
     enabled: !!businessId,
+  });
+
+  // Fetch available plans for upgrade
+  const { data: plans } = useQuery({
+    queryKey: ["subscription-plans"],
+    queryFn: async () => {
+      const response = await fetch("/api/subscriptions/plans", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      const data = await response.json();
+      if (!data.success) throw new Error(data.error);
+      return data.data;
+    },
   });
 
   const getPlanIcon = (planNameEn: string) => {
@@ -386,15 +407,29 @@ const SubscriptionStatus: React.FC<SubscriptionStatusProps> = ({
             {subscription.plan.nameEn !== "enterprise" && (
               <Button
                 size="sm"
-                onClick={() => navigate("/pricing")}
-                className="flex-1"
+                onClick={() => setShowUpgradeModal(true)}
+                className="flex-1 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white shadow-lg"
               >
+                <Sparkles className="w-4 h-4 ml-2" />
                 ارتقای پلن
               </Button>
             )}
           </div>
         </CardContent>
       </Card>
+
+      {/* Plan Upgrade Modal */}
+      {plans && (
+        <PlanUpgradeModal
+          isOpen={showUpgradeModal}
+          onClose={() => setShowUpgradeModal(false)}
+          currentPlan={subscription.plan}
+          availablePlans={plans}
+          currentBillingCycle={
+            subscription.billingCycle as "MONTHLY" | "YEARLY"
+          }
+        />
+      )}
     </div>
   );
 };

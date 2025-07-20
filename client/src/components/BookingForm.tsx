@@ -973,11 +973,11 @@ const BookingForm: React.FC<BookingFormProps> = ({
           )}
 
           {/* Action Buttons */}
-          <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
             <Button
               type="submit"
               disabled={createBookingMutation.isPending}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white h-11"
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white h-10 sm:h-11 text-sm"
             >
               {createBookingMutation.isPending ? (
                 <>
@@ -987,7 +987,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
               ) : (
                 <>
                   <svg
-                    className="w-5 h-5 mr-2"
+                    className="w-4 w-4 sm:w-5 sm:h-5 mr-2"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -1008,7 +1008,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
               variant="outline"
               onClick={onCancel}
               disabled={createBookingMutation.isPending}
-              className="px-6 h-11"
+              className="px-4 sm:px-6 h-10 sm:h-11 text-sm"
             >
               انصراف
             </Button>

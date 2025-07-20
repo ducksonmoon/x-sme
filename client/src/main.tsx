@@ -12,6 +12,7 @@ import { ThemeProvider } from "@providers/ThemeProvider";
 import { LanguageProvider } from "@providers/LanguageProvider";
 import ErrorFallback from "@components/ErrorFallback";
 import { AuthProvider } from "@providers/AuthProvider";
+import ToastProvider from "./components/ui/toast";
 
 import "./styles/index.css";
 
@@ -51,34 +52,36 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <BrowserRouter>
               <ThemeProvider>
                 <LanguageProvider>
-                  <App />
-                  <Toaster
-                    position="top-right"
-                    toastOptions={{
-                      duration: 4000,
-                      style: {
-                        background: "#363636",
-                        color: "#fff",
-                      },
-                      success: {
-                        duration: 3000,
-                        iconTheme: {
-                          primary: "#22c55e",
-                          secondary: "#fff",
+                  <ToastProvider>
+                    <App />
+                    <Toaster
+                      position="top-right"
+                      toastOptions={{
+                        duration: 4000,
+                        style: {
+                          background: "#363636",
+                          color: "#fff",
                         },
-                      },
-                      error: {
-                        duration: 5000,
-                        iconTheme: {
-                          primary: "#ef4444",
-                          secondary: "#fff",
+                        success: {
+                          duration: 3000,
+                          iconTheme: {
+                            primary: "#22c55e",
+                            secondary: "#fff",
+                          },
                         },
-                      },
-                    }}
-                  />
-                  {import.meta.env.DEV && (
-                    <ReactQueryDevtools initialIsOpen={false} />
-                  )}
+                        error: {
+                          duration: 5000,
+                          iconTheme: {
+                            primary: "#ef4444",
+                            secondary: "#fff",
+                          },
+                        },
+                      }}
+                    />
+                    {import.meta.env.DEV && (
+                      <ReactQueryDevtools initialIsOpen={false} />
+                    )}
+                  </ToastProvider>
                 </LanguageProvider>
               </ThemeProvider>
             </BrowserRouter>

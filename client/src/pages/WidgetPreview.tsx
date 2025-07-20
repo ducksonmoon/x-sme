@@ -1,359 +1,375 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import BookingWidget from "@components/BookingWidget";
-import { useTheme } from "@providers/ThemeProvider";
-import { useLanguage } from "@providers/LanguageProvider";
-import { WidgetConfig } from "../types";
+import { motion } from "framer-motion";
+import { ArrowLeft, RefreshCw, ExternalLink } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import BookingWidget from "@/components/BookingWidget";
+import LoadingSpinner from "@/components/LoadingSpinner";
+
+interface PreviewConfig {
+  businessId: string;
+  theme: "light" | "dark" | "auto";
+  primaryColor: string;
+  secondaryColor: string | undefined;
+  borderRadius: number;
+  showLogo: boolean;
+  allowNotes: boolean;
+  requireEmail: boolean;
+  maxAdvanceBooking: number;
+  minAdvanceBooking: number;
+  customLogo: string | undefined;
+  language: "fa" | "en";
+}
 
 const WidgetPreview: React.FC = () => {
   const [searchParams] = useSearchParams();
-  const { setTheme } = useTheme();
-  const { setLanguage } = useLanguage();
-  const [config, setConfig] = useState<WidgetConfig | null>(null);
+  const [config, setConfig] = useState<PreviewConfig | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Parse configuration from URL parameters
-    const widgetConfig: WidgetConfig = {
-      businessId:
-        searchParams.get("businessId") || searchParams.get("business") || "",
-      theme: (searchParams.get("theme") as "light" | "dark" | "auto") || "auto",
-      language: "fa",
-      primaryColor:
-        searchParams.get("primaryColor") ||
-        searchParams.get("accentColor") ||
-        "#3b82f6",
+    const businessId = searchParams.get("businessId");
+    if (!businessId) {
+      setIsLoading(false);
+      return;
+    }
+
+    const previewConfig: PreviewConfig = {
+      businessId,
+      theme: (searchParams.get("theme") as any) || "auto",
+      primaryColor: searchParams.get("primaryColor") || "#3b82f6",
+      secondaryColor: searchParams.get("secondaryColor") || undefined,
       borderRadius: parseInt(searchParams.get("borderRadius") || "8"),
       showLogo: searchParams.get("showLogo") !== "false",
-      showBusinessInfo: searchParams.get("showBusinessInfo") !== "false",
       allowNotes: searchParams.get("allowNotes") !== "false",
       requireEmail: searchParams.get("requireEmail") === "true",
       maxAdvanceBooking: parseInt(
         searchParams.get("maxAdvanceBooking") || "30"
       ),
       minAdvanceBooking: parseInt(searchParams.get("minAdvanceBooking") || "2"),
-      // New custom properties - only add if they have values
-      ...(searchParams.get("customLogo") || searchParams.get("logo")
-        ? {
-            customLogo:
-              searchParams.get("customLogo") || searchParams.get("logo") || "",
-          }
-        : {}),
-      ...(searchParams.get("secondaryColor")
-        ? {
-            secondaryColor: searchParams.get("secondaryColor") || "",
-          }
-        : {}),
-      embedMode: false, // Set to false for standalone preview
+      customLogo: searchParams.get("customLogo") || undefined,
+      language: (searchParams.get("language") as any) || "fa",
     };
 
-    setConfig(widgetConfig);
+    setConfig(previewConfig);
+    setIsLoading(false);
+  }, [searchParams]);
 
-    // Apply theme and language
-    setTheme(
-      widgetConfig.theme === "auto" ? "light" : widgetConfig.theme || "light"
-    );
-    setLanguage(widgetConfig.language || "fa");
+  const getThemeClass = (theme: string) => {
+    switch (theme) {
+      case "light":
+        return "light";
+      case "dark":
+        return "dark";
+      default:
+        return "";
+    }
+  };
 
-    // Apply custom CSS variables for theming
-    const root = document.documentElement;
-    root.style.setProperty(
-      "--primary-color",
-      widgetConfig.primaryColor || "#3b82f6"
+  const getPreviewStyles = () => {
+    if (!config) return {};
+
+    return {
+      "--primary-color": config.primaryColor,
+      "--secondary-color": config.secondaryColor || config.primaryColor,
+      "--border-radius": `${config.borderRadius}px`,
+    } as React.CSSProperties;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <LoadingSpinner size="lg" />
+          <p className="text-slate-600 dark:text-slate-400">
+            در حال بارگذاری پیش‌نمایش...
+          </p>
+        </div>
+      </div>
     );
-    root.style.setProperty(
-      "--border-radius",
-      `${widgetConfig.borderRadius || 8}px`
-    );
-  }, [searchParams, setTheme, setLanguage]);
+  }
 
   if (!config) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
-            <div className="animate-spin rounded-full h-8 w-8 border-3 border-white border-t-transparent"></div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 flex items-center justify-center">
+        <div className="text-center space-y-6 max-w-md mx-auto px-4">
+          <div className="w-20 h-20 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto">
+            <RefreshCw className="w-10 h-10 text-red-500" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            در حال بارگذاری ویجت...
-          </h2>
-          <p className="text-gray-600">لطفاً صبر کنید</p>
+          <div className="space-y-2">
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+              خطا در بارگذاری
+            </h2>
+            <p className="text-slate-600 dark:text-slate-400">
+              شناسه کسب‌وکار در URL یافت نشد
+            </p>
+          </div>
+          <Button
+            onClick={() => window.history.back()}
+            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl px-6 py-3"
+          >
+            <ArrowLeft className="w-4 h-4 ml-2" />
+            بازگشت
+          </Button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50/30">
-      {/* Header */}
-      <div className="bg-white/80 backdrop-blur-lg border-b border-gray-200/50 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4 space-x-reverse">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
-                <svg
-                  className="w-6 h-6 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                  />
-                </svg>
-              </div>
+    <div
+      className={`min-h-screen ${getThemeClass(config.theme)}`}
+      style={getPreviewStyles()}
+    >
+      {/* Preview Header */}
+      <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.history.back()}
+                className="border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+              >
+                <ArrowLeft className="w-4 h-4 ml-2" />
+                بازگشت
+              </Button>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">
+                <h1 className="text-lg font-semibold text-slate-900 dark:text-white">
                   پیش‌نمایش ویجت رزرو
                 </h1>
-                <p className="text-sm text-gray-600">
-                  این صفحه برای تست و پیش‌نمایش ویجت شما طراحی شده است
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  شناسه کسب‌وکار: {config.businessId}
                 </p>
               </div>
             </div>
-
-            <div className="flex items-center space-x-3 space-x-reverse">
-              <a
-                href="/dashboard/settings?tab=widget"
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            <div className="flex items-center gap-3">
+              <Badge variant="secondary" className="text-xs">
+                پیش‌نمایش زنده
+              </Badge>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.location.reload()}
+                className="border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
               >
-                بازگشت به تنظیمات
-              </a>
-              <button
-                onClick={() => window.print()}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+                <RefreshCw className="w-4 h-4 ml-2" />
+                بروزرسانی
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.open(`/w/${config.businessId}`, "_blank")}
+                className="border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
               >
-                چاپ صفحه
-              </button>
+                <ExternalLink className="w-4 h-4 ml-2" />
+                باز کردن در تب جدید
+              </Button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* Preview Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Widget Preview */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
-              <div className="p-6 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-900 mb-2">
-                  ویجت رزرو شما
-                </h2>
-                <p className="text-sm text-gray-600">
-                  این همان ویجتی است که مشتریان شما خواهند دید
-                </p>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-6"
+            >
+              {/* Desktop Preview */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    پیش‌نمایش دسکتاپ
+                  </span>
+                </div>
+                <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-6 shadow-lg">
+                  <BookingWidget
+                    businessId={config.businessId}
+                    theme={config.theme}
+                    primaryColor={config.primaryColor}
+                    {...(config.secondaryColor && {
+                      secondaryColor: config.secondaryColor,
+                    })}
+                    borderRadius={config.borderRadius}
+                    showLogo={config.showLogo}
+                    allowNotes={config.allowNotes}
+                    requireEmail={config.requireEmail}
+                    maxAdvanceBooking={config.maxAdvanceBooking}
+                    minAdvanceBooking={config.minAdvanceBooking}
+                    {...(config.customLogo && {
+                      customLogo: config.customLogo,
+                    })}
+                  />
+                </div>
               </div>
 
-              <div className="p-6">
-                <div
-                  className="w-full bg-white"
-                  style={
-                    {
-                      "--primary-color": config.primaryColor,
-                      "--border-radius": `${config.borderRadius}px`,
-                    } as React.CSSProperties
-                  }
-                >
-                  <div className="w-full max-w-none">
-                    <BookingWidget
-                      businessId={config.businessId}
-                      {...(config.embedMode !== undefined && {
-                        embedMode: config.embedMode,
-                      })}
-                      {...(config.theme && { theme: config.theme })}
-                      {...(config.showLogo !== undefined && {
-                        showLogo: config.showLogo,
-                      })}
-                      {...(config.primaryColor && {
-                        accentColor: config.primaryColor,
-                      })}
-                      {...(config.customLogo && {
-                        customLogo: config.customLogo,
-                      })}
-                      {...(config.primaryColor && {
-                        primaryColor: config.primaryColor,
-                      })}
-                      {...(config.secondaryColor && {
-                        secondaryColor: config.secondaryColor,
-                      })}
-                      {...(config.allowNotes !== undefined && {
-                        allowNotes: config.allowNotes,
-                      })}
-                      {...(config.requireEmail !== undefined && {
-                        requireEmail: config.requireEmail,
-                      })}
-                      {...(config.maxAdvanceBooking !== undefined && {
-                        maxAdvanceBooking: config.maxAdvanceBooking,
-                      })}
-                      {...(config.minAdvanceBooking !== undefined && {
-                        minAdvanceBooking: config.minAdvanceBooking,
-                      })}
-                      {...(config.borderRadius !== undefined && {
-                        borderRadius: config.borderRadius,
-                      })}
-                    />
+              {/* Mobile Preview */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    پیش‌نمایش موبایل
+                  </span>
+                </div>
+                <div className="flex justify-center">
+                  <div className="w-80 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl p-4 shadow-lg">
+                    <div className="bg-slate-100 dark:bg-slate-700 rounded-2xl p-4 h-96 overflow-hidden">
+                      <BookingWidget
+                        businessId={config.businessId}
+                        theme={config.theme}
+                        primaryColor={config.primaryColor}
+                        {...(config.secondaryColor && {
+                          secondaryColor: config.secondaryColor,
+                        })}
+                        borderRadius={config.borderRadius}
+                        showLogo={config.showLogo}
+                        allowNotes={config.allowNotes}
+                        requireEmail={config.requireEmail}
+                        maxAdvanceBooking={config.maxAdvanceBooking}
+                        minAdvanceBooking={config.minAdvanceBooking}
+                        {...(config.customLogo && {
+                          customLogo: config.customLogo,
+                        })}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            </motion.div>
           </div>
 
-          {/* Configuration Info */}
+          {/* Configuration Summary */}
           <div className="space-y-6">
-            {/* Current Settings */}
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                تنظیمات فعلی
-              </h3>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-700">
-                    رنگ اصلی
-                  </label>
-                  <div className="flex items-center space-x-2 space-x-reverse mt-1">
-                    <div
-                      className="w-6 h-6 rounded border border-gray-300"
-                      style={{ backgroundColor: config.primaryColor }}
-                    />
-                    <span className="text-sm text-gray-600 font-mono">
-                      {config.primaryColor}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
+                  تنظیمات فعلی
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-slate-600 dark:text-slate-400">
+                      تم:
+                    </span>
+                    <Badge variant="secondary" className="text-xs">
+                      {config.theme === "auto"
+                        ? "خودکار"
+                        : config.theme === "light"
+                          ? "روشن"
+                          : "تاریک"}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-slate-600 dark:text-slate-400">
+                      زبان:
+                    </span>
+                    <Badge variant="secondary" className="text-xs">
+                      {config.language === "fa" ? "فارسی" : "English"}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-slate-600 dark:text-slate-400">
+                      نمایش لوگو:
+                    </span>
+                    <Badge
+                      variant={config.showLogo ? "default" : "secondary"}
+                      className="text-xs"
+                    >
+                      {config.showLogo ? "فعال" : "غیرفعال"}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-slate-600 dark:text-slate-400">
+                      اجازه یادداشت:
+                    </span>
+                    <Badge
+                      variant={config.allowNotes ? "default" : "secondary"}
+                      className="text-xs"
+                    >
+                      {config.allowNotes ? "فعال" : "غیرفعال"}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-slate-600 dark:text-slate-400">
+                      الزامی بودن ایمیل:
+                    </span>
+                    <Badge
+                      variant={config.requireEmail ? "default" : "secondary"}
+                      className="text-xs"
+                    >
+                      {config.requireEmail ? "فعال" : "غیرفعال"}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-slate-600 dark:text-slate-400">
+                      حداکثر روزهای پیش‌رزرو:
+                    </span>
+                    <span className="text-sm font-medium">
+                      {config.maxAdvanceBooking}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-slate-600 dark:text-slate-400">
+                      حداقل روزهای پیش‌رزرو:
+                    </span>
+                    <span className="text-sm font-medium">
+                      {config.minAdvanceBooking}
                     </span>
                   </div>
                 </div>
+              </div>
+            </motion.div>
 
-                {config.secondaryColor && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">
-                      رنگ ثانویه
-                    </label>
-                    <div className="flex items-center space-x-2 space-x-reverse mt-1">
-                      <div
-                        className="w-6 h-6 rounded border border-gray-300"
-                        style={{ backgroundColor: config.secondaryColor }}
-                      />
-                      <span className="text-sm text-gray-600 font-mono">
-                        {config.secondaryColor}
-                      </span>
+            {/* Color Preview */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
+                  رنگ‌های انتخاب شده
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-8 h-8 rounded border border-slate-200 dark:border-slate-600"
+                      style={{ backgroundColor: config.primaryColor }}
+                    ></div>
+                    <div>
+                      <p className="text-sm font-medium">رنگ اصلی</p>
+                      <p className="text-xs text-slate-500">
+                        {config.primaryColor}
+                      </p>
                     </div>
                   </div>
-                )}
-
-                <div>
-                  <label className="text-sm font-medium text-gray-700">
-                    گردی گوشه‌ها
-                  </label>
-                  <span className="text-sm text-gray-600 block mt-1">
-                    {config.borderRadius}px
-                  </span>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-gray-700">
-                    تم
-                  </label>
-                  <span className="text-sm text-gray-600 block mt-1">
-                    {config.theme === "light"
-                      ? "روشن"
-                      : config.theme === "dark"
-                        ? "تاریک"
-                        : "خودکار"}
-                  </span>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-gray-700">
-                    نمایش لوگو
-                  </label>
-                  <span className="text-sm text-gray-600 block mt-1">
-                    {config.showLogo ? "فعال" : "غیرفعال"}
-                  </span>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-gray-700">
-                    درخواست ایمیل
-                  </label>
-                  <span className="text-sm text-gray-600 block mt-1">
-                    {config.requireEmail ? "اجباری" : "اختیاری"}
-                  </span>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-gray-700">
-                    یادداشت‌ها
-                  </label>
-                  <span className="text-sm text-gray-600 block mt-1">
-                    {config.allowNotes ? "فعال" : "غیرفعال"}
-                  </span>
+                  {config.secondaryColor && (
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-8 h-8 rounded border border-slate-200 dark:border-slate-600"
+                        style={{ backgroundColor: config.secondaryColor }}
+                      ></div>
+                      <div>
+                        <p className="text-sm font-medium">رنگ ثانویه</p>
+                        <p className="text-xs text-slate-500">
+                          {config.secondaryColor}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                اقدامات سریع
-              </h3>
-
-              <div className="space-y-3">
-                <button
-                  onClick={() => {
-                    const url = window.location.href;
-                    navigator.clipboard.writeText(url);
-                    alert("لینک پیش‌نمایش کپی شد!");
-                  }}
-                  className="w-full px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
-                >
-                  کپی لینک پیش‌نمایش
-                </button>
-
-                <button
-                  onClick={() => {
-                    const widgetUrl = `${window.location.origin}/widget?${searchParams.toString()}`;
-                    navigator.clipboard.writeText(widgetUrl);
-                    alert("لینک ویجت کپی شد!");
-                  }}
-                  className="w-full px-4 py-2 text-sm font-medium text-green-600 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors"
-                >
-                  کپی لینک ویجت
-                </button>
-
-                <a
-                  href={`/widget?${searchParams.toString()}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block w-full px-4 py-2 text-sm font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors text-center"
-                >
-                  باز کردن ویجت در تب جدید
-                </a>
-              </div>
-            </div>
-
-            {/* Help */}
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-blue-900 mb-3">
-                راهنمای استفاده
-              </h3>
-
-              <div className="space-y-3 text-sm text-blue-800">
-                <div className="flex items-start space-x-2 space-x-reverse">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                  <p>این صفحه برای تست ویجت شما طراحی شده است</p>
-                </div>
-                <div className="flex items-start space-x-2 space-x-reverse">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                  <p>می‌توانید لینک پیش‌نمایش را با دیگران به اشتراک بگذارید</p>
-                </div>
-                <div className="flex items-start space-x-2 space-x-reverse">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                  <p>برای تغییر تنظیمات به بخش تنظیمات ویجت مراجعه کنید</p>
-                </div>
-              </div>
-            </div>
+            </motion.div>
           </div>
         </div>
       </div>

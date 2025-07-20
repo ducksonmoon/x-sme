@@ -581,9 +581,9 @@ const BusinessRegister: React.FC = () => {
                   <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full mx-auto mb-4 flex items-center justify-center">
                     <Zap className="w-8 h-8 text-blue-600" />
                   </div>
-                  <h3 className="text-lg font-semibold mb-2">دوره آزمایشی</h3>
+                  <h3 className="text-lg font-semibold mb-2">پلن رایگان</h3>
                   <p className="text-sm text-gray-600">
-                    ۱۴ روز رایگان برای آزمایش همه قابلیت‌ها
+                    شروع رایگان بدون محدودیت زمانی
                   </p>
                 </CardContent>
               </Card>
@@ -637,7 +637,7 @@ const BusinessRegister: React.FC = () => {
                       <div>
                         <p className="text-sm text-gray-600 mb-1">وضعیت</p>
                         <Badge className="bg-green-100 text-green-700 border-green-200">
-                          آزمایشی
+                          رایگان
                         </Badge>
                       </div>
                     </div>

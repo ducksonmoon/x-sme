@@ -67,9 +67,13 @@ export interface Staff {
   createdAt: string;
   updatedAt: string;
   services?: StaffService[];
+  staff_services?: StaffService[];
   workingHours?: StaffWorkingHour[];
+  staff_working_hours?: StaffWorkingHour[];
   breaks?: StaffBreak[];
+  staff_breaks?: StaffBreak[];
   timeOff?: StaffTimeOff[];
+  staff_time_off?: StaffTimeOff[];
   _count?: {
     bookings: number;
   };
@@ -81,7 +85,13 @@ export interface StaffService {
   serviceId: string;
   customPrice?: number;
   isActive: boolean;
-  service: {
+  service?: {
+    id: string;
+    name: string;
+    price: number;
+    duration: number;
+  };
+  services?: {
     id: string;
     name: string;
     price: number;

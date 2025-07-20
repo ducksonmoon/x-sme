@@ -201,6 +201,46 @@ const featureLabels: Record<
     description: "آنالیز کامل عملکرد",
     icon: BarChart3,
   },
+  ZARINPAL_GATEWAY: {
+    label: "درگاه زرین‌پال",
+    description: "پرداخت از طریق زرین‌پال",
+    icon: CreditCard,
+  },
+  TWO_PAYMENT_GATEWAYS: {
+    label: "هر ۲ درگاه پرداخت",
+    description: "انتخاب از بین ۲ درگاه پرداخت",
+    icon: CreditCard,
+  },
+  ALL_PAYMENT_GATEWAYS: {
+    label: "تمام درگاه‌های پرداخت",
+    description: "دسترسی به تمام درگاه‌های پرداخت",
+    icon: CreditCard,
+  },
+  POWERED_BY_BRANDING: {
+    label: "برندینگ 'powered by'",
+    description: "نمایش برند X-SME",
+    icon: Shield,
+  },
+  MINIMAL_BRANDING: {
+    label: "برندینگ حداقلی",
+    description: "برندینگ کم‌تر",
+    icon: Shield,
+  },
+  WHITE_LABEL_BRANDING: {
+    label: "برندینگ سفید",
+    description: "بدون برند X-SME",
+    icon: Shield,
+  },
+  NO_BRANDING: {
+    label: "بدون برندینگ",
+    description: "کاملاً سفارشی",
+    icon: Shield,
+  },
+  WHITE_LABEL_SDK: {
+    label: "SDK برچسب سفید",
+    description: "SDK کاملاً سفارشی",
+    icon: Settings,
+  },
 };
 
 const PlanSelector: React.FC<PlanSelectorProps> = ({
@@ -224,10 +264,8 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
 
         if (data.success) {
           setPlans(data.data);
-          // Auto-select the "Professional" plan as recommended
-          const proPlan = data.data.find(
-            (p: Plan) => p.nameEn === "professional"
-          );
+          // Auto-select the "Pro" plan as recommended
+          const proPlan = data.data.find((p: Plan) => p.nameEn === "pro");
           if (proPlan) {
             setSelectedPlan(proPlan);
           }
@@ -274,7 +312,7 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
     }
   };
 
-  const isPlanPopular = (plan: Plan) => plan.nameEn === "professional";
+  const isPlanPopular = (plan: Plan) => plan.nameEn === "pro";
 
   if (plansLoading) {
     return (
@@ -420,12 +458,14 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600 dark:text-gray-400">
-                        رزروهای ماهانه:
+                        {plan.nameEn === "enterprise" ? "N/A" : "تعداد رزرو:"}
                       </span>
                       <span className="font-medium">
-                        {plan.bookingsLimit
-                          ? plan.bookingsLimit.toLocaleString()
-                          : "نامحدود"}
+                        {plan.nameEn === "enterprise"
+                          ? "N/A"
+                          : plan.bookingsLimit
+                            ? plan.bookingsLimit
+                            : "نامحدود"}
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
@@ -438,12 +478,16 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600 dark:text-gray-400">
-                        پیامک ماهانه:
+                        درگاه‌های پرداخت:
                       </span>
                       <span className="font-medium">
-                        {plan.smsLimit
-                          ? plan.smsLimit.toLocaleString()
-                          : "نامحدود"}
+                        {plan.features.includes("ZARINPAL_GATEWAY")
+                          ? "زرین‌پال"
+                          : plan.features.includes("TWO_PAYMENT_GATEWAYS")
+                            ? "هر ۲"
+                            : plan.features.includes("ALL_PAYMENT_GATEWAYS")
+                              ? "همه"
+                              : "سفارشی"}
                       </span>
                     </div>
                   </div>
@@ -526,12 +570,12 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
         </motion.div>
       )}
 
-      {/* Trial Notice */}
+      {/* Free Plan Notice */}
       <div className="text-center">
-        <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-blue-700 dark:text-blue-300">
+        <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-50 dark:bg-green-900/20 rounded-lg text-green-700 dark:text-green-300">
           <Info className="w-4 h-4" />
           <span className="text-sm">
-            ۱۴ روز رایگان آزمایش کنید - بدون نیاز به کارت اعتباری
+            پلن پایه کاملاً رایگان است - بدون محدودیت زمانی
           </span>
         </div>
       </div>

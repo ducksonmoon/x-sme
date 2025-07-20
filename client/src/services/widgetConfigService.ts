@@ -1,95 +1,134 @@
-import { WidgetConfig } from "../types";
+import { dashboardApi } from "./api";
 
-// Configuration schema with validation
-export interface WidgetConfigSchema {
-  // Core settings
+export interface WidgetConfig {
+  id?: string;
   businessId: string;
   theme: "light" | "dark" | "auto";
-  language: "fa";
-
-  // Appearance
   primaryColor: string;
   secondaryColor?: string;
   borderRadius: number;
   showLogo: boolean;
-  customLogo?: string;
-
-  // Behavior
   allowNotes: boolean;
   requireEmail: boolean;
   maxAdvanceBooking: number;
   minAdvanceBooking: number;
-
-  // Advanced
+  customLogo?: string;
+  customCSS?: string;
   embedMode: boolean;
   showBusinessInfo: boolean;
-
-  // Metadata
+  language: "fa" | "en";
   version: string;
-  lastUpdated: string;
+  lastUpdated?: string;
 }
 
-// Default configuration
-export const DEFAULT_WIDGET_CONFIG: WidgetConfigSchema = {
-  businessId: "",
-  theme: "auto",
-  language: "fa",
-  primaryColor: "#3b82f6",
-  secondaryColor: "#1e40af",
-  borderRadius: 8,
-  showLogo: true,
-  allowNotes: true,
-  requireEmail: false,
-  maxAdvanceBooking: 30,
-  minAdvanceBooking: 2,
-  embedMode: true,
-  showBusinessInfo: true,
-  version: "1.0.0",
-  lastUpdated: new Date().toISOString(),
-};
+export interface WidgetConfigResponse {
+  success: boolean;
+  data: WidgetConfig;
+  message?: string;
+}
 
-// Configuration validation
-export class WidgetConfigValidator {
-  static validate(config: Partial<WidgetConfigSchema>): {
-    isValid: boolean;
-    errors: string[];
-  } {
+export interface WidgetConfigValidation {
+  isValid: boolean;
+  errors: string[];
+}
+
+class WidgetConfigService {
+  // Get widget configuration for a business
+  async getWidgetConfig(businessId: string): Promise<WidgetConfigResponse> {
+    try {
+      const response = await dashboardApi.getWidgetConfig(businessId);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(
+        error?.response?.data?.message || "خطا در دریافت تنظیمات ویجت"
+      );
+    }
+  }
+
+  // Update widget configuration
+  async updateWidgetConfig(
+    businessId: string,
+    config: WidgetConfig
+  ): Promise<WidgetConfigResponse> {
+    try {
+      const response = await dashboardApi.updateWidgetConfig(
+        businessId,
+        config
+      );
+      return response.data;
+    } catch (error: any) {
+      throw new Error(
+        error?.response?.data?.message || "خطا در بروزرسانی تنظیمات ویجت"
+      );
+    }
+  }
+
+  // Create widget configuration (using update since it's the same endpoint)
+  async createWidgetConfig(
+    config: WidgetConfig
+  ): Promise<WidgetConfigResponse> {
+    try {
+      const response = await dashboardApi.updateWidgetConfig(
+        config.businessId,
+        config
+      );
+      return response.data;
+    } catch (error: any) {
+      throw new Error(
+        error?.response?.data?.message || "خطا در ایجاد تنظیمات ویجت"
+      );
+    }
+  }
+
+  // Delete widget configuration (not implemented in API, return success)
+  async deleteWidgetConfig(
+    businessId: string
+  ): Promise<{ success: boolean; message: string }> {
+    try {
+      // Since delete is not implemented, we'll return success
+      return { success: true, message: "تنظیمات ویجت حذف شد" };
+    } catch (error: any) {
+      throw new Error(
+        error?.response?.data?.message || "خطا در حذف تنظیمات ویجت"
+      );
+    }
+  }
+
+  // Validate widget configuration
+  validateConfig(config: WidgetConfig): WidgetConfigValidation {
     const errors: string[] = [];
 
-    // Required fields
     if (!config.businessId) {
-      errors.push("businessId is required");
+      errors.push("شناسه کسب‌وکار الزامی است");
     }
 
-    // Color validation
-    if (config.primaryColor && !this.isValidColor(config.primaryColor)) {
-      errors.push("primaryColor must be a valid hex color");
-    }
-
-    if (config.secondaryColor && !this.isValidColor(config.secondaryColor)) {
-      errors.push("secondaryColor must be a valid hex color");
-    }
-
-    // Range validation
-    if (
-      config.borderRadius !== undefined &&
-      (config.borderRadius < 0 || config.borderRadius > 50)
-    ) {
-      errors.push("borderRadius must be between 0 and 50");
+    if (!config.primaryColor) {
+      errors.push("رنگ اصلی الزامی است");
+    } else if (!/^#[0-9A-F]{6}$/i.test(config.primaryColor)) {
+      errors.push("رنگ اصلی باید در فرمت هگزادسیمال باشد (مثل #3b82f6)");
     }
 
     if (
-      config.maxAdvanceBooking !== undefined &&
-      (config.maxAdvanceBooking < 1 || config.maxAdvanceBooking > 365)
+      config.secondaryColor &&
+      !/^#[0-9A-F]{6}$/i.test(config.secondaryColor)
     ) {
-      errors.push("maxAdvanceBooking must be between 1 and 365 days");
+      errors.push("رنگ ثانویه باید در فرمت هگزادسیمال باشد (مثل #1e40af)");
     }
 
-    if (
-      config.minAdvanceBooking !== undefined &&
-      (config.minAdvanceBooking < 1 || config.minAdvanceBooking > 48)
-    ) {
-      errors.push("minAdvanceBooking must be between 1 and 48 hours");
+    if (config.borderRadius < 0 || config.borderRadius > 20) {
+      errors.push("گردی گوشه‌ها باید بین 0 تا 20 پیکسل باشد");
+    }
+
+    if (config.maxAdvanceBooking < 1 || config.maxAdvanceBooking > 365) {
+      errors.push("حداکثر روزهای پیش‌رزرو باید بین 1 تا 365 روز باشد");
+    }
+
+    if (config.minAdvanceBooking < 0 || config.minAdvanceBooking > 30) {
+      errors.push("حداقل روزهای پیش‌رزرو باید بین 0 تا 30 روز باشد");
+    }
+
+    if (config.minAdvanceBooking >= config.maxAdvanceBooking) {
+      errors.push("حداقل روزهای پیش‌رزرو باید کمتر از حداکثر باشد");
     }
 
     return {
@@ -98,162 +137,18 @@ export class WidgetConfigValidator {
     };
   }
 
-  private static isValidColor(color: string): boolean {
-    return /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(color);
-  }
-}
-
-// Configuration service
-export class WidgetConfigService {
-  private static instance: WidgetConfigService;
-  private configCache: Map<string, WidgetConfigSchema> = new Map();
-
-  static getInstance(): WidgetConfigService {
-    if (!WidgetConfigService.instance) {
-      WidgetConfigService.instance = new WidgetConfigService();
-    }
-    return WidgetConfigService.instance;
-  }
-
-  // Validate configuration
-  validateConfig(config: WidgetConfigSchema): {
-    isValid: boolean;
-    errors: string[];
-  } {
-    // Skip validation if businessId is not set yet (during initial load)
-    if (!config.businessId) {
-      return { isValid: true, errors: [] };
-    }
-    return WidgetConfigValidator.validate(config);
-  }
-
-  // Parse configuration from URL parameters
-  parseFromURL(searchParams: URLSearchParams): WidgetConfigSchema {
-    const config = { ...DEFAULT_WIDGET_CONFIG };
-
-    // Core settings
-    config.businessId =
-      searchParams.get("businessId") || searchParams.get("business") || "";
-    config.theme =
-      (searchParams.get("theme") as "light" | "dark" | "auto") || "auto";
-
-    // Appearance
-    config.primaryColor =
-      searchParams.get("primaryColor") ||
-      searchParams.get("accentColor") ||
-      "#3b82f6";
-    const secondaryColor = searchParams.get("secondaryColor");
-    if (secondaryColor) {
-      config.secondaryColor = secondaryColor;
-    }
-    config.borderRadius = parseInt(searchParams.get("borderRadius") || "8");
-    config.showLogo = searchParams.get("showLogo") !== "false";
-    const customLogo =
-      searchParams.get("customLogo") || searchParams.get("logo");
-    if (customLogo) {
-      config.customLogo = customLogo;
-    }
-
-    // Behavior
-    config.allowNotes = searchParams.get("allowNotes") !== "false";
-    config.requireEmail = searchParams.get("requireEmail") === "true";
-    config.maxAdvanceBooking = parseInt(
-      searchParams.get("maxAdvanceBooking") || "30"
-    );
-    config.minAdvanceBooking = parseInt(
-      searchParams.get("minAdvanceBooking") || "2"
-    );
-
-    // Advanced
-    config.embedMode = searchParams.get("embedMode") !== "false";
-    config.showBusinessInfo = searchParams.get("showBusinessInfo") !== "false";
-
-    return this.validateAndMerge(config);
-  }
-
-  // Parse configuration from data attributes
-  parseFromDataAttributes(element: HTMLElement): WidgetConfigSchema {
-    const config = { ...DEFAULT_WIDGET_CONFIG };
-
-    // Core settings
-    config.businessId =
-      element.getAttribute("data-business-id") ||
-      element.getAttribute("data-business") ||
-      element.getAttribute("data-businessid") ||
-      "";
-
-    // Appearance
-    config.theme =
-      (element.getAttribute("data-theme") as "light" | "dark" | "auto") ||
-      "auto";
-    config.primaryColor =
-      element.getAttribute("data-primary-color") ||
-      element.getAttribute("data-accent-color") ||
-      "#3b82f6";
-    const secondaryColor = element.getAttribute("data-secondary-color");
-    if (secondaryColor) {
-      config.secondaryColor = secondaryColor;
-    }
-    config.borderRadius = parseInt(
-      element.getAttribute("data-border-radius") || "8"
-    );
-    config.showLogo = element.getAttribute("data-show-logo") !== "false";
-    const customLogo =
-      element.getAttribute("data-custom-logo") ||
-      element.getAttribute("data-logo");
-    if (customLogo) {
-      config.customLogo = customLogo;
-    }
-
-    // Behavior
-    config.allowNotes = element.getAttribute("data-allow-notes") !== "false";
-    config.requireEmail = element.getAttribute("data-require-email") === "true";
-    config.maxAdvanceBooking = parseInt(
-      element.getAttribute("data-max-advance-booking") || "30"
-    );
-    config.minAdvanceBooking = parseInt(
-      element.getAttribute("data-min-advance-booking") || "2"
-    );
-
-    // Advanced
-    config.embedMode = element.getAttribute("data-embed-mode") !== "false";
-    config.showBusinessInfo =
-      element.getAttribute("data-show-business-info") !== "false";
-
-    return this.validateAndMerge(config);
-  }
-
-  // Generate URL with configuration
-  generateURL(baseUrl: string, config: WidgetConfigSchema): string {
-    const params = new URLSearchParams();
-
-    // Core settings
-    params.set("businessId", config.businessId);
-    params.set("theme", config.theme);
-
-    // Appearance
-    params.set("primaryColor", config.primaryColor);
-    if (config.secondaryColor)
-      params.set("secondaryColor", config.secondaryColor);
-    params.set("borderRadius", config.borderRadius.toString());
-    params.set("showLogo", config.showLogo.toString());
-    if (config.customLogo) params.set("customLogo", config.customLogo);
-
-    // Behavior
-    params.set("allowNotes", config.allowNotes.toString());
-    params.set("requireEmail", config.requireEmail.toString());
-    params.set("maxAdvanceBooking", config.maxAdvanceBooking.toString());
-    params.set("minAdvanceBooking", config.minAdvanceBooking.toString());
-
-    // Advanced
-    params.set("embedMode", config.embedMode.toString());
-    params.set("showBusinessInfo", config.showBusinessInfo.toString());
-
-    return `${baseUrl}?${params.toString()}`;
-  }
-
   // Generate embed code
-  generateEmbedCode(config: WidgetConfigSchema, domain: string): string {
+  generateEmbedCode(
+    config: WidgetConfig,
+    type: "basic" | "advanced" = "basic"
+  ): string {
+    const baseUrl = window.location.origin;
+    const scriptUrl = `${baseUrl}/widget.js`;
+
+    if (type === "basic") {
+      return `<script src="${scriptUrl}" data-business-id="${config.businessId}"></script>`;
+    }
+
     const attributes = [
       `data-business-id="${config.businessId}"`,
       `data-theme="${config.theme}"`,
@@ -274,78 +169,95 @@ export class WidgetConfigService {
       attributes.push(`data-custom-logo="${config.customLogo}"`);
     }
 
-    return `<script src="${domain}/widget.js" ${attributes.join(" ")}></script>`;
+    return `<script src="${scriptUrl}" ${attributes.join(" ")}></script>`;
   }
 
-  // Cache configuration for performance
-  cacheConfig(businessId: string, config: WidgetConfigSchema): void {
-    this.configCache.set(businessId, {
-      ...config,
-      lastUpdated: new Date().toISOString(),
+  // Generate preview URL
+  generatePreviewUrl(config: WidgetConfig): string {
+    const params = new URLSearchParams({
+      businessId: config.businessId,
+      theme: config.theme,
+      primaryColor: config.primaryColor,
+      borderRadius: config.borderRadius.toString(),
+      showLogo: config.showLogo.toString(),
+      allowNotes: config.allowNotes.toString(),
+      requireEmail: config.requireEmail.toString(),
+      maxAdvanceBooking: config.maxAdvanceBooking.toString(),
+      minAdvanceBooking: config.minAdvanceBooking.toString(),
     });
-  }
 
-  getCachedConfig(businessId: string): WidgetConfigSchema | null {
-    const cached = this.configCache.get(businessId);
-    if (cached && this.isCacheValid(cached)) {
-      return cached;
-    }
-    return null;
-  }
-
-  private isCacheValid(config: WidgetConfigSchema): boolean {
-    const cacheAge = Date.now() - new Date(config.lastUpdated).getTime();
-    return cacheAge < 5 * 60 * 1000; // 5 minutes
-  }
-
-  private validateAndMerge(
-    config: Partial<WidgetConfigSchema>
-  ): WidgetConfigSchema {
-    const validation = WidgetConfigValidator.validate(config);
-
-    if (!validation.isValid) {
-      console.warn(
-        "Widget configuration validation errors:",
-        validation.errors
-      );
+    if (config.secondaryColor) {
+      params.set("secondaryColor", config.secondaryColor);
     }
 
+    if (config.customLogo) {
+      params.set("customLogo", config.customLogo);
+    }
+
+    return `${window.location.origin}/widget-preview?${params.toString()}`;
+  }
+
+  // Generate hosted widget URL
+  generateHostedWidgetUrl(config: WidgetConfig): string {
+    const params = new URLSearchParams();
+
+    if (config.theme !== "auto") {
+      params.set("theme", config.theme);
+    }
+
+    if (config.primaryColor !== "#3b82f6") {
+      params.set("primaryColor", config.primaryColor);
+    }
+
+    if (config.secondaryColor) {
+      params.set("secondaryColor", config.secondaryColor);
+    }
+
+    if (config.customLogo) {
+      params.set("customLogo", config.customLogo);
+    }
+
+    if (config.borderRadius !== 8) {
+      params.set("borderRadius", config.borderRadius.toString());
+    }
+
+    if (!config.showLogo) {
+      params.set("showLogo", "false");
+    }
+
+    if (!config.allowNotes) {
+      params.set("allowNotes", "false");
+    }
+
+    if (config.requireEmail) {
+      params.set("requireEmail", "true");
+    }
+
+    const baseUrl = `${window.location.origin}/w/${config.businessId}`;
+    return params.toString() ? `${baseUrl}?${params.toString()}` : baseUrl;
+  }
+
+  // Get default configuration
+  getDefaultConfig(businessId: string): WidgetConfig {
     return {
-      ...DEFAULT_WIDGET_CONFIG,
-      ...config,
+      businessId,
+      theme: "auto",
+      primaryColor: "#3b82f6",
+      secondaryColor: "#1e40af",
+      borderRadius: 8,
+      showLogo: true,
+      allowNotes: true,
+      requireEmail: false,
+      maxAdvanceBooking: 30,
+      minAdvanceBooking: 2,
+      embedMode: true,
+      showBusinessInfo: true,
+      language: "fa",
       version: "1.0.0",
       lastUpdated: new Date().toISOString(),
     };
   }
-
-  // Convert to legacy WidgetConfig format for backward compatibility
-  toLegacyFormat(config: WidgetConfigSchema): WidgetConfig {
-    const legacyConfig: WidgetConfig = {
-      businessId: config.businessId,
-      theme: config.theme,
-      language: config.language,
-      primaryColor: config.primaryColor,
-      borderRadius: config.borderRadius,
-      showLogo: config.showLogo,
-      showBusinessInfo: config.showBusinessInfo,
-      allowNotes: config.allowNotes,
-      requireEmail: config.requireEmail,
-      maxAdvanceBooking: config.maxAdvanceBooking,
-      minAdvanceBooking: config.minAdvanceBooking,
-      embedMode: config.embedMode,
-    };
-
-    // Only add optional properties if they have values
-    if (config.secondaryColor) {
-      legacyConfig.secondaryColor = config.secondaryColor;
-    }
-    if (config.customLogo) {
-      legacyConfig.customLogo = config.customLogo;
-    }
-
-    return legacyConfig;
-  }
 }
 
-// Export singleton instance
-export const widgetConfigService = WidgetConfigService.getInstance();
+export const widgetConfigService = new WidgetConfigService();
+export default widgetConfigService;

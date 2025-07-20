@@ -296,6 +296,23 @@ export const subscriptionApi = {
     businessId: string;
     amount?: number;
   }) => api.post("/subscriptions/track-usage", usageData),
+
+  // Subscription payment endpoints
+  createSubscriptionPayment: (paymentData: {
+    planId: string;
+    billingCycle: "MONTHLY" | "YEARLY";
+    gateway: "TEST" | "PASARGAD" | "SAMAN" | "ZARINPAL";
+  }) => api.post("/subscription-payments/create", paymentData),
+
+  verifySubscriptionPayment: (verificationData: {
+    paymentId: string;
+    gateway: string;
+    refNum: string;
+    resNum?: string | undefined;
+  }) => api.post("/subscription-payments/verify", verificationData),
+
+  getSubscriptionPaymentStatus: (paymentId: string) =>
+    api.get(`/subscription-payments/${paymentId}/status`),
 };
 
 // API endpoints for authentication
@@ -303,6 +320,10 @@ export const authApi = {
   // Login user
   login: (credentials: { email: string; password: string }) =>
     api.post("/auth/login", credentials),
+
+  // Staff login
+  staffLogin: (credentials: { email: string; password: string }) =>
+    api.post("/staff/login", credentials),
 
   // Register user
   register: (userData: {
@@ -315,6 +336,9 @@ export const authApi = {
 
   // Get current user profile
   getProfile: () => api.get("/auth/me"),
+
+  // Get staff profile
+  getStaffProfile: () => api.get("/staff/profile"),
 
   // Update user profile
   updateProfile: (profileData: any) => api.put("/auth/profile", profileData),
@@ -329,4 +353,74 @@ export const authApi = {
 
   // Logout
   logout: () => api.post("/auth/logout"),
+};
+
+// API endpoints for domain management
+export const domainApi = {
+  // Get all domains for a business
+  getBusinessDomains: (businessId: string) =>
+    api.get(`/domains/business/${businessId}`),
+
+  // Add a new domain
+  addDomain: (domainData: { domain: string; type?: "CUSTOM" | "SUBDOMAIN" }) =>
+    api.post("/domains", domainData),
+
+  // Verify domain ownership
+  verifyDomain: (domainId: string) => api.post(`/domains/${domainId}/verify`),
+
+  // Activate domain
+  activateDomain: (domainId: string) =>
+    api.post(`/domains/${domainId}/activate`),
+
+  // Delete domain
+  deleteDomain: (domainId: string) => api.delete(`/domains/${domainId}`),
+
+  // Get domain verification instructions
+  getDomainInstructions: (domainId: string) =>
+    api.get(`/domains/${domainId}/instructions`),
+};
+
+// API endpoints for staff
+export const staffApi = {
+  // Get staff's bookings
+  getMyBookings: (params?: any) =>
+    api.get("/bookings/staff/my-bookings", { params }),
+
+  // Update booking status
+  updateBookingStatus: (bookingId: string, status: string) =>
+    api.put(`/bookings/staff/${bookingId}/status`, { status }),
+
+  // Get today's schedule
+  getTodaySchedule: () => api.get("/bookings/staff/schedule/today"),
+
+  // Get staff profile
+  getProfile: () => api.get("/staff/profile"),
+
+  // Update staff profile
+  updateProfile: (profileData: any) => api.put("/staff/profile", profileData),
+};
+
+// API endpoints for permissions
+export const permissionsApi = {
+  // Get available pages and actions
+  getAvailablePages: () => api.get("/permissions/available"),
+
+  // Get staff permissions
+  getStaffPermissions: (staffId: string) =>
+    api.get(`/permissions/staff/${staffId}`),
+
+  // Update staff permissions
+  updateStaffPermissions: (staffId: string, permissions: any) =>
+    api.put(`/permissions/staff/${staffId}`, { permissions }),
+
+  // Set default permissions
+  setDefaultPermissions: (staffId: string) =>
+    api.post(`/permissions/staff/${staffId}/default`),
+
+  // Get all staff with permissions for business
+  getBusinessStaffPermissions: (businessId: string) =>
+    api.get(`/permissions/business/${businessId}`),
+
+  // Get current user's permissions (for staff)
+  getMyPermissions: () => api.get("/permissions/my-permissions"),
 };

@@ -25,8 +25,12 @@ const adminRoutes = require('./routes/admin');
 const analyticsRoutes = require('./routes/analytics');
 const authRoutes = require('./routes/auth');
 const subscriptionRoutes = require('./routes/subscriptions');
+const subscriptionPaymentRoutes = require('./routes/subscriptionPayments');
 const staffRoutes = require('./routes/staff');
 const timeSlotCreationRoutes = require('./routes/timeSlotCreation');
+const domainRoutes = require('./routes/domains');
+const notificationRoutes = require('./routes/notifications');
+const permissionsRoutes = require('./routes/permissions');
 
 const app = express();
 const httpServer = http.createServer(app);
@@ -105,9 +109,13 @@ app.use('/api/bookings', bookingRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/staff', staffRoutes);
+app.use('/api/permissions', permissionsRoutes);
 app.use('/api/availability', availabilityRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
+app.use('/api/subscription-payments', subscriptionPaymentRoutes);
 app.use('/api/time-slots', timeSlotCreationRoutes);
+app.use('/api/domains', domainRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Protected routes (require authentication)
 app.use('/api/admin', adminRoutes);

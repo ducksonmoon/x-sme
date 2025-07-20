@@ -1,15 +1,14 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import {
-  WidgetConfigSchema,
+  WidgetConfig,
   widgetConfigService,
-  DEFAULT_WIDGET_CONFIG,
 } from "../services/widgetConfigService";
 import { dashboardApi } from "../services/api";
 
 interface WidgetConfigState {
   // Configuration
-  config: WidgetConfigSchema;
+  config: WidgetConfig;
 
   // UI State
   isEditing: boolean;
@@ -17,7 +16,7 @@ interface WidgetConfigState {
   hasUnsavedChanges: boolean;
 
   // Actions
-  updateConfig: (updates: Partial<WidgetConfigSchema>) => void;
+  updateConfig: (updates: Partial<WidgetConfig>) => void;
   resetConfig: () => void;
   setEditing: (editing: boolean) => void;
   saveConfig: (businessId: string) => Promise<void>;
@@ -26,20 +25,20 @@ interface WidgetConfigState {
 
   // Computed values
   getPreviewUrl: (businessId: string) => string;
-  getEmbedCode: (businessId: string, domain: string) => string;
+  getEmbedCode: (businessId: string, type?: "basic" | "advanced") => string;
 }
 
 export const useWidgetConfigStore = create<WidgetConfigState>()(
   persist(
     (set, get) => ({
       // Initial state
-      config: DEFAULT_WIDGET_CONFIG,
+      config: widgetConfigService.getDefaultConfig(""),
       isEditing: false,
       isSaving: false,
       hasUnsavedChanges: false,
 
       // Actions
-      updateConfig: (updates: Partial<WidgetConfigSchema>) => {
+      updateConfig: (updates: Partial<WidgetConfig>) => {
         set((state) => ({
           config: { ...state.config, ...updates },
           hasUnsavedChanges: true,
@@ -48,7 +47,7 @@ export const useWidgetConfigStore = create<WidgetConfigState>()(
 
       resetConfig: () => {
         set({
-          config: DEFAULT_WIDGET_CONFIG,
+          config: widgetConfigService.getDefaultConfig(""),
           hasUnsavedChanges: false,
         });
       },
@@ -75,10 +74,10 @@ export const useWidgetConfigStore = create<WidgetConfigState>()(
           const configToSave = { ...config, businessId };
 
           // Save to API
-          await dashboardApi.updateWidgetConfig(businessId, configToSave);
-
-          // Cache the configuration
-          widgetConfigService.cacheConfig(businessId, configToSave);
+          await widgetConfigService.updateWidgetConfig(
+            businessId,
+            configToSave
+          );
 
           set({
             config: configToSave,
@@ -95,19 +94,11 @@ export const useWidgetConfigStore = create<WidgetConfigState>()(
 
       loadConfig: async (businessId: string) => {
         try {
-          // Try to get from cache first
-          let config = widgetConfigService.getCachedConfig(businessId);
-
-          if (!config) {
-            // Load from API
-            const response = await dashboardApi.getWidgetConfig(businessId);
-            config = response.data || { ...DEFAULT_WIDGET_CONFIG, businessId };
-          }
-
-          // Ensure config is not null
-          if (!config) {
-            config = { ...DEFAULT_WIDGET_CONFIG, businessId };
-          }
+          // Load from API
+          const response =
+            await widgetConfigService.getWidgetConfig(businessId);
+          const config =
+            response.data || widgetConfigService.getDefaultConfig(businessId);
 
           set({
             config,
@@ -117,7 +108,8 @@ export const useWidgetConfigStore = create<WidgetConfigState>()(
           return Promise.resolve();
         } catch (error) {
           // If API fails, use default config
-          const defaultConfig = { ...DEFAULT_WIDGET_CONFIG, businessId };
+          const defaultConfig =
+            widgetConfigService.getDefaultConfig(businessId);
           set({
             config: defaultConfig,
             hasUnsavedChanges: false,
@@ -134,17 +126,20 @@ export const useWidgetConfigStore = create<WidgetConfigState>()(
       // Computed values
       getPreviewUrl: (businessId: string) => {
         const { config } = get();
-        return widgetConfigService.generateURL(
-          `${window.location.origin}/widget-preview`,
-          { ...config, businessId }
-        );
+        return widgetConfigService.generatePreviewUrl({
+          ...config,
+          businessId,
+        });
       },
 
-      getEmbedCode: (businessId: string, domain: string) => {
+      getEmbedCode: (
+        businessId: string,
+        type: "basic" | "advanced" = "basic"
+      ) => {
         const { config } = get();
         return widgetConfigService.generateEmbedCode(
           { ...config, businessId },
-          domain
+          type
         );
       },
     }),
@@ -160,9 +155,8 @@ export const useWidgetConfigStore = create<WidgetConfigState>()(
 // Selectors for better performance
 export const useWidgetConfig = () =>
   useWidgetConfigStore((state) => state.config);
-export const useWidgetConfigField = <K extends keyof WidgetConfigSchema>(
-  field: K
-) => useWidgetConfigStore((state) => state.config[field]);
+export const useWidgetConfigField = <K extends keyof WidgetConfig>(field: K) =>
+  useWidgetConfigStore((state) => state.config[field]);
 
 // Memoized actions to prevent infinite loops
 export const useWidgetConfigActions = () => {

@@ -115,9 +115,9 @@ const Contact: React.FC = () => {
         "همین الان! کافیه پیام بدی، تا چند ساعت ویجت رو روی سایتت نصب می‌کنیم. همین!",
     },
     {
-      question: "واقعاً ۱۴ روز رایگانه؟",
+      question: "واقعاً پلن رایگان دارید؟",
       answer:
-        "آره، کاملاً رایگان. ۱۴ روز هر چی ویژگی داریم رو امتحان کن، راضی نبودی هیچی نمی‌گیریم.",
+        "آره، کاملاً رایگان. پلن پایه بدون محدودیت زمانی رایگان است و می‌توانید هر زمان که آماده باشید ارتقاء دهید.",
     },
     {
       question: "هزینه‌ش چقدره؟",
@@ -159,7 +159,7 @@ const Contact: React.FC = () => {
             <p className="text-xl text-gray-600 leading-relaxed mb-8 max-w-4xl mx-auto">
               مستقیماً با سازنده صحبت کن. دمو زنده ببین، سوالاتت رو بپرس، ببین
               چطور ویجت رزرو می‌تونه مشتریات رو ۲ برابر کنه و غیبت‌هاشون رو کم
-              کنه. راستی، تا ۱۴ روز رایگان تست کنی!
+              کنه. راستی، پلن پایه کاملاً رایگان است!
             </p>
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
@@ -487,7 +487,7 @@ const Contact: React.FC = () => {
               همین الان شروع کنیم؟
             </h2>
             <p className="text-xl text-blue-100 mb-8 opacity-95 max-w-3xl mx-auto leading-relaxed">
-              یه پیام بده، تا چند ساعت ویجت رو روی سایتت نصب می‌کنیم. ۱۴ روز
+              یه پیام بده، تا چند ساعت ویجت رو روی سایتت نصب می‌کنیم. پلن رایگان
               رایگان امتحان کن، راضی نبودی هیچی نمی‌گیریم!
             </p>
 
@@ -516,7 +516,7 @@ const Contact: React.FC = () => {
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold">رایگان</div>
-                <div className="text-sm">۱۴ روز تست رایگان</div>
+                <div className="text-sm">پلن رایگان</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold">ایرانی</div>

@@ -23,6 +23,7 @@ model User {
   staff         staff?
   subscriptions Subscription[]
   business      Business?      @relation(fields: [businessId], references: [id])
+  notifications Notification[]
 
   @@map("users")
 }
@@ -48,9 +49,11 @@ model Business {
   services     Service[]
   staff        staff[]
   subscription Subscription?
+  subscriptionPayments SubscriptionPayment[]
   usageStats   UsageStats[]
   users        User[]
   workingHours WorkingHour[]
+  domains      Domain[]          // New: Custom domains
 
   @@map("businesses")
 }
@@ -235,6 +238,8 @@ model Plan {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
   subscriptions  Subscription[]
+  currentPayments SubscriptionPayment[] @relation("CurrentPlan")
+  newPayments     SubscriptionPayment[] @relation("NewPlan")
 
   @@map("plans")
 }
@@ -303,6 +308,27 @@ model InvoicePayment {
   @@map("invoice_payments")
 }
 
+model SubscriptionPayment {
+  id              String         @id @default(cuid())
+  businessId      String
+  currentPlanId   String
+  newPlanId       String
+  billingCycle    BillingCycle
+  amount          Decimal        @db.Decimal(10, 2)
+  gateway         PaymentGateway
+  gatewayRef      String?
+  status          PaymentStatus  @default(PENDING)
+  paidAt          DateTime?
+  metadata        Json?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  business        Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  currentPlan     Plan           @relation("CurrentPlan", fields: [currentPlanId], references: [id])
+  newPlan         Plan           @relation("NewPlan", fields: [newPlanId], references: [id])
+
+  @@map("subscription_payments")
+}
+
 model UsageStats {
   id             String       @id @default(cuid())
   businessId     String
@@ -365,6 +391,7 @@ model staff {
   staff_services      staff_services[]
   staff_time_off      staff_time_off[]
   staff_working_hours staff_working_hours[]
+  staff_permissions   StaffPermission[]     // NEW: Staff permissions
 }
 
 model staff_breaks {
@@ -421,6 +448,53 @@ model staff_working_hours {
   @@unique([staffId, dayOfWeek])
 }
 
+model StaffPermission {
+  id          String           @id @default(cuid())
+  staffId     String
+  page        String           // e.g., "bookings", "services", "analytics", "settings"
+  action      PermissionAction // e.g., "view", "edit", "delete", "create"
+  isGranted   Boolean          @default(true)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  staff       staff            @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@unique([staffId, page, action])
+  @@map("staff_permissions")
+}
+
+model Domain {
+  id          String        @id @default(cuid())
+  businessId  String
+  domain      String        @unique // e.g., "booking.mybusiness.com"
+  type        DomainType    @default(CUSTOM)
+  status      DomainStatus  @default(PENDING)
+  sslStatus   SSLStatus     @default(PENDING)
+  verifiedAt  DateTime?
+  expiresAt   DateTime?
+  dnsRecords  Json?         // Store DNS verification records
+  metadata    Json?         // Additional domain info
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  business    Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@map("domains")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String   // booking, payment, system, reminder
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  data      Json?    // Additional data for the notification
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
 enum UserRole {
   ADMIN
   BUSINESS_OWNER
@@ -444,6 +518,7 @@ enum PaymentStatus {
 }
 
 enum PaymentGateway {
+  TEST
   PASARGAD
   SAMAN
   ZARINPAL
@@ -495,4 +570,33 @@ enum TimeOffType {
   HOLIDAY
   TRAINING
   OTHER
+}
+
+enum DomainType {
+  CUSTOM      // Custom domain (e.g., booking.mybusiness.com)
+  SUBDOMAIN   // Subdomain of main platform (e.g., mybusiness.x-sme.ir)
+}
+
+enum DomainStatus {
+  PENDING     // Domain added, waiting for verification
+  VERIFIED    // Domain ownership verified
+  ACTIVE      // Domain is active and serving content
+  FAILED      // Verification failed
+  EXPIRED     // Domain expired
+  SUSPENDED   // Domain suspended
+}
+
+enum SSLStatus {
+  PENDING     // SSL certificate pending
+  ACTIVE      // SSL certificate active
+  FAILED      // SSL certificate failed
+  EXPIRED     // SSL certificate expired
+}
+
+enum PermissionAction {
+  VIEW
+  CREATE
+  EDIT
+  DELETE
+  MANAGE
 }

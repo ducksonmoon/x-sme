@@ -32,6 +32,7 @@ import { dashboardApi, subscriptionApi } from "@/services/api";
 import { useBusiness } from "@/contexts/BusinessContext";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import WidgetConfiguration from "@/components/WidgetConfiguration";
+import PlanUpgradeModal from "@/components/PlanUpgradeModal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -115,6 +116,7 @@ const Settings: React.FC = () => {
     useState(false);
   const [isEditingNotifications, setIsEditingNotifications] = useState(false);
   const [activeTab, setActiveTab] = useState("general");
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [formData, setFormData] = useState<BusinessSettings>({
     name: "",
     email: "",
@@ -3005,7 +3007,10 @@ const Settings: React.FC = () => {
                         </h3>
                         <div className="space-y-3">
                           {subscription?.data?.data?.status !== "CANCELLED" && (
-                            <Button className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white shadow-lg">
+                            <Button
+                              className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white shadow-lg"
+                              onClick={() => setShowUpgradeModal(true)}
+                            >
                               <Award className="w-4 h-4 ml-2" />
                               ارتقاء پلن
                             </Button>
@@ -3063,13 +3068,15 @@ const Settings: React.FC = () => {
                                   : "رایگان"}
                               </div>
                               <div className="text-xs text-gray-600 dark:text-gray-400">
-                                {plan.bookingsLimit
-                                  ? `${plan.bookingsLimit} رزرو`
-                                  : "رزرو نامحدود"}{" "}
+                                {plan.nameEn === "enterprise"
+                                  ? "N/A"
+                                  : plan.bookingsLimit
+                                    ? `${plan.bookingsLimit} کارکنان`
+                                    : "کارکنان نامحدود"}{" "}
                                 •
-                                {plan.smsLimit
-                                  ? ` ${plan.smsLimit} پیامک`
-                                  : " پیامک نامحدود"}
+                                {plan.servicesLimit
+                                  ? ` ${plan.servicesLimit} خدمات`
+                                  : " خدمات نامحدود"}
                               </div>
                             </div>
                           ))}
@@ -3203,6 +3210,19 @@ const Settings: React.FC = () => {
               </CardContent>
             </Card>
           </div>
+        )}
+
+        {/* Plan Upgrade Modal */}
+        {plans?.data?.data && subscription?.data?.data && (
+          <PlanUpgradeModal
+            isOpen={showUpgradeModal}
+            onClose={() => setShowUpgradeModal(false)}
+            currentPlan={subscription.data.data.plan}
+            availablePlans={plans.data.data}
+            currentBillingCycle={
+              subscription.data.data.billingCycle as "MONTHLY" | "YEARLY"
+            }
+          />
         )}
       </div>
     </div>

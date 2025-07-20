@@ -9,6 +9,7 @@ import AuthLayout from "@layouts/AuthLayout";
 import DashboardLayout from "@layouts/DashboardLayout";
 import { useAuthStore } from "@store/authStore";
 import { BusinessProvider } from "./contexts/BusinessContext";
+import { NotificationProvider } from "./contexts/NotificationContext";
 
 // Lazy load pages for better performance
 const Home = React.lazy(() => import("@pages/Home"));
@@ -19,6 +20,7 @@ const Features = React.lazy(() => import("@pages/Features"));
 
 // Auth pages
 const Login = React.lazy(() => import("@pages/auth/Login"));
+const StaffLogin = React.lazy(() => import("@pages/auth/StaffLogin"));
 const Register = React.lazy(() => import("@pages/auth/Register"));
 const BusinessRegister = React.lazy(
   () => import("@pages/auth/BusinessRegister")
@@ -33,8 +35,13 @@ const Services = React.lazy(() => import("@pages/dashboard/Services"));
 const Staff = React.lazy(() => import("@pages/dashboard/Staff"));
 const TimeSlots = React.lazy(() => import("@pages/dashboard/TimeSlots"));
 const Analytics = React.lazy(() => import("@pages/dashboard/Analytics"));
+const Domains = React.lazy(() => import("@pages/dashboard/Domains"));
 const Settings = React.lazy(() => import("@pages/dashboard/Settings"));
 const Profile = React.lazy(() => import("@pages/dashboard/Profile"));
+const PaymentPage = React.lazy(() => import("@pages/dashboard/PaymentPage"));
+const PaymentCallback = React.lazy(
+  () => import("@pages/dashboard/PaymentCallback")
+);
 
 // Admin pages
 const AdminDashboard = React.lazy(() => import("@pages/admin/Dashboard"));
@@ -53,6 +60,7 @@ const WidgetDemo = React.lazy(() => import("@pages/WidgetDemo"));
 const WidgetDocs = React.lazy(() => import("@pages/WidgetDocs"));
 const Widget = React.lazy(() => import("@pages/Widget"));
 const WidgetPreview = React.lazy(() => import("@pages/WidgetPreview"));
+const HostedWidget = React.lazy(() => import("@pages/HostedWidget"));
 
 // Error pages
 const NotFound = React.lazy(() => import("@pages/NotFound"));
@@ -91,10 +99,12 @@ function App() {
           {/* Widget routes (no layout) */}
           <Route path="/widget" element={<Widget />} />
           <Route path="/widget-preview" element={<WidgetPreview />} />
+          <Route path="/w/:businessId" element={<HostedWidget />} />
 
           {/* Auth routes */}
           <Route path="/auth" element={<AuthLayout />}>
             <Route path="login" element={<Login />} />
+            <Route path="staff-login" element={<StaffLogin />} />
             <Route path="register" element={<Register />} />
             <Route path="business-register" element={<BusinessRegister />} />
             <Route path="forgot-password" element={<ForgotPassword />} />
@@ -106,18 +116,95 @@ function App() {
             path="/dashboard"
             element={
               <ProtectedRoute>
-                <DashboardLayout />
+                <NotificationProvider>
+                  <DashboardLayout />
+                </NotificationProvider>
               </ProtectedRoute>
             }
           >
             <Route index element={<Dashboard />} />
-            <Route path="bookings" element={<Bookings />} />
-            <Route path="services" element={<Services />} />
-            <Route path="staff" element={<Staff />} />
-            <Route path="timeslots" element={<TimeSlots />} />
-            <Route path="analytics" element={<Analytics />} />
-            <Route path="settings" element={<Settings />} />
-            <Route path="profile" element={<Profile />} />
+            <Route
+              path="bookings"
+              element={
+                <ProtectedRoute
+                  requiredPermission={{ page: "bookings", action: "VIEW" }}
+                >
+                  <Bookings />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="services"
+              element={
+                <ProtectedRoute
+                  requiredPermission={{ page: "services", action: "VIEW" }}
+                >
+                  <Services />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="staff"
+              element={
+                <ProtectedRoute
+                  requiredPermission={{ page: "staff", action: "VIEW" }}
+                >
+                  <Staff />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="timeslots"
+              element={
+                <ProtectedRoute
+                  requiredPermission={{ page: "timeslots", action: "VIEW" }}
+                >
+                  <TimeSlots />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="analytics"
+              element={
+                <ProtectedRoute
+                  requiredPermission={{ page: "analytics", action: "VIEW" }}
+                >
+                  <Analytics />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="domains"
+              element={
+                <ProtectedRoute
+                  requiredPermission={{ page: "domains", action: "VIEW" }}
+                >
+                  <Domains />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="settings"
+              element={
+                <ProtectedRoute
+                  requiredPermission={{ page: "settings", action: "VIEW" }}
+                >
+                  <Settings />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="profile"
+              element={
+                <ProtectedRoute
+                  requiredPermission={{ page: "profile", action: "VIEW" }}
+                >
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="payment" element={<PaymentPage />} />
+            <Route path="payment/callback" element={<PaymentCallback />} />
           </Route>
 
           {/* Admin routes */}
@@ -125,7 +212,9 @@ function App() {
             path="/admin"
             element={
               <ProtectedRoute requiredRole="ADMIN">
-                <DashboardLayout />
+                <NotificationProvider>
+                  <DashboardLayout />
+                </NotificationProvider>
               </ProtectedRoute>
             }
           >

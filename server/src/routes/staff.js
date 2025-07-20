@@ -2,7 +2,10 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const { PrismaClient } = require('@prisma/client');
 const { authenticate, authorize } = require('../middleware/auth');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const moment = require('moment');
+const { setDefaultPermissions } = require('../middleware/permissions');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -12,14 +15,205 @@ const validateStaff = [
   body('firstName').notEmpty().withMessage('First name is required'),
   body('lastName').notEmpty().withMessage('Last name is required'),
   body('email').optional().isEmail().withMessage('Valid email is required'),
-  body('phone').optional().isMobilePhone().withMessage('Valid phone number is required'),
+  body('phone').optional().isString().withMessage('Phone number must be a string'),
   body('specialization').optional().isString(),
   body('bio').optional().isString(),
   body('experience').optional().isString(),
   body('isActive').optional().isBoolean(),
+  body('canLogin').optional().isBoolean(),
+  body('password').optional().isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
   body('workingHours').optional().isArray(),
   body('serviceIds').optional().isArray(),
 ];
+
+// @desc    Staff login
+// @route   POST /api/staff/login
+// @access  Public
+router.post('/login', [
+  body('email').isEmail().normalizeEmail(),
+  body('password').notEmpty(),
+], async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        details: errors.array()
+      });
+    }
+
+    const { email, password } = req.body;
+
+    // Find staff member by email
+    const staff = await prisma.staff.findFirst({
+      where: { 
+        email,
+        canLogin: true,
+        isActive: true
+      },
+      include: {
+        users: {
+          select: {
+            id: true,
+            email: true,
+            password: true,
+            firstName: true,
+            lastName: true,
+            role: true,
+            phone: true,
+            isActive: true,
+            businessId: true
+          }
+        },
+        businesses: {
+          select: {
+            id: true,
+            name: true,
+            isActive: true
+          }
+        }
+      }
+    });
+
+    if (!staff || !staff.users) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid credentials or staff member cannot login'
+      });
+    }
+
+    const user = staff.users;
+
+    if (!user.isActive) {
+      return res.status(401).json({
+        success: false,
+        error: 'Account is deactivated'
+      });
+    }
+
+    if (!staff.businesses.isActive) {
+      return res.status(401).json({
+        success: false,
+        error: 'Business is deactivated'
+      });
+    }
+
+    // Check password
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid credentials'
+      });
+    }
+
+    // Remove password from response
+    const { password: _, ...userWithoutPassword } = user;
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: user.id, role: user.role, staffId: staff.id },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    // Update last login
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { lastLoginAt: new Date() }
+    });
+
+    res.json({
+      success: true,
+      message: 'Login successful',
+      user: {
+        ...userWithoutPassword,
+        staff: {
+          id: staff.id,
+          firstName: staff.firstName,
+          lastName: staff.lastName,
+          specialization: staff.specialization,
+          bio: staff.bio,
+          experience: staff.experience
+        }
+      },
+      token
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// @desc    Get staff profile
+// @route   GET /api/staff/profile
+// @access  Private (Staff only)
+router.get('/profile', authenticate, authorize('STAFF'), async (req, res, next) => {
+  try {
+    const staff = await prisma.staff.findFirst({
+      where: { 
+        userId: req.user.id,
+        isActive: true
+      },
+      include: {
+        businesses: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            phone: true,
+            email: true,
+            address: true,
+            website: true,
+            logo: true,
+            theme: true,
+            timezone: true
+          }
+        },
+        staff_services: {
+          include: {
+            services: {
+              select: {
+                id: true,
+                name: true,
+                price: true,
+                duration: true,
+                description: true
+              }
+            }
+          }
+        },
+        staff_working_hours: {
+          orderBy: { dayOfWeek: 'asc' }
+        },
+        staff_breaks: true,
+        staff_time_off: {
+          where: {
+            startDate: { gte: new Date() }
+          },
+          orderBy: { startDate: 'asc' }
+        },
+        _count: {
+          select: { bookings: true }
+        }
+      }
+    });
+
+    if (!staff) {
+      return res.status(404).json({
+        success: false,
+        error: 'Staff profile not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: staff
+    });
+  } catch (error) {
+    next(error);
+  }
+});
 
 // @route   GET /api/staff
 // @desc    Get all staff for a business
@@ -70,6 +264,48 @@ router.get('/', authenticate, authorize('BUSINESS_OWNER', 'STAFF'), async (req, 
     res.json({
       success: true,
       data: staff
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// @route   GET /api/staff/time-off
+// @desc    Get all time off requests for a business
+// @access  Private (Business owners only)
+router.get('/time-off', authenticate, authorize('BUSINESS_OWNER'), async (req, res, next) => {
+  try {
+    const { businessId } = req.query;
+    
+    if (!businessId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Business ID is required'
+      });
+    }
+
+    const timeOffRequests = await prisma.staff_time_off.findMany({
+      where: {
+        staff: {
+          businessId: businessId
+        }
+      },
+      include: {
+        staff: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            specialization: true
+          }
+        }
+      },
+      orderBy: { startDate: 'asc' }
+    });
+
+    res.json({
+      success: true,
+      data: timeOffRequests
     });
   } catch (error) {
     next(error);
@@ -139,7 +375,8 @@ router.post('/', authenticate, authorize('BUSINESS_OWNER'), validateStaff, async
     if (!errors.isEmpty()) {
       return res.status(400).json({
         success: false,
-        errors: errors.array()
+        error: 'Validation failed',
+        details: errors.array()
       });
     }
 
@@ -153,9 +390,57 @@ router.post('/', authenticate, authorize('BUSINESS_OWNER'), validateStaff, async
       bio,
       experience,
       isActive = true,
+      canLogin = false,
+      password,
       workingHours = [],
       serviceIds = []
     } = req.body;
+
+    // Validate email and password if canLogin is true
+    if (canLogin) {
+      if (!email) {
+        return res.status(400).json({
+          success: false,
+          error: 'Email is required when staff can login'
+        });
+      }
+      if (!password) {
+        return res.status(400).json({
+          success: false,
+          error: 'Password is required when staff can login'
+        });
+      }
+
+      // Check if email already exists
+      const existingUser = await prisma.user.findUnique({
+        where: { email }
+      });
+
+      if (existingUser) {
+        return res.status(400).json({
+          success: false,
+          error: 'Email already exists'
+        });
+      }
+    }
+
+    // Create user account if canLogin is true
+    let userId = null;
+    if (canLogin && email && password) {
+      const hashedPassword = await bcrypt.hash(password, 12);
+      const user = await prisma.user.create({
+        data: {
+          email,
+          password: hashedPassword,
+          firstName,
+          lastName,
+          phone,
+          role: 'STAFF',
+          businessId
+        }
+      });
+      userId = user.id;
+    }
 
     // Create staff member
     const staff = await prisma.staff.create({
@@ -168,7 +453,9 @@ router.post('/', authenticate, authorize('BUSINESS_OWNER'), validateStaff, async
         specialization,
         bio,
         experience,
-        isActive
+        isActive,
+        canLogin,
+        userId
       }
     });
 
@@ -194,6 +481,11 @@ router.post('/', authenticate, authorize('BUSINESS_OWNER'), validateStaff, async
           customPrice: null // Can be set later
         }))
       });
+    }
+
+    // Set default permissions if staff can login
+    if (canLogin) {
+      await setDefaultPermissions(staff.id);
     }
 
     // Fetch the created staff with relations
@@ -241,7 +533,8 @@ router.put('/:id', authenticate, authorize('BUSINESS_OWNER'), validateStaff, asy
     if (!errors.isEmpty()) {
       return res.status(400).json({
         success: false,
-        errors: errors.array()
+        error: 'Validation failed',
+        details: errors.array()
       });
     }
 
@@ -255,6 +548,8 @@ router.put('/:id', authenticate, authorize('BUSINESS_OWNER'), validateStaff, asy
       bio,
       experience,
       isActive,
+      canLogin,
+      password,
       workingHours,
       serviceIds
     } = req.body;
@@ -271,6 +566,75 @@ router.put('/:id', authenticate, authorize('BUSINESS_OWNER'), validateStaff, asy
       });
     }
 
+    // Handle user account updates if canLogin is being enabled/disabled
+    let userId = existingStaff.userId;
+    
+    if (canLogin && !existingStaff.canLogin) {
+      // Enable login - create user account
+      if (!email || !password) {
+        return res.status(400).json({
+          success: false,
+          error: 'Email and password are required when enabling staff login'
+        });
+      }
+
+      // Check if email already exists
+      const existingUser = await prisma.user.findUnique({
+        where: { email }
+      });
+
+      if (existingUser) {
+        return res.status(400).json({
+          success: false,
+          error: 'Email already exists'
+        });
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 12);
+      const user = await prisma.user.create({
+        data: {
+          email,
+          password: hashedPassword,
+          firstName,
+          lastName,
+          phone,
+          role: 'STAFF',
+          businessId: existingStaff.businessId
+        }
+      });
+      userId = user.id;
+    } else if (!canLogin && existingStaff.canLogin && existingStaff.userId) {
+      // Disable login - delete user account
+      await prisma.user.delete({
+        where: { id: existingStaff.userId }
+      });
+      userId = null;
+    } else if (canLogin && existingStaff.canLogin && existingStaff.userId && password) {
+      // Update password for existing user account
+      const hashedPassword = await bcrypt.hash(password, 12);
+      await prisma.user.update({
+        where: { id: existingStaff.userId },
+        data: {
+          email,
+          firstName,
+          lastName,
+          phone,
+          password: hashedPassword
+        }
+      });
+    } else if (canLogin && existingStaff.canLogin && existingStaff.userId) {
+      // Update user account without password change
+      await prisma.user.update({
+        where: { id: existingStaff.userId },
+        data: {
+          email,
+          firstName,
+          lastName,
+          phone
+        }
+      });
+    }
+
     // Update staff member
     const updatedStaff = await prisma.staff.update({
       where: { id },
@@ -282,7 +646,9 @@ router.put('/:id', authenticate, authorize('BUSINESS_OWNER'), validateStaff, asy
         specialization,
         bio,
         experience,
-        isActive
+        isActive,
+        canLogin,
+        userId
       }
     });
 
@@ -399,6 +765,13 @@ router.delete('/:id', authenticate, authorize('BUSINESS_OWNER'), async (req, res
       return res.status(400).json({
         success: false,
         error: `Cannot delete staff member with ${futureBookings} future bookings. Please reassign or cancel bookings first.`
+      });
+    }
+
+    // Delete associated user account if exists
+    if (existingStaff.userId) {
+      await prisma.user.delete({
+        where: { id: existingStaff.userId }
       });
     }
 

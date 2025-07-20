@@ -3,6 +3,15 @@ import { persist } from "zustand/middleware";
 import { authApi } from "@/services/api";
 import axios from "axios";
 
+interface Staff {
+  id: string;
+  firstName: string;
+  lastName: string;
+  specialization?: string;
+  bio?: string;
+  experience?: string;
+}
+
 interface User {
   id: string;
   email: string;
@@ -14,6 +23,7 @@ interface User {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  staff?: Staff;
 }
 
 interface AuthState {
