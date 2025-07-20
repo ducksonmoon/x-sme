@@ -383,7 +383,11 @@ export const StaffScheduler: React.FC<StaffSchedulerProps> = ({
 
       {/* Time Off Request Modal */}
       {isTimeOffModalOpen && (
-        <Modal onClose={() => setIsTimeOffModalOpen(false)} size="lg">
+        <Modal
+          isOpen={isTimeOffModalOpen}
+          onClose={() => setIsTimeOffModalOpen(false)}
+          size="lg"
+        >
           <div className="sticky top-0 z-10 bg-white pb-2 mb-4 border-b">
             <h2 className="text-xl font-bold text-gray-900 text-center py-3">
               درخواست مرخصی جدید

@@ -7,7 +7,7 @@ import { HelmetProvider } from "react-helmet-async";
 import { ErrorBoundary } from "react-error-boundary";
 import { Toaster } from "react-hot-toast";
 
-import App from "./App.tsx";
+import App from "./App";
 import { ThemeProvider } from "@providers/ThemeProvider";
 import { LanguageProvider } from "@providers/LanguageProvider";
 import ErrorFallback from "@components/ErrorFallback";
