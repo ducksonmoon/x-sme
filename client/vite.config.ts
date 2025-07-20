@@ -41,12 +41,9 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: path.resolve(__dirname, "index.html"),
-        widget: path.resolve(__dirname, "src/widget.ts"),
       },
       output: {
-        entryFileNames: (chunkInfo) => {
-          return chunkInfo.name === "widget" ? "widget.js" : "[name]-[hash].js";
-        },
+        entryFileNames: "[name]-[hash].js",
         chunkFileNames: "assets/[name]-[hash].js",
         assetFileNames: "assets/[name]-[hash].[ext]",
       },
