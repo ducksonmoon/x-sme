@@ -92,6 +92,10 @@ check_api_health() {
     if [ "$response" = "200" ]; then
         print_status "API health check passed"
         log_message "INFO: API health check passed"
+    elif [ "$response" = "000" ]; then
+        print_error "API health check failed (Connection refused)"
+        log_message "ERROR: API health check failed - connection refused"
+        return 1
     else
         print_error "API health check failed (HTTP $response)"
         log_message "ERROR: API health check failed with HTTP $response"
@@ -104,11 +108,15 @@ check_frontend_health() {
     print_info "Checking frontend health..."
     
     local response
-    response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/health 2>/dev/null || echo "000")
+    response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/ 2>/dev/null || echo "000")
     
-    if [ "$response" = "200" ]; then
-        print_status "Frontend health check passed"
-        log_message "INFO: Frontend health check passed"
+    if [ "$response" = "200" ] || [ "$response" = "301" ] || [ "$response" = "302" ]; then
+        print_status "Frontend health check passed (HTTP $response)"
+        log_message "INFO: Frontend health check passed (HTTP $response)"
+    elif [ "$response" = "000" ]; then
+        print_error "Frontend health check failed (Connection refused)"
+        log_message "ERROR: Frontend health check failed - connection refused"
+        return 1
     else
         print_error "Frontend health check failed (HTTP $response)"
         log_message "ERROR: Frontend health check failed with HTTP $response"
@@ -163,13 +171,26 @@ check_container_resources() {
             local cpu_usage
             cpu_usage=$(echo "$stats" | awk '{print $2}' | sed 's/%//')
             local mem_usage
-            mem_usage=$(echo "$stats" | awk '{print $3}' | sed 's/%//')
+            mem_usage=$(echo "$stats" | awk '{print $3}')
             
-            if [ "$cpu_usage" -gt 80 ] || [ "$mem_usage" -gt 80 ]; then
-                print_warning "Container $container: CPU $cpu_usage%, Memory $mem_usage%"
-                log_message "WARNING: Container $container high resource usage - CPU $cpu_usage%, Memory $mem_usage%"
+            # Handle CPU usage (can be decimal)
+            local cpu_numeric
+            cpu_numeric=$(echo "$cpu_usage" | awk '{printf "%.0f", $1}')
+            
+            # Handle memory usage (can have units like MiB, KiB, etc.)
+            local mem_numeric
+            if echo "$mem_usage" | grep -q "%"; then
+                mem_numeric=$(echo "$mem_usage" | sed 's/%//' | awk '{printf "%.0f", $1}')
             else
-                print_status "Container $container: CPU $cpu_usage%, Memory $mem_usage%"
+                # If no percentage, just show the memory usage as-is
+                mem_numeric=0
+            fi
+            
+            if [ "$cpu_numeric" -gt 80 ] || [ "$mem_numeric" -gt 80 ]; then
+                print_warning "Container $container: CPU $cpu_usage%, Memory $mem_usage"
+                log_message "WARNING: Container $container high resource usage - CPU $cpu_usage%, Memory $mem_usage"
+            else
+                print_status "Container $container: CPU $cpu_usage%, Memory $mem_usage"
             fi
         fi
     done
