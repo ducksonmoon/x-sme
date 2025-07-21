@@ -112,7 +112,7 @@ export const useRealtimeBookings = (
 
     try {
       const serverUrl =
-        process.env.REACT_APP_API_URL || "http://localhost:3001";
+        process.env.REACT_APP_API_URL || "https://193.36.84.222";
 
       const newSocket = io(serverUrl, {
         auth: {
