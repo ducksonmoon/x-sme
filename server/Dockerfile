@@ -1,17 +1,20 @@
-############################   build stage   ############################
+################  build stage  ################
 FROM node:20-alpine AS build
 WORKDIR /app
 
-# OS packages needed by Prisma’s query‑engine
+# OS packages for Prisma
 RUN apk add --no-cache openssl postgresql-client libc6-compat
 
-# ───────────────────────── dependencies ─────────────────────────
-# 1️⃣  Pin EXACT versions in package.json first (e.g. "6.7.0")
+# Dependency manifests first
 COPY package*.json ./
 COPY prisma ./prisma/
-ENV PRISMA_GENERATE_SKIP_AUTOINSTALL=1   # fail fast if CLI is missing :contentReference[oaicite:0]{index=0}
-RUN npm ci --legacy-peer-deps           # installs prod+dev *exact* versions
-RUN npx prisma generate                 # CLI is present, versions match
+
+# Fail fast if the CLI ever goes missing
+# (inline comments are on their own line to satisfy the legacy parser)
+ENV PRISMA_GENERATE_SKIP_AUTOINSTALL=1
+RUN npm ci --legacy-peer-deps
+RUN npx prisma generate
+
 
 # ───────────────────────── source code ─────────────────────────
 COPY . .
