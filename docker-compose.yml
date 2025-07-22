@@ -47,6 +47,8 @@ services:
       context: ./server
       dockerfile: Dockerfile
     container_name: x-sme-server
+    env_file:
+      - env.production
     environment:
       - NODE_ENV=production
       - DATABASE_URL=postgresql://${POSTGRES_USER:-x_sme_user}:${POSTGRES_PASSWORD:-x_sme_password}@postgres:5432/x_sme_db?schema=public
@@ -77,9 +79,11 @@ services:
       context: ./client
       dockerfile: Dockerfile
     container_name: x-sme-client
+    env_file:
+      - env.production
     environment:
       - NODE_ENV=production
-      - VITE_API_URL=${VITE_API_URL:-http://localhost:3001}
+      - VITE_API_URL=${VITE_API_URL:-https://193.36.84.222}
     ports:
       - "3000:80"
     networks:
