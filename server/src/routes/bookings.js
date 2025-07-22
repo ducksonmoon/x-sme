@@ -179,7 +179,7 @@ router.post('/', validateBooking, async (req, res, next) => {
       prisma.service.findUnique({
         where: { id: serviceId },
         include: {
-          staff: {
+          staff_services: {
             include: {
               staff: true
             }
