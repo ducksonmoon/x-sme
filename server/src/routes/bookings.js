@@ -208,7 +208,7 @@ router.post('/', validateBooking, async (req, res, next) => {
       assignedStaff = await prisma.staff.findUnique({
         where: { id: staffId },
         include: {
-          services: {
+          staff_services: {
             where: { serviceId }
           }
         }
@@ -229,7 +229,7 @@ router.post('/', validateBooking, async (req, res, next) => {
       }
 
       // Check if staff is assigned to this service
-      if (assignedStaff.services.length === 0) {
+      if (assignedStaff.staff_services.length === 0) {
         return res.status(400).json({
           success: false,
           error: 'Staff member is not assigned to this service'
