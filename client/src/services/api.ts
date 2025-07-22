@@ -6,7 +6,9 @@ export const api = axios.create({
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",
+    Accept: "application/json",
   },
+  withCredentials: true, // Include credentials in CORS requests
 });
 
 // Request interceptor to add auth token
@@ -31,6 +33,15 @@ api.interceptors.response.use(
       // Token expired or invalid
       localStorage.removeItem("token");
       window.location.href = "/login";
+    } else if (
+      error.code === "ERR_NETWORK" ||
+      error.message?.includes("CORS")
+    ) {
+      // CORS or network error
+      console.error("CORS or Network Error:", error.message);
+      console.error(
+        "Please check if the server is running and CORS is properly configured"
+      );
     }
     return Promise.reject(error);
   }
