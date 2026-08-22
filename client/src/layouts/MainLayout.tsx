@@ -68,7 +68,7 @@ const MainLayout: React.FC = () => {
               </div>
               <div className="flex flex-col">
                 <span className="text-xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent">
-                  شرکت ما
+                  مریخ
                 </span>
                 <span className="text-xs text-gray-500 font-medium">
                   وب، نرم‌افزار و هوش مصنوعی
@@ -241,7 +241,7 @@ const MainLayout: React.FC = () => {
                 </div>
                 <div className="flex flex-col">
                   <span className="text-xl font-bold bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">
-                    شرکت ما
+                    مریخ
                   </span>
                   <span className="text-xs text-gray-400">
                     وب، نرم‌افزار و هوش مصنوعی
@@ -310,7 +310,7 @@ const MainLayout: React.FC = () => {
                 </li>
                 <li className="flex items-center text-gray-300">
                   <Mail className="w-4 h-4 mr-2 text-blue-400" />
-                  <span className="text-sm">info@company.com</span>
+                  <span className="text-sm">info@marikh.co</span>
                 </li>
               </ul>
             </div>
@@ -320,7 +320,7 @@ const MainLayout: React.FC = () => {
           <div className="border-t border-gray-700/50 mt-12 pt-8">
             <div className="flex flex-col md:flex-row justify-between items-center">
               <div className="text-gray-400 text-sm mb-4 md:mb-0">
-                © ۱۴۰۳ شرکت ما. تمامی حقوق محفوظ است.
+                © ۱۴۰۳ مریخ. تمامی حقوق محفوظ است.
               </div>
               <div className="flex space-x-6 space-x-reverse text-sm">
                 <a
