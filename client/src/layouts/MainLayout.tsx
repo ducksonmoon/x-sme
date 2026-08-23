@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Outlet, Link, useLocation } from "react-router-dom";
+import { Outlet, Link, useLocation, useHref } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Menu,
@@ -28,6 +28,7 @@ const MainLayout: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const location = useLocation();
+  const portfolioHref = useHref("/#portfolio");
 
   const navigation: NavigationItem[] = [
     { name: "خانه", href: "/" },
@@ -117,7 +118,7 @@ const MainLayout: React.FC = () => {
                 asChild
                 className="text-gray-600 hover:text-blue-600 hover:bg-blue-50 border border-transparent hover:border-blue-200 transition-all duration-300"
               >
-                <a href="/#portfolio" className="flex items-center">
+                <a href={portfolioHref} className="flex items-center">
                   <Zap className="w-4 h-4 mr-2" />
                   نمونه‌کارها
                 </a>
@@ -193,7 +194,7 @@ const MainLayout: React.FC = () => {
                       className="justify-start text-gray-600 hover:text-blue-600 hover:bg-blue-50"
                     >
                       <a
-                        href="/#portfolio"
+                        href={portfolioHref}
                         onClick={() => setIsMenuOpen(false)}
                         className="flex items-center"
                       >
