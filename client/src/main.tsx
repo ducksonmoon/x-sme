@@ -15,6 +15,13 @@ import ToastProvider from "./components/ui/toast";
 
 import "./styles/index.css";
 
+// On a GitHub Pages project site (username.github.io/repo/) the app is served
+// from a subpath instead of the domain root, so routes need that prefix.
+// On the custom domain (or any other host) it's served from "/" as normal.
+const basename = window.location.hostname.endsWith("github.io")
+  ? `/${window.location.pathname.split("/")[1] ?? ""}`
+  : "/";
+
 // Create a client
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -47,7 +54,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     >
       <HelmetProvider>
         <QueryClientProvider client={queryClient}>
-          <BrowserRouter>
+          <BrowserRouter basename={basename}>
             <ThemeProvider>
               <LanguageProvider>
                 <ToastProvider>
