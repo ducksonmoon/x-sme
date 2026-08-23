@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import {
   Home,
   RefreshCw,
-  ArrowLeft,
   AlertTriangle,
   Mail,
   MessageSquare,
@@ -128,8 +127,8 @@ const ServerError: React.FC = () => {
                           : ""
                       }
                     >
-                      <Link to={suggestion.href} className="flex items-center">
-                        <suggestion.icon className="mr-2 h-4 w-4" />
+                      <Link to={suggestion.href} className="flex items-center gap-2">
+                        <suggestion.icon className="h-4 w-4" />
                         {suggestion.text}
                       </Link>
                     </Button>
@@ -138,9 +137,9 @@ const ServerError: React.FC = () => {
                       size="lg"
                       variant={suggestion.variant}
                       onClick={suggestion.action}
-                      className={`flex items-center ${suggestion.variant === "secondary" ? "bg-gray-200 text-gray-800 hover:bg-gray-300" : ""}`}
+                      className={`flex items-center gap-2 ${suggestion.variant === "secondary" ? "bg-gray-200 text-gray-800 hover:bg-gray-300" : ""}`}
                     >
-                      <suggestion.icon className="mr-2 h-4 w-4" />
+                      <suggestion.icon className="h-4 w-4" />
                       {suggestion.text}
                     </Button>
                   )}

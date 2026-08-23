@@ -6,7 +6,7 @@ import {
   X,
   Phone,
   Mail,
-  ArrowRight,
+  ArrowLeft,
   ChevronUp,
   Zap,
   ExternalLink,
@@ -109,8 +109,8 @@ const MainLayout: React.FC = () => {
                 asChild
                 className="text-ink-soft hover:text-mars-dark hover:bg-mars-tint border border-transparent hover:border-mars/30 transition-all duration-300"
               >
-                <a href={portfolioHref} className="flex items-center">
-                  <Zap className="w-4 h-4 mr-2" />
+                <a href={portfolioHref} className="flex items-center gap-2">
+                  <Zap className="w-4 h-4" />
                   نمونه‌کارها
                 </a>
               </Button>
@@ -118,9 +118,9 @@ const MainLayout: React.FC = () => {
                 asChild
                 className="bg-mars text-paper hover:bg-[oklch(62%_0.15_35)] hover:text-paper transition-all duration-300"
               >
-                <Link to="/contact" className="flex items-center">
-                  <ArrowRight className="w-4 h-4 mr-2" />
+                <Link to="/contact" className="flex items-center gap-2">
                   شروع پروژه
+                  <ArrowLeft className="w-4 h-4" />
                 </Link>
               </Button>
             </div>
@@ -166,8 +166,8 @@ const MainLayout: React.FC = () => {
                         )}
                         onClick={() => setIsMenuOpen(false)}
                       >
-                        <div className="flex items-center">
-                          <ArrowRight className="w-4 h-4 mr-3" />
+                        <div className="flex items-center gap-3">
+                          <ArrowLeft className="w-4 h-4" />
                           {item.name}
                         </div>
                         {item.badge && (
@@ -187,9 +187,9 @@ const MainLayout: React.FC = () => {
                       <a
                         href={portfolioHref}
                         onClick={() => setIsMenuOpen(false)}
-                        className="flex items-center"
+                        className="flex items-center gap-3"
                       >
-                        <Zap className="w-4 h-4 mr-3" />
+                        <Zap className="w-4 h-4" />
                         نمونه‌کارها
                       </a>
                     </Button>
@@ -197,10 +197,10 @@ const MainLayout: React.FC = () => {
                       <Link
                         to="/contact"
                         onClick={() => setIsMenuOpen(false)}
-                        className="flex items-center"
+                        className="flex items-center gap-3"
                       >
-                        <ArrowRight className="w-4 h-4 mr-3" />
                         شروع پروژه
+                        <ArrowLeft className="w-4 h-4" />
                       </Link>
                     </Button>
                   </div>
@@ -253,9 +253,9 @@ const MainLayout: React.FC = () => {
                   <li key={index}>
                     <a
                       href={item.href}
-                      className="text-ink-soft hover:text-mars-dark transition-colors flex items-center group"
+                      className="text-ink-soft hover:text-mars-dark transition-colors flex items-center gap-2 group"
                     >
-                      <ArrowRight className="w-4 h-4 mr-2 group-hover:translate-x-1 transition-transform text-mars" />
+                      <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform text-mars" />
                       {item.name}
                     </a>
                   </li>
@@ -269,12 +269,12 @@ const MainLayout: React.FC = () => {
                 ارتباط با ما
               </h4>
               <ul className="space-y-3">
-                <li className="flex items-center text-ink-soft pt-2">
-                  <Phone className="w-4 h-4 mr-2 text-mars" />
+                <li className="flex items-center gap-2 text-ink-soft pt-2">
+                  <Phone className="w-4 h-4 text-mars" />
                   <span className="text-sm">۰۲۱-۱۲۳۴۵۶۷۸</span>
                 </li>
-                <li className="flex items-center text-ink-soft">
-                  <Mail className="w-4 h-4 mr-2 text-mars" />
+                <li className="flex items-center gap-2 text-ink-soft">
+                  <Mail className="w-4 h-4 text-mars" />
                   <span className="text-sm">info@merikh.co</span>
                 </li>
               </ul>
@@ -290,17 +290,17 @@ const MainLayout: React.FC = () => {
               <div className="flex space-x-6 space-x-reverse text-sm">
                 <a
                   href="/privacy"
-                  className="text-ink-faint hover:text-ink transition-colors flex items-center group"
+                  className="text-ink-faint hover:text-ink transition-colors flex items-center gap-2 group"
                 >
                   حریم خصوصی
-                  <ExternalLink className="w-3 h-3 mr-2 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                  <ExternalLink className="w-3 h-3 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                 </a>
                 <a
                   href="/terms"
-                  className="text-ink-faint hover:text-ink transition-colors flex items-center group"
+                  className="text-ink-faint hover:text-ink transition-colors flex items-center gap-2 group"
                 >
                   شرایط استفاده
-                  <ExternalLink className="w-3 h-3 mr-2 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                  <ExternalLink className="w-3 h-3 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                 </a>
               </div>
             </div>

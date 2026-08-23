@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Home, Search, ArrowLeft, AlertCircle } from "lucide-react";
+import { Home, Search, ArrowRight, AlertCircle } from "lucide-react";
 import { Button } from "@components/ui/button";
 import {
   Card,
@@ -75,8 +75,8 @@ const NotFound: React.FC = () => {
                 asChild
                 className="bg-mars text-paper hover:bg-[oklch(62%_0.15_35)] hover:text-paper"
               >
-                <Link to="/" className="flex items-center">
-                  <ArrowLeft className="mr-2 h-4 w-4" />
+                <Link to="/" className="flex items-center gap-2">
+                  <ArrowRight className="h-4 w-4" />
                   بازگشت به صفحه اصلی
                 </Link>
               </Button>

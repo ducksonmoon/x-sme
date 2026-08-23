@@ -9,7 +9,6 @@ import {
   Package,
   ShieldCheck,
   ArrowLeft,
-  ArrowRight,
   ExternalLink,
   CheckCircle,
 } from "lucide-react";
@@ -153,15 +152,15 @@ const Home: React.FC = () => {
             </p>
             <div className="flex flex-col sm:flex-row items-center gap-4 mt-2">
               <Button asChild size="lg" className="bg-mars text-paper hover:bg-[oklch(62%_0.15_35)] hover:text-paper">
-                <a href="#products" className="flex items-center">
-                  <ArrowRight className="w-4 h-4 mr-2" />
+                <a href="#products" className="flex items-center gap-2">
                   مشاهده محصولات
+                  <ArrowLeft className="w-4 h-4" />
                 </a>
               </Button>
               <Button variant="outline" size="lg" asChild className="border-line text-ink hover:border-navy-700">
-                <a href="#services" className="flex items-center">
+                <a href="#services" className="flex items-center gap-2">
                   خدمات سفارشی
-                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  <ArrowLeft className="w-4 h-4" />
                 </a>
               </Button>
             </div>
@@ -337,7 +336,7 @@ const Home: React.FC = () => {
                       {item.description}
                     </p>
                   </div>
-                  <ExternalLink className="w-4 h-4 text-mars-dark shrink-0 transition-transform group-hover:-translate-x-1 group-hover:translate-y-1" />
+                  <ExternalLink className="w-4 h-4 text-mars-dark shrink-0 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
                 </div>
               </motion.a>
             ))}
@@ -397,9 +396,9 @@ const Home: React.FC = () => {
             راهکار سفارشی؛ تیم مریخ آماده همکاری است.
           </p>
           <Button asChild size="lg" className="bg-mars text-paper hover:bg-[oklch(62%_0.15_35)] hover:text-paper mt-2">
-            <Link to="/contact" className="flex items-center">
-              <ArrowRight className="w-4 h-4 mr-2" />
+            <Link to="/contact" className="flex items-center gap-2">
               تماس با ما
+              <ArrowLeft className="w-4 h-4" />
             </Link>
           </Button>
         </div>

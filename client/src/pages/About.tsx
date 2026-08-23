@@ -9,7 +9,7 @@ import {
   Code2,
   Globe,
   Brain,
-  ArrowRight,
+  ArrowLeft,
 } from "lucide-react";
 import { Button } from "@components/ui/button";
 
@@ -154,9 +154,9 @@ const About: React.FC = () => {
             درباره پروژه خود با ما صحبت کنید تا بهترین راهکار را پیشنهاد دهیم.
           </p>
           <Button asChild size="lg" className="bg-mars text-paper hover:bg-[oklch(62%_0.15_35)] hover:text-paper">
-            <Link to="/contact" className="flex items-center">
-              <ArrowRight className="w-4 h-4 mr-2" />
+            <Link to="/contact" className="flex items-center gap-2">
               تماس با ما
+              <ArrowLeft className="w-4 h-4" />
             </Link>
           </Button>
         </div>
