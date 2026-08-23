@@ -119,7 +119,29 @@ export default {
           green: '#00A651',
           white: '#FFFFFF',
           red: '#DA0000',
-        }
+        },
+        navy: {
+          950: 'oklch(15.5% 0.045 258)',
+          900: 'oklch(19% 0.05 258)',
+          800: 'oklch(24% 0.055 258)',
+          700: 'oklch(31% 0.06 258)',
+          100: 'oklch(93% 0.016 258)',
+        },
+        mars: {
+          DEFAULT: 'oklch(58% 0.15 35)',
+          dark: 'oklch(44% 0.14 35)',
+          tint: 'oklch(95% 0.025 35)',
+        },
+        paper: 'oklch(98.3% 0.004 90)',
+        ink: {
+          DEFAULT: 'oklch(21% 0.03 258)',
+          soft: 'oklch(48% 0.02 258)',
+          faint: 'oklch(64% 0.015 258)',
+        },
+        line: {
+          DEFAULT: 'oklch(90% 0.01 258)',
+          soft: 'oklch(93.5% 0.008 258)',
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

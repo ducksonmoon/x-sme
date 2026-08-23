@@ -19,7 +19,7 @@ const NotFound: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center">
+    <div className="min-h-screen bg-paper flex items-center justify-center">
       <div className="container mx-auto px-4 max-w-4xl">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -34,7 +34,7 @@ const NotFound: React.FC = () => {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="mb-8"
           >
-            <div className="text-8xl lg:text-9xl font-bold text-blue-200 select-none">
+            <div className="text-8xl lg:text-9xl font-bold text-navy-100 select-none">
               ۴۰۴
             </div>
           </motion.div>
@@ -48,13 +48,13 @@ const NotFound: React.FC = () => {
           >
             <Card className="border-0 shadow-lg">
               <CardContent className="py-12 px-8">
-                <div className="w-16 h-16 bg-red-100 rounded-full mx-auto mb-6 flex items-center justify-center">
-                  <AlertCircle className="w-8 h-8 text-red-500" />
+                <div className="w-16 h-16 bg-mars-tint rounded-full mx-auto mb-6 flex items-center justify-center">
+                  <AlertCircle className="w-8 h-8 text-mars-dark" />
                 </div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-4">
+                <h1 className="text-3xl font-bold text-ink mb-4">
                   صفحه پیدا نشد
                 </h1>
-                <p className="text-gray-600 text-lg leading-relaxed max-w-2xl mx-auto">
+                <p className="text-ink-soft text-lg leading-relaxed max-w-2xl mx-auto">
                   متأسفانه صفحه‌ای که به دنبال آن هستید وجود ندارد. ممکن است
                   لینک اشتباه باشد یا صفحه حذف شده باشد.
                 </p>
@@ -73,7 +73,7 @@ const NotFound: React.FC = () => {
               <Button
                 size="lg"
                 asChild
-                className="bg-blue-600 hover:bg-blue-700 text-white"
+                className="bg-mars text-paper hover:bg-[oklch(62%_0.15_35)] hover:text-paper"
               >
                 <Link to="/" className="flex items-center">
                   <ArrowLeft className="mr-2 h-4 w-4" />
@@ -84,7 +84,7 @@ const NotFound: React.FC = () => {
                 variant="outline"
                 size="lg"
                 onClick={() => window.history.back()}
-                className="border-blue-200 text-blue-600 hover:bg-blue-50"
+                className="border-line text-ink hover:bg-mars-tint"
               >
                 برگشت به صفحه قبل
               </Button>
@@ -99,10 +99,10 @@ const NotFound: React.FC = () => {
           >
             <Card className="border-0 shadow-lg">
               <CardHeader>
-                <CardTitle className="text-lg text-gray-900">
+                <CardTitle className="text-lg text-ink">
                   شاید به دنبال این‌ها باشید
                 </CardTitle>
-                <CardDescription className="text-gray-600">
+                <CardDescription className="text-ink-soft">
                   پیشنهادهایی برای ادامه گشت‌وگذار در سایت ما
                 </CardDescription>
               </CardHeader>
@@ -117,10 +117,10 @@ const NotFound: React.FC = () => {
                     >
                       <Link
                         to={suggestion.href}
-                        className="flex items-center gap-3 p-4 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all group"
+                        className="flex items-center gap-3 p-4 rounded-lg border border-line hover:border-mars/40 hover:bg-mars-tint transition-all group"
                       >
-                        <suggestion.icon className="w-4 h-4 text-gray-500 group-hover:text-blue-600" />
-                        <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600">
+                        <suggestion.icon className="w-4 h-4 text-ink-faint group-hover:text-mars-dark" />
+                        <span className="text-sm font-medium text-ink-soft group-hover:text-mars-dark">
                           {suggestion.text}
                         </span>
                       </Link>
@@ -138,11 +138,11 @@ const NotFound: React.FC = () => {
             transition={{ duration: 0.6, delay: 1.2 }}
             className="mt-8"
           >
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-ink-faint">
               اگر فکر می‌کنید این یک خطا است، لطفاً با{" "}
               <Link
                 to="/contact"
-                className="text-blue-600 hover:underline font-medium"
+                className="text-mars-dark hover:underline font-medium"
               >
                 تیم پشتیبانی
               </Link>{" "}

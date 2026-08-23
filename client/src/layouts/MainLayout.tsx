@@ -4,18 +4,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Menu,
   X,
-  Globe,
   Phone,
   Mail,
-  Instagram,
-  Twitter,
-  Linkedin,
   ArrowRight,
   ChevronUp,
   Zap,
   ExternalLink,
 } from "lucide-react";
 import { Button } from "@components/ui/button";
+import LogoMark from "@components/LogoMark";
 import { cn } from "../utils/cn";
 
 interface NavigationItem {
@@ -55,23 +52,17 @@ const MainLayout: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+    <div className="min-h-screen flex flex-col bg-paper">
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b border-white/20 backdrop-blur-xl bg-white/80 shadow-lg shadow-blue-500/5">
+      <header className="sticky top-0 z-50 w-full border-b border-line-soft backdrop-blur-xl bg-paper/90">
         <div className="container mx-auto px-4 max-w-7xl">
           <div className="flex h-16 items-center justify-between">
             {/* Logo */}
             <Link to="/" className="flex items-center space-x-3 group">
-              <div className="relative">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-all duration-300 shadow-lg shadow-blue-500/25">
-                  <Globe className="h-6 w-6 text-white" />
-                </div>
-              </div>
+              <LogoMark />
               <div className="flex flex-col">
-                <span className="text-xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent">
-                  مریخ
-                </span>
-                <span className="text-xs text-gray-500 font-medium">
+                <span className="text-xl font-bold text-ink">مریخ</span>
+                <span className="text-xs text-ink-faint font-medium">
                   وب، نرم‌افزار و هوش مصنوعی
                 </span>
               </div>
@@ -86,20 +77,20 @@ const MainLayout: React.FC = () => {
                   className={cn(
                     "relative px-4 py-2 text-sm font-medium transition-all duration-300 rounded-lg flex items-center gap-2",
                     isActive(item.href)
-                      ? "text-blue-600 bg-blue-50"
-                      : "text-gray-600 hover:text-blue-600 hover:bg-blue-50/50"
+                      ? "text-mars-dark bg-mars-tint"
+                      : "text-ink-soft hover:text-mars-dark hover:bg-mars-tint/50"
                   )}
                 >
                   {item.name}
                   {item.badge && (
-                    <span className="bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs px-2 py-0.5 rounded-full font-medium">
+                    <span className="bg-mars text-paper text-xs px-2 py-0.5 rounded-full font-medium">
                       {item.badge}
                     </span>
                   )}
                   {isActive(item.href) && (
                     <motion.div
                       layoutId="activeTab"
-                      className="absolute inset-0 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-lg -z-10"
+                      className="absolute inset-0 bg-mars-tint rounded-lg -z-10"
                       transition={{
                         type: "spring",
                         bounce: 0.2,
@@ -116,7 +107,7 @@ const MainLayout: React.FC = () => {
               <Button
                 variant="ghost"
                 asChild
-                className="text-gray-600 hover:text-blue-600 hover:bg-blue-50 border border-transparent hover:border-blue-200 transition-all duration-300"
+                className="text-ink-soft hover:text-mars-dark hover:bg-mars-tint border border-transparent hover:border-mars/30 transition-all duration-300"
               >
                 <a href={portfolioHref} className="flex items-center">
                   <Zap className="w-4 h-4 mr-2" />
@@ -125,7 +116,7 @@ const MainLayout: React.FC = () => {
               </Button>
               <Button
                 asChild
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all duration-300"
+                className="bg-mars text-paper hover:bg-[oklch(62%_0.15_35)] hover:text-paper transition-all duration-300"
               >
                 <Link to="/contact" className="flex items-center">
                   <ArrowRight className="w-4 h-4 mr-2" />
@@ -136,13 +127,13 @@ const MainLayout: React.FC = () => {
 
             {/* Mobile menu button */}
             <button
-              className="md:hidden p-2 rounded-xl hover:bg-blue-50 transition-all duration-300"
+              className="md:hidden p-2 rounded-xl hover:bg-mars-tint transition-all duration-300"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
               {isMenuOpen ? (
-                <X className="h-6 w-6 text-gray-600" />
+                <X className="h-6 w-6 text-ink-soft" />
               ) : (
-                <Menu className="h-6 w-6 text-gray-600" />
+                <Menu className="h-6 w-6 text-ink-soft" />
               )}
             </button>
           </div>
@@ -155,7 +146,7 @@ const MainLayout: React.FC = () => {
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.3, ease: "easeInOut" }}
-                className="md:hidden border-t border-gray-200/50 py-4 backdrop-blur-xl bg-white/90"
+                className="md:hidden border-t border-line-soft py-4 backdrop-blur-xl bg-paper/95"
               >
                 <nav className="flex flex-col space-y-2">
                   {navigation.map((item, index) => (
@@ -170,8 +161,8 @@ const MainLayout: React.FC = () => {
                         className={cn(
                           "flex items-center justify-between px-4 py-3 text-sm font-medium transition-all duration-300 rounded-xl",
                           isActive(item.href)
-                            ? "text-blue-600 bg-gradient-to-r from-blue-50 to-indigo-50"
-                            : "text-gray-600 hover:text-blue-600 hover:bg-blue-50"
+                            ? "text-mars-dark bg-mars-tint"
+                            : "text-ink-soft hover:text-mars-dark hover:bg-mars-tint"
                         )}
                         onClick={() => setIsMenuOpen(false)}
                       >
@@ -180,18 +171,18 @@ const MainLayout: React.FC = () => {
                           {item.name}
                         </div>
                         {item.badge && (
-                          <span className="bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs px-2 py-0.5 rounded-full font-medium">
+                          <span className="bg-mars text-paper text-xs px-2 py-0.5 rounded-full font-medium">
                             {item.badge}
                           </span>
                         )}
                       </Link>
                     </motion.div>
                   ))}
-                  <div className="flex flex-col space-y-3 pt-4 border-t border-gray-200/50">
+                  <div className="flex flex-col space-y-3 pt-4 border-t border-line-soft">
                     <Button
                       variant="ghost"
                       asChild
-                      className="justify-start text-gray-600 hover:text-blue-600 hover:bg-blue-50"
+                      className="justify-start text-ink-soft hover:text-mars-dark hover:bg-mars-tint"
                     >
                       <a
                         href={portfolioHref}
@@ -202,10 +193,7 @@ const MainLayout: React.FC = () => {
                         نمونه‌کارها
                       </a>
                     </Button>
-                    <Button
-                      asChild
-                      className="bg-gradient-to-r from-blue-600 to-purple-600 text-white"
-                    >
+                    <Button asChild className="bg-mars text-paper">
                       <Link
                         to="/contact"
                         onClick={() => setIsMenuOpen(false)}
@@ -229,53 +217,29 @@ const MainLayout: React.FC = () => {
       </main>
 
       {/* Footer */}
-      <footer className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white mt-auto">
-        <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-blue-500/50 to-transparent"></div>
-
+      <footer className="bg-paper border-t border-line-soft mt-auto">
         <div className="container mx-auto px-4 max-w-7xl py-16">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             {/* Company Info */}
             <div className="md:col-span-2">
               <div className="flex items-center space-x-3 mb-6">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/25">
-                  <Globe className="h-6 w-6 text-white" />
-                </div>
+                <LogoMark animated={false} />
                 <div className="flex flex-col">
-                  <span className="text-xl font-bold bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">
-                    مریخ
-                  </span>
-                  <span className="text-xs text-gray-400">
+                  <span className="text-xl font-bold text-ink">مریخ</span>
+                  <span className="text-xs text-ink-faint">
                     وب، نرم‌افزار و هوش مصنوعی
                   </span>
                 </div>
               </div>
-              <p className="text-gray-300 mb-6 leading-relaxed max-w-md">
+              <p className="text-ink-soft mb-6 leading-relaxed max-w-md">
                 طراحی و توسعه وب‌سایت، نرم‌افزار، API و راهکارهای هوش مصنوعی
                 برای کسب‌وکارها؛ شریک فنی شما از ایده تا اجرا.
               </p>
-
-              {/* Social Media */}
-              <div className="flex space-x-4 space-x-reverse">
-                {[
-                  { icon: Instagram, href: "#", label: "Instagram" },
-                  { icon: Twitter, href: "#", label: "Twitter" },
-                  { icon: Linkedin, href: "#", label: "LinkedIn" },
-                ].map((social, index) => (
-                  <a
-                    key={index}
-                    href={social.href}
-                    className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center text-gray-400 hover:text-blue-400 hover:bg-gray-700 transition-all duration-300"
-                    aria-label={social.label}
-                  >
-                    <social.icon className="w-5 h-5" />
-                  </a>
-                ))}
-              </div>
             </div>
 
             {/* Quick Links */}
             <div>
-              <h4 className="text-lg font-semibold mb-6 text-white">
+              <h4 className="text-sm font-semibold mb-6 text-ink">
                 دسترسی سریع
               </h4>
               <ul className="space-y-3">
@@ -289,9 +253,9 @@ const MainLayout: React.FC = () => {
                   <li key={index}>
                     <a
                       href={item.href}
-                      className="text-gray-300 hover:text-white transition-colors flex items-center group"
+                      className="text-ink-soft hover:text-mars-dark transition-colors flex items-center group"
                     >
-                      <ArrowRight className="w-4 h-4 mr-2 group-hover:translate-x-1 transition-transform text-blue-400" />
+                      <ArrowRight className="w-4 h-4 mr-2 group-hover:translate-x-1 transition-transform text-mars" />
                       {item.name}
                     </a>
                   </li>
@@ -301,16 +265,16 @@ const MainLayout: React.FC = () => {
 
             {/* Support & Contact */}
             <div>
-              <h4 className="text-lg font-semibold mb-6 text-white">
+              <h4 className="text-sm font-semibold mb-6 text-ink">
                 ارتباط با ما
               </h4>
               <ul className="space-y-3">
-                <li className="flex items-center text-gray-300 pt-2">
-                  <Phone className="w-4 h-4 mr-2 text-blue-400" />
+                <li className="flex items-center text-ink-soft pt-2">
+                  <Phone className="w-4 h-4 mr-2 text-mars" />
                   <span className="text-sm">۰۲۱-۱۲۳۴۵۶۷۸</span>
                 </li>
-                <li className="flex items-center text-gray-300">
-                  <Mail className="w-4 h-4 mr-2 text-blue-400" />
+                <li className="flex items-center text-ink-soft">
+                  <Mail className="w-4 h-4 mr-2 text-mars" />
                   <span className="text-sm">info@merikh.co</span>
                 </li>
               </ul>
@@ -318,22 +282,22 @@ const MainLayout: React.FC = () => {
           </div>
 
           {/* Bottom Section */}
-          <div className="border-t border-gray-700/50 mt-12 pt-8">
+          <div className="border-t border-line-soft mt-12 pt-8">
             <div className="flex flex-col md:flex-row justify-between items-center">
-              <div className="text-gray-400 text-sm mb-4 md:mb-0">
+              <div className="text-ink-faint text-sm mb-4 md:mb-0">
                 © ۱۴۰۳ مریخ. تمامی حقوق محفوظ است.
               </div>
               <div className="flex space-x-6 space-x-reverse text-sm">
                 <a
                   href="/privacy"
-                  className="text-gray-400 hover:text-white transition-colors flex items-center group"
+                  className="text-ink-faint hover:text-ink transition-colors flex items-center group"
                 >
                   حریم خصوصی
                   <ExternalLink className="w-3 h-3 mr-2 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                 </a>
                 <a
                   href="/terms"
-                  className="text-gray-400 hover:text-white transition-colors flex items-center group"
+                  className="text-ink-faint hover:text-ink transition-colors flex items-center group"
                 >
                   شرایط استفاده
                   <ExternalLink className="w-3 h-3 mr-2 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
@@ -352,7 +316,7 @@ const MainLayout: React.FC = () => {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
             onClick={scrollToTop}
-            className="fixed bottom-8 right-8 w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-110 transition-all duration-300 z-40"
+            className="fixed bottom-8 right-8 w-12 h-12 bg-mars text-paper rounded-xl shadow-lg hover:scale-110 transition-all duration-300 z-40"
           >
             <ChevronUp className="w-5 h-5 mx-auto" />
           </motion.button>
