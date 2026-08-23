@@ -310,7 +310,7 @@ const MainLayout: React.FC = () => {
                 </li>
                 <li className="flex items-center text-gray-300">
                   <Mail className="w-4 h-4 mr-2 text-blue-400" />
-                  <span className="text-sm">info@marikh.co</span>
+                  <span className="text-sm">info@merikh.co</span>
                 </li>
               </ul>
             </div>

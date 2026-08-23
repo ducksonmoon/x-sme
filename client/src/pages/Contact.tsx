@@ -13,7 +13,7 @@ import {
 
 const contactInfo = [
   { icon: Phone, label: "تلفن", value: "۰۲۱-۱۲۳۴۵۶۷۸" },
-  { icon: Mail, label: "ایمیل", value: "info@marikh.co" },
+  { icon: Mail, label: "ایمیل", value: "info@merikh.co" },
   { icon: MapPin, label: "آدرس", value: "تهران، ایران" },
 ];
 
