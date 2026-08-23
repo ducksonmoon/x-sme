@@ -138,9 +138,9 @@ const Contact: React.FC = () => {
                       <Button
                         type="submit"
                         size="lg"
-                        className="bg-mars text-paper hover:bg-[oklch(62%_0.15_35)] hover:text-paper"
+                        className="bg-mars text-paper hover:bg-[oklch(62%_0.15_35)] hover:text-paper flex items-center gap-2"
                       >
-                        <Send className="w-4 h-4 mr-2" />
+                        <Send className="w-4 h-4" />
                         ارسال پیام
                       </Button>
                     </form>
