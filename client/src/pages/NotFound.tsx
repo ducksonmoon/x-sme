@@ -14,8 +14,7 @@ import {
 const NotFound: React.FC = () => {
   const suggestions = [
     { text: "صفحه اصلی", href: "/", icon: Home },
-    { text: "ویژگی‌ها", href: "/features", icon: Search },
-    { text: "قیمت‌گذاری", href: "/pricing", icon: Search },
+    { text: "درباره ما", href: "/about", icon: Search },
     { text: "تماس با ما", href: "/contact", icon: Search },
   ];
 

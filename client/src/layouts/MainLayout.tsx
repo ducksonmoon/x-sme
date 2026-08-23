@@ -17,7 +17,6 @@ import {
 } from "lucide-react";
 import { Button } from "@components/ui/button";
 import { cn } from "../utils/cn";
-import { useLanguage } from "../providers/LanguageProvider";
 
 interface NavigationItem {
   name: string;
@@ -26,18 +25,16 @@ interface NavigationItem {
 }
 
 const MainLayout: React.FC = () => {
-  const { t } = useLanguage();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const location = useLocation();
 
   const navigation: NavigationItem[] = [
-    { name: t("nav.features"), href: "/features" },
-    { name: t("nav.pricing"), href: "/pricing" },
-    { name: "مستندات", href: "/widget-docs" },
-    { name: "WordPress", href: "/widget-docs#wordpress-guide", badge: "ویژه" },
-    { name: t("nav.about"), href: "/about" },
-    { name: t("nav.contact"), href: "/contact" },
+    { name: "خانه", href: "/" },
+    { name: "خدمات", href: "/#services" },
+    { name: "نمونه‌کارها", href: "/#portfolio" },
+    { name: "درباره ما", href: "/about" },
+    { name: "تماس با ما", href: "/contact" },
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -71,10 +68,10 @@ const MainLayout: React.FC = () => {
               </div>
               <div className="flex flex-col">
                 <span className="text-xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent">
-                  X-SME
+                  مریخ
                 </span>
                 <span className="text-xs text-gray-500 font-medium">
-                  سامانه رزرو هوشمند
+                  وب، نرم‌افزار و هوش مصنوعی
                 </span>
               </div>
             </Link>
@@ -120,18 +117,18 @@ const MainLayout: React.FC = () => {
                 asChild
                 className="text-gray-600 hover:text-blue-600 hover:bg-blue-50 border border-transparent hover:border-blue-200 transition-all duration-300"
               >
-                <Link to="/widget-demo" className="flex items-center">
+                <a href="/#portfolio" className="flex items-center">
                   <Zap className="w-4 h-4 mr-2" />
-                  {t("home.hero.try_demo")}
-                </Link>
+                  نمونه‌کارها
+                </a>
               </Button>
               <Button
                 asChild
                 className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all duration-300"
               >
-                <Link to="/auth/login" className="flex items-center">
+                <Link to="/contact" className="flex items-center">
                   <ArrowRight className="w-4 h-4 mr-2" />
-                  {t("auth.login")}
+                  شروع پروژه
                 </Link>
               </Button>
             </div>
@@ -195,26 +192,26 @@ const MainLayout: React.FC = () => {
                       asChild
                       className="justify-start text-gray-600 hover:text-blue-600 hover:bg-blue-50"
                     >
-                      <Link
-                        to="/widget-demo"
+                      <a
+                        href="/#portfolio"
                         onClick={() => setIsMenuOpen(false)}
                         className="flex items-center"
                       >
                         <Zap className="w-4 h-4 mr-3" />
-                        {t("home.hero.try_demo")}
-                      </Link>
+                        نمونه‌کارها
+                      </a>
                     </Button>
                     <Button
                       asChild
                       className="bg-gradient-to-r from-blue-600 to-purple-600 text-white"
                     >
                       <Link
-                        to="/auth/login"
+                        to="/contact"
                         onClick={() => setIsMenuOpen(false)}
                         className="flex items-center"
                       >
                         <ArrowRight className="w-4 h-4 mr-3" />
-                        {t("auth.login")}
+                        شروع پروژه
                       </Link>
                     </Button>
                   </div>
@@ -244,16 +241,16 @@ const MainLayout: React.FC = () => {
                 </div>
                 <div className="flex flex-col">
                   <span className="text-xl font-bold bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">
-                    X-SME
+                    مریخ
                   </span>
                   <span className="text-xs text-gray-400">
-                    سامانه رزرو هوشمند
+                    وب، نرم‌افزار و هوش مصنوعی
                   </span>
                 </div>
               </div>
               <p className="text-gray-300 mb-6 leading-relaxed max-w-md">
-                بهترین سامانه رزرو آنلاین برای کسب‌وکارهای خدماتی. مدیریت آسان
-                نوبت‌ها، پیگیری مشتریان و افزایش درآمد.
+                طراحی و توسعه وب‌سایت، نرم‌افزار، API و راهکارهای هوش مصنوعی
+                برای کسب‌وکارها؛ شریک فنی شما از ایده تا اجرا.
               </p>
 
               {/* Social Media */}
@@ -283,13 +280,9 @@ const MainLayout: React.FC = () => {
               <ul className="space-y-3">
                 {[
                   { name: "صفحه اصلی", href: "/" },
-                  { name: "امکانات", href: "/features" },
-                  { name: "تعرفه‌ها", href: "/pricing" },
-                  { name: "مستندات ویجت", href: "/widget-docs" },
-                  {
-                    name: "راهنمای WordPress",
-                    href: "/widget-docs#wordpress-guide",
-                  },
+                  { name: "خدمات", href: "/#services" },
+                  { name: "نمونه‌کارها", href: "/#portfolio" },
+                  { name: "درباره ما", href: "/about" },
                   { name: "تماس با ما", href: "/contact" },
                 ].map((item, index) => (
                   <li key={index}>
@@ -308,31 +301,16 @@ const MainLayout: React.FC = () => {
             {/* Support & Contact */}
             <div>
               <h4 className="text-lg font-semibold mb-6 text-white">
-                پشتیبانی
+                ارتباط با ما
               </h4>
               <ul className="space-y-3">
-                {[
-                  { name: "راهنمای استفاده", href: "/help" },
-                  { name: "سوالات متداول", href: "/faq" },
-                  { name: "پشتیبانی فنی", href: "/support" },
-                ].map((item, index) => (
-                  <li key={index}>
-                    <a
-                      href={item.href}
-                      className="text-gray-300 hover:text-white transition-colors flex items-center group"
-                    >
-                      <ArrowRight className="w-4 h-4 mr-2 group-hover:translate-x-1 transition-transform text-blue-400" />
-                      {item.name}
-                    </a>
-                  </li>
-                ))}
                 <li className="flex items-center text-gray-300 pt-2">
                   <Phone className="w-4 h-4 mr-2 text-blue-400" />
                   <span className="text-sm">۰۲۱-۱۲۳۴۵۶۷۸</span>
                 </li>
                 <li className="flex items-center text-gray-300">
                   <Mail className="w-4 h-4 mr-2 text-blue-400" />
-                  <span className="text-sm">support@x-sme.ir</span>
+                  <span className="text-sm">info@marikh.co</span>
                 </li>
               </ul>
             </div>
@@ -342,7 +320,7 @@ const MainLayout: React.FC = () => {
           <div className="border-t border-gray-700/50 mt-12 pt-8">
             <div className="flex flex-col md:flex-row justify-between items-center">
               <div className="text-gray-400 text-sm mb-4 md:mb-0">
-                © ۱۴۰۳ X-SME سامانه رزرو آنلاین. تمامی حقوق محفوظ است.
+                © ۱۴۰۳ مریخ. تمامی حقوق محفوظ است.
               </div>
               <div className="flex space-x-6 space-x-reverse text-sm">
                 <a
