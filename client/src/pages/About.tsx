@@ -12,12 +12,6 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { Button } from "@components/ui/button";
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@components/ui/card";
 
 const values = [
   {
@@ -68,17 +62,17 @@ const About: React.FC = () => {
   return (
     <div className="overflow-hidden">
       {/* Hero */}
-      <section className="py-20 md:py-28 bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+      <section className="py-20 md:py-28 bg-paper">
         <div className="container mx-auto px-4 max-w-4xl text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+            <h1 className="text-4xl md:text-5xl font-bold text-ink mb-6">
               درباره ما
             </h1>
-            <p className="text-lg text-gray-600 leading-relaxed">
+            <p className="text-lg text-ink-soft leading-relaxed">
               ما تیمی از توسعه‌دهندگان و طراحان هستیم که به شرکت‌ها کمک می‌کنیم
               با وب‌سایت، نرم‌افزار و راهکارهای هوش مصنوعی، کسب‌وکار خود را
               دیجیتال کنند و رشد دهند. از ایده اولیه تا پشتیبانی پس از
@@ -89,13 +83,13 @@ const About: React.FC = () => {
       </section>
 
       {/* Expertise */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-white border-t border-line-soft">
         <div className="container mx-auto px-4 max-w-7xl">
           <div className="text-center mb-14">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-ink mb-4">
               حوزه‌های تخصصی
             </h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
+            <p className="text-ink-soft max-w-2xl mx-auto">
               سه ستون اصلی کاری ما که در کنار هم، یک راهکار کامل دیجیتال را
               برای کسب‌وکار شما می‌سازند.
             </p>
@@ -108,16 +102,15 @@ const About: React.FC = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
+                className="border border-line border-t-[3px] border-t-mars rounded-md p-7"
               >
-                <Card className="h-full border-gray-200">
-                  <CardHeader>
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center mb-4">
-                      <item.icon className="w-6 h-6 text-white" />
-                    </div>
-                    <CardTitle>{item.title}</CardTitle>
-                    <CardDescription>{item.description}</CardDescription>
-                  </CardHeader>
-                </Card>
+                <item.icon className="w-8 h-8 text-navy-700 mb-4" />
+                <h3 className="text-lg font-bold text-ink mb-2">
+                  {item.title}
+                </h3>
+                <p className="text-sm text-ink-soft leading-relaxed">
+                  {item.description}
+                </p>
               </motion.div>
             ))}
           </div>
@@ -125,10 +118,10 @@ const About: React.FC = () => {
       </section>
 
       {/* Values */}
-      <section className="py-20 bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+      <section className="py-20 bg-paper border-t border-line-soft">
         <div className="container mx-auto px-4 max-w-7xl">
           <div className="text-center mb-14">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-ink mb-4">
               ارزش‌های ما
             </h2>
           </div>
@@ -140,15 +133,11 @@ const About: React.FC = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="text-center bg-white rounded-2xl p-6 border border-gray-200"
+                className="text-center bg-white rounded-md p-6 border border-line"
               >
-                <div className="w-12 h-12 mx-auto rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center mb-4">
-                  <value.icon className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="font-semibold text-gray-900 mb-2">
-                  {value.title}
-                </h3>
-                <p className="text-sm text-gray-600">{value.description}</p>
+                <value.icon className="w-7 h-7 mx-auto text-mars-dark mb-4" />
+                <h3 className="font-semibold text-ink mb-2">{value.title}</h3>
+                <p className="text-sm text-ink-soft">{value.description}</p>
               </motion.div>
             ))}
           </div>
@@ -156,19 +145,15 @@ const About: React.FC = () => {
       </section>
 
       {/* CTA */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-white border-t border-line-soft">
         <div className="container mx-auto px-4 max-w-3xl text-center">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">
+          <h2 className="text-3xl font-bold text-ink mb-4">
             می‌خواهید با ما همکاری کنید؟
           </h2>
-          <p className="text-gray-600 mb-8">
+          <p className="text-ink-soft mb-8">
             درباره پروژه خود با ما صحبت کنید تا بهترین راهکار را پیشنهاد دهیم.
           </p>
-          <Button
-            asChild
-            size="lg"
-            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
-          >
+          <Button asChild size="lg" className="bg-mars text-paper hover:bg-[oklch(62%_0.15_35)] hover:text-paper">
             <Link to="/contact" className="flex items-center">
               <ArrowRight className="w-4 h-4 mr-2" />
               تماس با ما

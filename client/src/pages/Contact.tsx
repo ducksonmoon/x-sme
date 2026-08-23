@@ -34,17 +34,17 @@ const Contact: React.FC = () => {
 
   return (
     <div className="overflow-hidden">
-      <section className="py-20 md:py-28 bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+      <section className="py-20 md:py-28 bg-paper">
         <div className="container mx-auto px-4 max-w-4xl text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+            <h1 className="text-4xl md:text-5xl font-bold text-ink mb-6">
               تماس با ما
             </h1>
-            <p className="text-lg text-gray-600 leading-relaxed">
+            <p className="text-lg text-ink-soft leading-relaxed">
               درباره پروژه وب‌سایت، نرم‌افزار یا راهکار هوش مصنوعی خود با ما
               صحبت کنید.
             </p>
@@ -52,22 +52,20 @@ const Contact: React.FC = () => {
         </div>
       </section>
 
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-white border-t border-line-soft">
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
             {/* Contact info */}
             <div className="space-y-6">
               {contactInfo.map((item) => (
-                <Card key={item.label} className="border-gray-200">
+                <Card key={item.label} className="border-line">
                   <CardContent className="flex items-center gap-4 py-6">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center shrink-0">
-                      <item.icon className="w-6 h-6 text-white" />
+                    <div className="w-12 h-12 rounded-xl bg-mars-tint flex items-center justify-center shrink-0">
+                      <item.icon className="w-6 h-6 text-mars-dark" />
                     </div>
                     <div>
-                      <p className="text-sm text-gray-500">{item.label}</p>
-                      <p className="font-medium text-gray-900">
-                        {item.value}
-                      </p>
+                      <p className="text-sm text-ink-faint">{item.label}</p>
+                      <p className="font-medium text-ink">{item.value}</p>
                     </div>
                   </CardContent>
                 </Card>
@@ -76,7 +74,7 @@ const Contact: React.FC = () => {
 
             {/* Contact form */}
             <div className="lg:col-span-2">
-              <Card className="border-gray-200">
+              <Card className="border-line">
                 <CardHeader>
                   <CardTitle>ارسال پیام</CardTitle>
                   <CardDescription>
@@ -86,11 +84,11 @@ const Contact: React.FC = () => {
                 <CardContent>
                   {submitted ? (
                     <div className="flex flex-col items-center justify-center py-12 text-center">
-                      <CheckCircle className="w-12 h-12 text-green-600 mb-4" />
-                      <p className="text-lg font-medium text-gray-900">
+                      <CheckCircle className="w-12 h-12 text-mars mb-4" />
+                      <p className="text-lg font-medium text-ink">
                         پیام شما با موفقیت ارسال شد.
                       </p>
-                      <p className="text-gray-600 mt-2">
+                      <p className="text-ink-soft mt-2">
                         به زودی با شما تماس خواهیم گرفت.
                       </p>
                     </div>
@@ -98,7 +96,7 @@ const Contact: React.FC = () => {
                     <form onSubmit={handleSubmit} className="space-y-5">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                          <label className="block text-sm font-medium text-ink-soft mb-1.5">
                             نام و نام خانوادگی
                           </label>
                           <Input
@@ -110,7 +108,7 @@ const Contact: React.FC = () => {
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                          <label className="block text-sm font-medium text-ink-soft mb-1.5">
                             ایمیل
                           </label>
                           <Input
@@ -124,7 +122,7 @@ const Contact: React.FC = () => {
                         </div>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                        <label className="block text-sm font-medium text-ink-soft mb-1.5">
                           پیام شما
                         </label>
                         <textarea
@@ -140,7 +138,7 @@ const Contact: React.FC = () => {
                       <Button
                         type="submit"
                         size="lg"
-                        className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+                        className="bg-mars text-paper hover:bg-[oklch(62%_0.15_35)] hover:text-paper"
                       >
                         <Send className="w-4 h-4 mr-2" />
                         ارسال پیام
