@@ -139,16 +139,16 @@ const Home: React.FC = () => {
         <div className="container mx-auto px-4 max-w-7xl flex flex-col md:flex-row items-center gap-12 py-24 md:py-28">
           <div className="flex-1 flex flex-col items-start gap-6 min-w-0">
             <span className="text-xs font-bold tracking-wider text-mars-dark uppercase">
-              مریخ — شریک فنی کسب‌وکار شما
+              استودیوی وب، نرم‌افزار و هوش مصنوعی مریخ
             </span>
             <h1 className="text-4xl md:text-6xl font-extrabold text-ink leading-tight">
-              دیجیتالی که به کسب‌وکار شما{" "}
-              <span className="text-mars">اعتبار</span> می‌دهد
+              نرم‌افزار و وب‌سایتی که{" "}
+              <span className="text-mars">واقعاً</span> کار می‌کند
             </h1>
             <p className="text-lg md:text-xl text-ink-soft leading-relaxed max-w-xl">
-              از نرم‌افزارهای آماده کسب‌وکار — مدیریت انبار، کنترل کیفیت — تا
-              طراحی وب‌سایت، نرم‌افزار سفارشی و راهکارهای هوش مصنوعی؛ مریخ
-              همراه فنی شماست.
+              مدیریت انبار و کنترل کیفیت را به‌صورت آماده تحویل می‌دهیم؛
+              وب‌سایت، نرم‌افزار سفارشی و راهکار هوش مصنوعی را از صفر برایتان
+              می‌سازیم.
             </p>
             <div className="flex flex-col sm:flex-row items-center gap-4 mt-2">
               <Button asChild size="lg" className="bg-mars text-paper hover:bg-[oklch(62%_0.15_35)] hover:text-paper">
@@ -271,7 +271,7 @@ const Home: React.FC = () => {
               فراتر از محصولات آماده، پروژه اختصاصی خودتان را بسازید
             </h2>
           </div>
-          <div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {services.map((service, index) => (
               <motion.div
                 key={service.title}
@@ -279,22 +279,17 @@ const Home: React.FC = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.05 }}
-                className={`flex items-start gap-7 py-8 group hover:bg-mars-tint/40 transition-colors ${
-                  index !== services.length - 1 ? "border-b border-line-soft" : ""
-                }`}
+                className="group border border-line rounded-md p-7 hover:border-mars/40 hover:bg-mars-tint/30 transition-colors"
               >
-                <service.icon className="w-6 h-6 text-navy-700 shrink-0 mt-1 transition-transform group-hover:-rotate-6 group-hover:scale-110" />
-                <div className="flex-1">
-                  <h3 className="text-lg font-bold text-ink mb-1.5">
-                    {service.title}
-                  </h3>
-                  <p className="text-sm text-ink-soft leading-relaxed max-w-xl">
-                    {service.description}
-                  </p>
+                <div className="w-11 h-11 rounded-lg bg-mars-tint flex items-center justify-center mb-5 transition-transform group-hover:-rotate-6 group-hover:scale-110">
+                  <service.icon className="w-5 h-5 text-mars-dark" />
                 </div>
-                <span className="text-sm font-extrabold text-line hidden sm:block">
-                  {String(index + 1).padStart(2, "0")}
-                </span>
+                <h3 className="text-lg font-bold text-ink mb-2">
+                  {service.title}
+                </h3>
+                <p className="text-sm text-ink-soft leading-relaxed">
+                  {service.description}
+                </p>
               </motion.div>
             ))}
           </div>
@@ -312,7 +307,7 @@ const Home: React.FC = () => {
               پروژه‌هایی که ساخته‌ایم
             </h2>
           </div>
-          <div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {portfolio.map((item, index) => (
               <motion.a
                 key={item.name}
@@ -323,20 +318,24 @@ const Home: React.FC = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.05 }}
-                className={`group block py-6 ${
-                  index !== portfolio.length - 1 ? "border-b border-line-soft" : ""
-                }`}
+                className="group flex flex-col gap-4 border border-line rounded-md p-6 hover:border-mars/40 hover:bg-mars-tint/20 transition-colors"
               >
-                <div className="flex items-center justify-between gap-5">
-                  <div>
-                    <span className="relative inline-flex items-center gap-2 text-lg font-bold text-ink after:content-[''] after:absolute after:right-0 after:-bottom-1 after:h-0.5 after:w-full after:bg-mars after:origin-right after:scale-x-0 group-hover:after:scale-x-100 after:transition-transform">
-                      {item.name}
-                    </span>
-                    <p className="text-sm text-ink-faint mt-1.5">
-                      {item.description}
-                    </p>
-                  </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-lg font-bold text-ink">{item.name}</span>
                   <ExternalLink className="w-4 h-4 text-mars-dark shrink-0 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
+                </div>
+                <p className="text-sm text-ink-soft leading-relaxed flex-1">
+                  {item.description}
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {item.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="text-xs font-medium text-mars-dark bg-mars-tint px-2 py-1 rounded-full"
+                    >
+                      {tag}
+                    </span>
+                  ))}
                 </div>
               </motion.a>
             ))}
@@ -353,8 +352,7 @@ const Home: React.FC = () => {
             </span>
             <h2 className="text-3xl font-bold text-ink">از ایده تا اجرا</h2>
           </div>
-          <div className="relative grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div className="hidden md:block absolute top-[23px] right-[12.5%] left-[12.5%] h-px bg-line" />
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-x-8 gap-y-12">
             {process.map((step, index) => (
               <motion.div
                 key={step.title}
@@ -362,15 +360,22 @@ const Home: React.FC = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="relative flex flex-col items-start gap-3.5"
+                className="flex flex-col gap-4"
               >
-                <div className="w-11 h-11 rounded-full bg-paper border-[1.5px] border-mars text-mars-dark flex items-center justify-center font-extrabold">
-                  {index + 1}
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 shrink-0 rounded-full bg-mars text-paper flex items-center justify-center font-extrabold text-sm">
+                    {index + 1}
+                  </div>
+                  {index !== process.length - 1 && (
+                    <div className="hidden md:block flex-1 h-px bg-line" />
+                  )}
                 </div>
-                <h3 className="font-bold text-ink">{step.title}</h3>
-                <p className="text-sm text-ink-soft leading-relaxed">
-                  {step.description}
-                </p>
+                <div>
+                  <h3 className="font-bold text-ink mb-1.5">{step.title}</h3>
+                  <p className="text-sm text-ink-soft leading-relaxed">
+                    {step.description}
+                  </p>
+                </div>
               </motion.div>
             ))}
           </div>
@@ -392,8 +397,8 @@ const Home: React.FC = () => {
             پروژه بعدی شما، اینجا شروع می‌شود
           </h2>
           <p className="text-white/60 max-w-xl leading-relaxed">
-            چه به دنبال نرم‌افزار آماده کسب‌وکار باشید، چه یک وب‌سایت یا
-            راهکار سفارشی؛ تیم مریخ آماده همکاری است.
+            چه دنبال نرم‌افزار آماده باشید، چه یک وب‌سایت یا پروژه سفارشی —
+            برایمان بنویسید چه چیزی می‌سازیم.
           </p>
           <Button asChild size="lg" className="bg-mars text-paper hover:bg-[oklch(62%_0.15_35)] hover:text-paper mt-2">
             <Link to="/contact" className="flex items-center gap-2">
