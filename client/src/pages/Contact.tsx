@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
+import { useForm, ValidationError } from "@formspree/react";
 import { Phone, Mail, MapPin, Send, CheckCircle } from "lucide-react";
 import { Button } from "@components/ui/button";
 import { Input } from "@components/ui/input";
@@ -11,6 +12,8 @@ import {
   CardTitle,
 } from "@components/ui/card";
 
+const FORMSPREE_FORM_ID = "xvkpjknp";
+
 const contactInfo = [
   { icon: Phone, label: "تلفن", value: "۰۲۱-۱۲۳۴۵۶۷۸" },
   { icon: Mail, label: "ایمیل", value: "info@merikh.co" },
@@ -19,17 +22,12 @@ const contactInfo = [
 
 const Contact: React.FC = () => {
   const [form, setForm] = useState({ name: "", email: "", message: "" });
-  const [submitted, setSubmitted] = useState(false);
+  const [state, handleSubmit] = useForm(FORMSPREE_FORM_ID);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitted(true);
   };
 
   return (
@@ -82,7 +80,7 @@ const Contact: React.FC = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {submitted ? (
+                  {state.succeeded ? (
                     <div className="flex flex-col items-center justify-center py-12 text-center">
                       <CheckCircle className="w-12 h-12 text-mars mb-4" />
                       <p className="text-lg font-medium text-ink">
@@ -119,6 +117,11 @@ const Contact: React.FC = () => {
                             onChange={handleChange}
                             placeholder="you@company.com"
                           />
+                          <ValidationError
+                            field="email"
+                            errors={state.errors}
+                            className="text-xs text-error mt-1.5 block"
+                          />
                         </div>
                       </div>
                       <div>
@@ -134,14 +137,24 @@ const Contact: React.FC = () => {
                           placeholder="درباره پروژه خود بنویسید..."
                           className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                         />
+                        <ValidationError
+                          field="message"
+                          errors={state.errors}
+                          className="text-xs text-error mt-1.5 block"
+                        />
                       </div>
+                      <ValidationError
+                        errors={state.errors}
+                        className="text-sm text-error"
+                      />
                       <Button
                         type="submit"
                         size="lg"
+                        disabled={state.submitting}
                         className="bg-mars text-paper hover:bg-[oklch(62%_0.15_35)] hover:text-paper flex items-center gap-2"
                       >
                         <Send className="w-4 h-4" />
-                        ارسال پیام
+                        {state.submitting ? "در حال ارسال..." : "ارسال پیام"}
                       </Button>
                     </form>
                   )}
