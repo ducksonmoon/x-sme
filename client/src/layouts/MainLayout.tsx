@@ -53,7 +53,7 @@ const MainLayout: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col bg-paper">
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b border-line-soft backdrop-blur-xl bg-paper/90">
+      <header className="sticky top-0 z-50 w-full border-b border-line-soft bg-paper">
         <div className="container mx-auto px-4 max-w-7xl">
           <div className="flex h-16 items-center justify-between">
             {/* Logo */}
@@ -149,7 +149,7 @@ const MainLayout: React.FC = () => {
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.3, ease: "easeInOut" }}
-                className="md:hidden border-t border-line-soft py-4 backdrop-blur-xl bg-paper/95"
+                className="md:hidden border-t border-line-soft py-4 bg-paper"
               >
                 <nav className="flex flex-col space-y-2">
                   {navigation.map((item, index) => (
