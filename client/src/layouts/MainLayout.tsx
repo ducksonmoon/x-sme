@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Outlet, Link, useLocation, useHref } from "react-router-dom";
+import { Outlet, Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Menu,
@@ -9,10 +9,10 @@ import {
   ArrowLeft,
   ChevronUp,
   Zap,
-  ExternalLink,
 } from "lucide-react";
 import { Button } from "@components/ui/button";
 import { cn } from "../utils/cn";
+import { publicAsset } from "@utils/publicPath";
 
 interface NavigationItem {
   name: string;
@@ -24,12 +24,11 @@ const MainLayout: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const location = useLocation();
-  const portfolioHref = useHref("/#portfolio");
 
   const navigation: NavigationItem[] = [
     { name: "خانه", href: "/" },
-    { name: "خدمات", href: "/#services" },
-    { name: "نمونه‌کارها", href: "/#portfolio" },
+    { name: "خدمات", href: "/services" },
+    { name: "نمونه‌کارها", href: "/portfolio" },
     { name: "درباره ما", href: "/about" },
     { name: "تماس با ما", href: "/contact" },
   ];
@@ -59,7 +58,7 @@ const MainLayout: React.FC = () => {
             {/* Logo */}
             <Link to="/" className="flex items-center space-x-3 group">
               <img
-                src={`${import.meta.env.BASE_URL}logo.png`}
+                src={publicAsset("logo.png")}
                 alt="مریخ"
                 className="w-9 h-9"
               />
@@ -112,10 +111,10 @@ const MainLayout: React.FC = () => {
                 asChild
                 className="text-ink-soft hover:text-mars-dark hover:bg-mars-tint border border-transparent hover:border-mars/30 transition-all duration-300"
               >
-                <a href={portfolioHref} className="flex items-center gap-2">
+                <Link to="/portfolio" className="flex items-center gap-2">
                   <Zap className="w-4 h-4" />
                   نمونه‌کارها
-                </a>
+                </Link>
               </Button>
               <Button
                 asChild
@@ -187,14 +186,14 @@ const MainLayout: React.FC = () => {
                       asChild
                       className="justify-start text-ink-soft hover:text-mars-dark hover:bg-mars-tint"
                     >
-                      <a
-                        href={portfolioHref}
+                      <Link
+                        to="/portfolio"
                         onClick={() => setIsMenuOpen(false)}
                         className="flex items-center gap-3"
                       >
                         <Zap className="w-4 h-4" />
                         نمونه‌کارها
-                      </a>
+                      </Link>
                     </Button>
                     <Button asChild className="bg-mars text-paper">
                       <Link
@@ -227,7 +226,7 @@ const MainLayout: React.FC = () => {
             <div className="md:col-span-2">
               <div className="flex items-center space-x-3 mb-6">
                 <img
-                  src={`${import.meta.env.BASE_URL}logo.png`}
+                  src={publicAsset("logo.png")}
                   alt="مریخ"
                   className="w-9 h-9"
                 />
@@ -252,19 +251,19 @@ const MainLayout: React.FC = () => {
               <ul className="space-y-3">
                 {[
                   { name: "صفحه اصلی", href: "/" },
-                  { name: "خدمات", href: "/#services" },
-                  { name: "نمونه‌کارها", href: "/#portfolio" },
+                  { name: "خدمات", href: "/services" },
+                  { name: "نمونه‌کارها", href: "/portfolio" },
                   { name: "درباره ما", href: "/about" },
                   { name: "تماس با ما", href: "/contact" },
                 ].map((item, index) => (
                   <li key={index}>
-                    <a
-                      href={item.href}
+                    <Link
+                      to={item.href}
                       className="text-ink-soft hover:text-mars-dark transition-colors flex items-center gap-2 group"
                     >
                       <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform text-mars" />
                       {item.name}
-                    </a>
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -295,20 +294,18 @@ const MainLayout: React.FC = () => {
                 © ۱۴۰۳ مریخ. تمامی حقوق محفوظ است.
               </div>
               <div className="flex space-x-6 space-x-reverse text-sm">
-                <a
-                  href="/privacy"
-                  className="text-ink-faint hover:text-ink transition-colors flex items-center gap-2 group"
+                <Link
+                  to="/privacy"
+                  className="text-ink-faint hover:text-ink transition-colors"
                 >
                   حریم خصوصی
-                  <ExternalLink className="w-3 h-3 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                </a>
-                <a
-                  href="/terms"
-                  className="text-ink-faint hover:text-ink transition-colors flex items-center gap-2 group"
+                </Link>
+                <Link
+                  to="/terms"
+                  className="text-ink-faint hover:text-ink transition-colors"
                 >
                   شرایط استفاده
-                  <ExternalLink className="w-3 h-3 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                </a>
+                </Link>
               </div>
             </div>
           </div>

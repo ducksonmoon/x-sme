@@ -9,6 +9,11 @@ import MainLayout from "@layouts/MainLayout";
 const Home = React.lazy(() => import("@pages/Home"));
 const About = React.lazy(() => import("@pages/About"));
 const Contact = React.lazy(() => import("@pages/Contact"));
+const Services = React.lazy(() => import("@pages/Services"));
+const Portfolio = React.lazy(() => import("@pages/Portfolio"));
+const PortfolioDetail = React.lazy(() => import("@pages/PortfolioDetail"));
+const Privacy = React.lazy(() => import("@pages/Privacy"));
+const Terms = React.lazy(() => import("@pages/Terms"));
 
 // Error pages
 const NotFound = React.lazy(() => import("@pages/NotFound"));
@@ -31,6 +36,11 @@ function App() {
             <Route index element={<Home />} />
             <Route path="about" element={<About />} />
             <Route path="contact" element={<Contact />} />
+            <Route path="services" element={<Services />} />
+            <Route path="portfolio" element={<Portfolio />} />
+            <Route path="portfolio/:slug" element={<PortfolioDetail />} />
+            <Route path="privacy" element={<Privacy />} />
+            <Route path="terms" element={<Terms />} />
           </Route>
 
           {/* Error routes */}

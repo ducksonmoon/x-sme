@@ -1,0 +1,36 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>مریخ</title>
+    <script>
+      // Single-Page-App GitHub Pages redirect trick, adapted for dual
+      // hosting: a GitHub Pages project subpath ("/x-sme/") and a custom
+      // domain served from root. GitHub Pages serves this file (with a 404
+      // status) for any path that isn't a real file -- i.e. every
+      // client-side route. Since it doesn't know the app's own root
+      // (needed for relative asset paths in index.html to resolve), this
+      // encodes the intended deep path into a query string and redirects
+      // to the app's actual root; index.html then decodes it and restores
+      // the real URL before React Router reads it.
+      (function (l) {
+        var pathSegmentsToKeep = l.hostname.endsWith("github.io") ? 1 : 0;
+        var segments = l.pathname.split("/").slice(1);
+        var root = segments.slice(0, pathSegmentsToKeep).join("/");
+        var rest = segments.slice(pathSegmentsToKeep).join("/");
+        l.replace(
+          l.protocol +
+            "//" +
+            l.hostname +
+            (l.port ? ":" + l.port : "") +
+            (root ? "/" + root : "") +
+            "/?/" +
+            rest.replace(/&/g, "~and~") +
+            (l.search ? "&" + l.search.slice(1).replace(/&/g, "~and~") : "") +
+            l.hash
+        );
+      })(window.location);
+    </script>
+  </head>
+  <body></body>
+</html>
