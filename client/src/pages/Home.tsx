@@ -2,24 +2,14 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-  Globe,
-  Code2,
-  Brain,
-  Smartphone,
   Package,
   ShieldCheck,
   ArrowLeft,
-  ExternalLink,
   CheckCircle,
 } from "lucide-react";
 import { Button } from "@components/ui/button";
 import LogoMark from "@components/LogoMark";
-
-interface Service {
-  icon: React.ElementType;
-  title: string;
-  description: string;
-}
+import { services, portfolio } from "@/data/site";
 
 interface Product {
   icon: React.ElementType;
@@ -28,39 +18,7 @@ interface Product {
   features: string[];
 }
 
-interface PortfolioItem {
-  name: string;
-  description: string;
-  url: string;
-  tags: string[];
-}
-
-const services: Service[] = [
-  {
-    icon: Globe,
-    title: "وب‌سایت",
-    description:
-      "طراحی و توسعه وب‌سایت‌های شرکتی و فروشگاهی با تمرکز بر تجربه کاربری، سرعت و سئو.",
-  },
-  {
-    icon: Code2,
-    title: "نرم‌افزار و API",
-    description:
-      "نرم‌افزار سفارشی، پنل‌های مدیریتی و سرویس‌های API برای یکپارچه‌سازی سیستم‌های کسب‌وکار.",
-  },
-  {
-    icon: Brain,
-    title: "هوش مصنوعی",
-    description:
-      "اتوماسیون فرآیندها، تحلیل داده و دستیارهای هوشمند مبتنی بر هوش مصنوعی.",
-  },
-  {
-    icon: Smartphone,
-    title: "اپلیکیشن",
-    description:
-      "ساخت اپلیکیشن‌های وب و موبایل، از MVP استارتاپی تا محصولات مقیاس‌پذیر.",
-  },
-];
+const MotionLink = motion(Link);
 
 const products: Product[] = [
   {
@@ -86,39 +44,6 @@ const products: Product[] = [
       "گزارش کیفیت به تفکیک محصول/خط",
       "همکاری تیمی و تاریخچه کامل تست‌ها",
     ],
-  },
-];
-
-const portfolio: PortfolioItem[] = [
-  {
-    name: "Zarandooz",
-    description: "توسعه اپلیکیشن، سرویس‌های API و وب‌سایت",
-    url: "https://zarandooz.app/",
-    tags: ["اپلیکیشن", "API", "وب‌سایت"],
-  },
-  {
-    name: "Nipou",
-    description: "طراحی وب‌سایت شرکتی",
-    url: "https://nipoucompany.com/",
-    tags: ["وب‌سایت"],
-  },
-  {
-    name: "Tabeshraad",
-    description: "طراحی وب‌سایت شرکتی",
-    url: "https://tabeshraad.co/",
-    tags: ["وب‌سایت"],
-  },
-  {
-    name: "Jamnevisi",
-    description: "طراحی وب‌سایت و خدمات آنلاین",
-    url: "https://jamnevisi.ir/",
-    tags: ["وب‌سایت", "خدمات"],
-  },
-  {
-    name: "FBC",
-    description: "توسعه نرم‌افزار",
-    url: "https://fbc.ir/",
-    tags: ["نرم‌افزار"],
   },
 ];
 
@@ -263,13 +188,22 @@ const Home: React.FC = () => {
       {/* Services */}
       <section id="services" className="py-24 bg-white">
         <div className="container mx-auto px-4 max-w-7xl">
-          <div className="flex flex-col gap-3 max-w-xl mb-6">
-            <span className="text-xs font-bold tracking-wider text-mars-dark uppercase">
-              خدمات سفارشی
-            </span>
-            <h2 className="text-3xl font-bold text-ink">
-              فراتر از محصولات آماده، پروژه اختصاصی خودتان را بسازید
-            </h2>
+          <div className="flex flex-wrap items-end justify-between gap-4 mb-6">
+            <div className="flex flex-col gap-3 max-w-xl">
+              <span className="text-xs font-bold tracking-wider text-mars-dark uppercase">
+                خدمات سفارشی
+              </span>
+              <h2 className="text-3xl font-bold text-ink">
+                فراتر از محصولات آماده، پروژه اختصاصی خودتان را بسازید
+              </h2>
+            </div>
+            <Link
+              to="/services"
+              className="flex items-center gap-2 text-sm font-bold text-mars-dark hover:underline shrink-0"
+            >
+              مشاهده همه خدمات
+              <ArrowLeft className="w-4 h-4" />
+            </Link>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {services.map((service, index) => (
@@ -299,21 +233,28 @@ const Home: React.FC = () => {
       {/* Portfolio */}
       <section id="portfolio" className="py-24 bg-white border-y border-line-soft">
         <div className="container mx-auto px-4 max-w-7xl">
-          <div className="flex flex-col gap-3 max-w-xl mb-6">
-            <span className="text-xs font-bold tracking-wider text-mars-dark uppercase">
-              نمونه‌کارها
-            </span>
-            <h2 className="text-3xl font-bold text-ink">
-              پروژه‌هایی که ساخته‌ایم
-            </h2>
+          <div className="flex flex-wrap items-end justify-between gap-4 mb-6">
+            <div className="flex flex-col gap-3 max-w-xl">
+              <span className="text-xs font-bold tracking-wider text-mars-dark uppercase">
+                نمونه‌کارها
+              </span>
+              <h2 className="text-3xl font-bold text-ink">
+                پروژه‌هایی که ساخته‌ایم
+              </h2>
+            </div>
+            <Link
+              to="/portfolio"
+              className="flex items-center gap-2 text-sm font-bold text-mars-dark hover:underline shrink-0"
+            >
+              مشاهده همه نمونه‌کارها
+              <ArrowLeft className="w-4 h-4" />
+            </Link>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {portfolio.map((item, index) => (
-              <motion.a
+              <MotionLink
                 key={item.name}
-                href={item.url}
-                target="_blank"
-                rel="noopener noreferrer"
+                to={`/portfolio/${item.slug}`}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
@@ -322,7 +263,7 @@ const Home: React.FC = () => {
               >
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-lg font-bold text-ink">{item.name}</span>
-                  <ExternalLink className="w-4 h-4 text-mars-dark shrink-0 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
+                  <ArrowLeft className="w-4 h-4 text-mars-dark shrink-0 transition-transform group-hover:-translate-x-1" />
                 </div>
                 <p className="text-sm text-ink-soft leading-relaxed flex-1">
                   {item.description}
@@ -337,7 +278,7 @@ const Home: React.FC = () => {
                     </span>
                   ))}
                 </div>
-              </motion.a>
+              </MotionLink>
             ))}
           </div>
         </div>

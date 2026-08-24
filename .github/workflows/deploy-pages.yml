@@ -34,9 +34,6 @@ jobs:
         working-directory: client
         run: npm run build
 
-      - name: Add SPA fallback for client-side routing
-        run: cp client/dist/index.html client/dist/404.html
-
       - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v3
