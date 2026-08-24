@@ -12,7 +12,6 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { Button } from "@components/ui/button";
-import LogoMark from "@components/LogoMark";
 import { cn } from "../utils/cn";
 
 interface NavigationItem {
@@ -59,7 +58,11 @@ const MainLayout: React.FC = () => {
           <div className="flex h-16 items-center justify-between">
             {/* Logo */}
             <Link to="/" className="flex items-center space-x-3 group">
-              <LogoMark />
+              <img
+                src={`${import.meta.env.BASE_URL}logo.png`}
+                alt="مریخ"
+                className="w-9 h-9"
+              />
               <div className="flex flex-col">
                 <span className="text-xl font-bold text-ink">مریخ</span>
                 <span className="text-xs text-ink-faint font-medium">
@@ -223,7 +226,11 @@ const MainLayout: React.FC = () => {
             {/* Company Info */}
             <div className="md:col-span-2">
               <div className="flex items-center space-x-3 mb-6">
-                <LogoMark animated={false} />
+                <img
+                  src={`${import.meta.env.BASE_URL}logo.png`}
+                  alt="مریخ"
+                  className="w-9 h-9"
+                />
                 <div className="flex flex-col">
                   <span className="text-xl font-bold text-ink">مریخ</span>
                   <span className="text-xs text-ink-faint">
