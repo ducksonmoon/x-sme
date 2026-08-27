@@ -1,0 +1,24 @@
+@keyframes circle-mark-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes circle-mark-spin-reverse {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(-360deg); }
+}
+
+@keyframes circle-blob-drift-1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-18px, 14px) scale(1.06); }
+}
+
+@keyframes circle-blob-drift-2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(16px, -20px) scale(1.08); }
+}
+
+@keyframes circle-dot-glow {
+  0%, 100% { opacity: 0.9; }
+  50% { opacity: 0.55; }
+}
