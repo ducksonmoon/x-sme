@@ -127,10 +127,10 @@ export default {
           700: 'oklch(31% 0.06 258)',
           100: 'oklch(93% 0.016 258)',
         },
-        mars: {
-          DEFAULT: 'oklch(58% 0.15 35)',
-          dark: 'oklch(44% 0.14 35)',
-          tint: 'oklch(95% 0.025 35)',
+        gold: {
+          DEFAULT: 'oklch(74% 0.12 82)',
+          dark: 'oklch(46% 0.12 75)',
+          tint: 'oklch(95% 0.03 82)',
         },
         paper: 'oklch(98.3% 0.004 90)',
         ink: {

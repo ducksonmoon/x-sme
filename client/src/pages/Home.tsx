@@ -8,7 +8,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { Button } from "@components/ui/button";
-import LogoMark from "@components/LogoMark";
+import { CircleMark, HeroGlow, circleGradient } from "@/brand/circle";
 import { services, portfolio } from "@/data/site";
 
 interface Product {
@@ -60,29 +60,42 @@ const Home: React.FC = () => {
   return (
     <div className="overflow-hidden">
       {/* Hero */}
-      <section className="relative">
+      <HeroGlow className="relative">
         <div className="container mx-auto px-4 max-w-7xl flex flex-col md:flex-row items-center gap-12 py-24 md:py-28">
-          <div className="flex-1 flex flex-col items-start gap-6 min-w-0">
-            <span className="text-xs font-bold tracking-wider text-mars-dark uppercase">
-              استودیوی وب، نرم‌افزار و هوش مصنوعی مریخ
+          <div className="flex-1 flex flex-col items-start gap-5 min-w-0">
+            <span className="text-sm font-bold tracking-wide text-gold uppercase">
+              بازوی فنی کسب‌وکار شما
             </span>
-            <h1 className="text-4xl md:text-6xl font-extrabold text-ink leading-tight">
-              نرم‌افزار و وب‌سایتی که{" "}
-              <span className="text-mars">واقعاً</span> کار می‌کند
+            <h1
+              className="text-4xl md:text-5xl font-normal text-white leading-[1.55]"
+              style={{ fontFamily: "'Lalezar', 'Vazirmatn', Tahoma, sans-serif" }}
+            >
+              راهکار نرم‌افزاری برای{" "}
+              <span
+                style={{
+                  background: circleGradient,
+                  WebkitBackgroundClip: "text",
+                  backgroundClip: "text",
+                  color: "transparent",
+                }}
+              >
+                خودکارسازی
+              </span>
+              ، مدیریت
+              <br />و بهینه‌سازی کسب‌وکار شما
             </h1>
-            <p className="text-lg md:text-xl text-ink-soft leading-relaxed max-w-xl">
-              مدیریت انبار و کنترل کیفیت را به‌صورت آماده تحویل می‌دهیم؛
-              وب‌سایت، نرم‌افزار سفارشی و راهکار هوش مصنوعی را از صفر برایتان
-              می‌سازیم.
+            <p className="text-base md:text-lg text-white/70 leading-relaxed max-w-xl">
+              ما از نزدیک با کسب‌وکار شما همکاری می‌کنیم و با شخصی‌سازی کامل،
+              مناسب‌ترین راهکار را برایتان ارائه می‌دهیم.
             </p>
             <div className="flex flex-col sm:flex-row items-center gap-4 mt-2">
-              <Button asChild size="lg" className="bg-mars text-paper hover:bg-[oklch(62%_0.15_35)] hover:text-paper">
+              <Button asChild size="lg" className="bg-gold text-navy-950 hover:bg-[oklch(80%_0.14_85)]">
                 <a href="#products" className="flex items-center gap-2">
                   مشاهده محصولات
                   <ArrowLeft className="w-4 h-4" />
                 </a>
               </Button>
-              <Button variant="outline" size="lg" asChild className="border-line text-ink hover:border-navy-700">
+              <Button variant="outline" size="lg" asChild className="bg-transparent border-white/25 text-white hover:bg-white/10 hover:text-white">
                 <a href="#services" className="flex items-center gap-2">
                   خدمات سفارشی
                   <ArrowLeft className="w-4 h-4" />
@@ -90,26 +103,17 @@ const Home: React.FC = () => {
               </Button>
             </div>
           </div>
-          <div className="flex-shrink-0 relative w-[280px] h-[280px] md:w-[340px] md:h-[340px] flex items-center justify-center">
-            <span className="absolute top-[18%] left-[12%] w-1.5 h-1.5 rounded-full bg-mars animate-pulse" />
-            <span
-              className="absolute top-[70%] left-[20%] w-1 h-1 rounded-full bg-navy-700 animate-pulse"
-              style={{ animationDelay: "0.9s" }}
-            />
-            <span
-              className="absolute top-[12%] right-[10%] w-1.5 h-1.5 rounded-full bg-navy-700 animate-pulse"
-              style={{ animationDelay: "1.8s" }}
-            />
-            <LogoMark large />
+          <div className="flex-shrink-0 w-[280px] h-[280px] md:w-[340px] md:h-[340px] flex items-center justify-center">
+            <CircleMark variant="full" theme="dark" animated size={300} />
           </div>
         </div>
-      </section>
+      </HeroGlow>
 
       {/* Trust strip (marquee) */}
       <section className="marquee-wrap border-t border-b border-line-soft overflow-hidden">
         <div className="container mx-auto px-4 max-w-7xl py-6 flex items-center gap-7">
           <span className="text-sm font-semibold text-ink-faint whitespace-nowrap shrink-0">
-            با مریخ ساخته‌اند
+            با دایره ساخته‌اند
           </span>
           <div
             className="overflow-hidden flex-1"
@@ -138,14 +142,14 @@ const Home: React.FC = () => {
       <section id="products" className="py-24 bg-white border-b border-line-soft">
         <div className="container mx-auto px-4 max-w-7xl">
           <div className="flex flex-col gap-3 max-w-xl mb-12">
-            <span className="text-xs font-bold tracking-wider text-mars-dark uppercase">
-              محصولات مریخ
+            <span className="text-xs font-bold tracking-wider text-gold-dark uppercase">
+              محصولات دایره
             </span>
             <h2 className="text-3xl font-bold text-ink">
               نرم‌افزارهای آماده برای کسب‌وکار شما
             </h2>
             <p className="text-ink-soft leading-relaxed">
-              جدا از پروژه‌های سفارشی، مریخ نرم‌افزارهایی آماده و
+              جدا از پروژه‌های سفارشی، دایره نرم‌افزارهایی آماده و
               مقرون‌به‌صرفه برای کسب‌وکارهای کوچک و متوسط ارائه می‌دهد.
             </p>
           </div>
@@ -157,7 +161,7 @@ const Home: React.FC = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="border border-line border-t-[3px] border-t-mars rounded-md p-8"
+                className="border border-line border-t-[3px] border-t-gold rounded-md p-8"
               >
                 <div className="w-9 h-9 flex items-center justify-center text-navy-700 mb-5">
                   <product.icon className="w-8 h-8" />
@@ -171,7 +175,7 @@ const Home: React.FC = () => {
                 <div className="flex flex-col gap-2.5 mb-6">
                   {product.features.map((feature) => (
                     <div key={feature} className="flex items-start gap-2">
-                      <CheckCircle className="w-3.5 h-3.5 text-mars-dark mt-0.5 shrink-0" />
+                      <CheckCircle className="w-3.5 h-3.5 text-gold-dark mt-0.5 shrink-0" />
                       <span className="text-sm text-ink-soft">{feature}</span>
                     </div>
                   ))}
@@ -190,7 +194,7 @@ const Home: React.FC = () => {
         <div className="container mx-auto px-4 max-w-7xl">
           <div className="flex flex-wrap items-end justify-between gap-4 mb-6">
             <div className="flex flex-col gap-3 max-w-xl">
-              <span className="text-xs font-bold tracking-wider text-mars-dark uppercase">
+              <span className="text-xs font-bold tracking-wider text-gold-dark uppercase">
                 خدمات سفارشی
               </span>
               <h2 className="text-3xl font-bold text-ink">
@@ -199,7 +203,7 @@ const Home: React.FC = () => {
             </div>
             <Link
               to="/services"
-              className="flex items-center gap-2 text-sm font-bold text-mars-dark hover:underline shrink-0"
+              className="flex items-center gap-2 text-sm font-bold text-gold-dark hover:underline shrink-0"
             >
               مشاهده همه خدمات
               <ArrowLeft className="w-4 h-4" />
@@ -213,10 +217,10 @@ const Home: React.FC = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.05 }}
-                className="group border border-line rounded-md p-7 hover:border-mars/40 hover:bg-mars-tint/30 transition-colors"
+                className="group border border-line rounded-md p-7 hover:border-gold/40 hover:bg-gold-tint/30 transition-colors"
               >
-                <div className="w-11 h-11 rounded-lg bg-mars-tint flex items-center justify-center mb-5 transition-transform group-hover:-rotate-6 group-hover:scale-110">
-                  <service.icon className="w-5 h-5 text-mars-dark" />
+                <div className="w-11 h-11 rounded-lg bg-gold-tint flex items-center justify-center mb-5 transition-transform group-hover:-rotate-6 group-hover:scale-110">
+                  <service.icon className="w-5 h-5 text-gold-dark" />
                 </div>
                 <h3 className="text-lg font-bold text-ink mb-2">
                   {service.title}
@@ -235,7 +239,7 @@ const Home: React.FC = () => {
         <div className="container mx-auto px-4 max-w-7xl">
           <div className="flex flex-wrap items-end justify-between gap-4 mb-6">
             <div className="flex flex-col gap-3 max-w-xl">
-              <span className="text-xs font-bold tracking-wider text-mars-dark uppercase">
+              <span className="text-xs font-bold tracking-wider text-gold-dark uppercase">
                 نمونه‌کارها
               </span>
               <h2 className="text-3xl font-bold text-ink">
@@ -244,7 +248,7 @@ const Home: React.FC = () => {
             </div>
             <Link
               to="/portfolio"
-              className="flex items-center gap-2 text-sm font-bold text-mars-dark hover:underline shrink-0"
+              className="flex items-center gap-2 text-sm font-bold text-gold-dark hover:underline shrink-0"
             >
               مشاهده همه نمونه‌کارها
               <ArrowLeft className="w-4 h-4" />
@@ -259,11 +263,11 @@ const Home: React.FC = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.05 }}
-                className="group flex flex-col gap-4 border border-line rounded-md p-6 hover:border-mars/40 hover:bg-mars-tint/20 transition-colors"
+                className="group flex flex-col gap-4 border border-line rounded-md p-6 hover:border-gold/40 hover:bg-gold-tint/20 transition-colors"
               >
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-lg font-bold text-ink">{item.name}</span>
-                  <ArrowLeft className="w-4 h-4 text-mars-dark shrink-0 transition-transform group-hover:-translate-x-1" />
+                  <ArrowLeft className="w-4 h-4 text-gold-dark shrink-0 transition-transform group-hover:-translate-x-1" />
                 </div>
                 <p className="text-sm text-ink-soft leading-relaxed flex-1">
                   {item.description}
@@ -272,7 +276,7 @@ const Home: React.FC = () => {
                   {item.tags.map((tag) => (
                     <span
                       key={tag}
-                      className="text-xs font-medium text-mars-dark bg-mars-tint px-2 py-1 rounded-full"
+                      className="text-xs font-medium text-gold-dark bg-gold-tint px-2 py-1 rounded-full"
                     >
                       {tag}
                     </span>
@@ -288,7 +292,7 @@ const Home: React.FC = () => {
       <section className="py-24 bg-white">
         <div className="container mx-auto px-4 max-w-7xl">
           <div className="flex flex-col gap-3 max-w-xl mb-16">
-            <span className="text-xs font-bold tracking-wider text-mars-dark uppercase">
+            <span className="text-xs font-bold tracking-wider text-gold-dark uppercase">
               فرآیند
             </span>
             <h2 className="text-3xl font-bold text-ink">از ایده تا اجرا</h2>
@@ -304,7 +308,7 @@ const Home: React.FC = () => {
                 className="flex flex-col gap-4"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 shrink-0 rounded-full bg-mars text-paper flex items-center justify-center font-extrabold text-sm">
+                  <div className="w-10 h-10 shrink-0 rounded-full bg-gold text-paper flex items-center justify-center font-extrabold text-sm">
                     {index + 1}
                   </div>
                   {index !== process.length - 1 && (
@@ -333,7 +337,7 @@ const Home: React.FC = () => {
           }}
         />
         <div className="relative container mx-auto px-4 max-w-4xl py-24 text-center flex flex-col items-center gap-5">
-          <LogoMark variant="dark" />
+          <CircleMark variant="full" theme="dark" size={64} />
           <h2 className="text-3xl font-bold text-white max-w-xl">
             پروژه بعدی شما، اینجا شروع می‌شود
           </h2>
@@ -341,7 +345,7 @@ const Home: React.FC = () => {
             چه دنبال نرم‌افزار آماده باشید، چه یک وب‌سایت یا پروژه سفارشی —
             برایمان بنویسید چه چیزی می‌سازیم.
           </p>
-          <Button asChild size="lg" className="bg-mars text-paper hover:bg-[oklch(62%_0.15_35)] hover:text-paper mt-2">
+          <Button asChild size="lg" className="bg-gold text-paper hover:bg-[oklch(66%_0.13_80)] hover:text-paper mt-2">
             <Link to="/contact" className="flex items-center gap-2">
               تماس با ما
               <ArrowLeft className="w-4 h-4" />

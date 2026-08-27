@@ -1,6 +1,7 @@
-// Color tokens for the "Circle" (دایره) artistic brand concept.
-// Kept separate from tailwind.config.js's navy/mars tokens so this can be
-// reviewed and reused without touching the live مریخ brand.
+// Color tokens for the "Circle" (دایره) brand's gold/coral accent system.
+// Kept separate from tailwind.config.js's "gold" token (used for small UI
+// accents like icons and tags) since these also cover the coral half of the
+// hero gradient and the dark navy hero background, which "gold" alone doesn't.
 export const circleColors = {
   gold: "oklch(74% 0.12 82)",
   goldBright: "oklch(80% 0.14 85)",

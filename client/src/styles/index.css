@@ -3,9 +3,12 @@
 @tailwind utilities;
 
 /* Design-system tokens for shadcn-style primitives (Button, Card, Input).
-   Mapped to the navy/mars/paper palette in tailwind.config.js so every
+   Mapped to the navy/gold/paper palette in tailwind.config.js so every
    component -- not just hand-styled pages -- renders in brand colors with
-   working border-radius (rounded-md/lg/sm all read var(--radius)). */
+   working border-radius (rounded-md/lg/sm all read var(--radius)). Kept
+   under their own --accent/--primary names (not --gold) since these feed
+   shadcn's own "accent"/"primary" semantic color slots in the Tailwind
+   config, which are a separate, unrelated key from the "gold" brand token. */
 :root {
   --radius: 0.5rem;
 
@@ -18,8 +21,8 @@
   --popover: 0 0% 100%;
   --popover-foreground: 230 20% 14%;
 
-  --primary: 14 55% 50%;
-  --primary-foreground: 30 25% 98%;
+  --primary: 38 60% 55%;
+  --primary-foreground: 230 20% 14%;
 
   --secondary: 230 12% 93%;
   --secondary-foreground: 230 20% 14%;
@@ -27,8 +30,8 @@
   --muted: 230 10% 93%;
   --muted-foreground: 230 8% 42%;
 
-  --accent: 14 45% 95%;
-  --accent-foreground: 14 55% 38%;
+  --accent: 45 60% 94%;
+  --accent-foreground: 32 55% 32%;
 
   --destructive: 0 72% 51%;
   --destructive-foreground: 0 0% 100%;
@@ -44,7 +47,7 @@
 
   --border: 230 10% 88%;
   --input: 230 10% 88%;
-  --ring: 14 55% 50%;
+  --ring: 38 60% 55%;
 }
 
 /* RTL Support for Farsi */
@@ -120,38 +123,6 @@ html[dir="rtl"] ::-webkit-scrollbar-thumb:hover {
   .custom-scrollbar::-webkit-scrollbar {
     display: none;
   }
-}
-
-/* Brand mark: a planet with a moon that passes behind on top, in front on
-   bottom (Saturn-ring style). The dot's own cx/cy must stay 0,0 -- combining
-   offset-path with non-zero cx/cy double-offsets the element. */
-.orbit-back-dot {
-  offset-path: path("M 1.5 17 A 15.5 6.5 0 1 1 32.5 17");
-  animation: orbit-back 7s linear infinite;
-}
-.orbit-front-dot {
-  offset-path: path("M 32.5 17 A 15.5 6.5 0 1 1 1.5 17");
-  animation: orbit-front 7s linear infinite;
-}
-.orbit-mark-lg .orbit-back-dot {
-  offset-path: path("M 9 105 A 96 40 0 1 1 201 105");
-  animation-duration: 9s;
-}
-.orbit-mark-lg .orbit-front-dot {
-  offset-path: path("M 201 105 A 96 40 0 1 1 9 105");
-  animation-duration: 9s;
-}
-@keyframes orbit-back {
-  0% { offset-distance: 0%; opacity: 1; }
-  50% { offset-distance: 100%; opacity: 1; }
-  50.001% { opacity: 0; }
-  100% { offset-distance: 100%; opacity: 0; }
-}
-@keyframes orbit-front {
-  0% { offset-distance: 0%; opacity: 0; }
-  49.999% { offset-distance: 0%; opacity: 0; }
-  50% { offset-distance: 0%; opacity: 1; }
-  100% { offset-distance: 100%; opacity: 1; }
 }
 
 /* Trust-strip marquee */

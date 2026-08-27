@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { Button } from "@components/ui/button";
 import { cn } from "../utils/cn";
-import { publicAsset } from "@utils/publicPath";
+import { CircleMark } from "@/brand/circle";
 
 interface NavigationItem {
   name: string;
@@ -57,13 +57,9 @@ const MainLayout: React.FC = () => {
           <div className="flex h-16 items-center justify-between">
             {/* Logo */}
             <Link to="/" className="flex items-center space-x-3 group">
-              <img
-                src={publicAsset("logo.png")}
-                alt="مریخ"
-                className="w-9 h-9"
-              />
+              <CircleMark variant="full" size={36} />
               <div className="flex flex-col">
-                <span className="text-xl font-bold text-ink">مریخ</span>
+                <span className="text-xl font-bold text-ink">دایره</span>
                 <span className="text-xs text-ink-faint font-medium">
                   وب، نرم‌افزار و هوش مصنوعی
                 </span>
@@ -79,20 +75,20 @@ const MainLayout: React.FC = () => {
                   className={cn(
                     "relative px-4 py-2 text-sm font-medium transition-all duration-300 rounded-lg flex items-center gap-2",
                     isActive(item.href)
-                      ? "text-mars-dark bg-mars-tint"
-                      : "text-ink-soft hover:text-mars-dark hover:bg-mars-tint/50"
+                      ? "text-gold-dark bg-gold-tint"
+                      : "text-ink-soft hover:text-gold-dark hover:bg-gold-tint/50"
                   )}
                 >
                   {item.name}
                   {item.badge && (
-                    <span className="bg-mars text-paper text-xs px-2 py-0.5 rounded-full font-medium">
+                    <span className="bg-gold text-paper text-xs px-2 py-0.5 rounded-full font-medium">
                       {item.badge}
                     </span>
                   )}
                   {isActive(item.href) && (
                     <motion.div
                       layoutId="activeTab"
-                      className="absolute inset-0 bg-mars-tint rounded-lg -z-10"
+                      className="absolute inset-0 bg-gold-tint rounded-lg -z-10"
                       transition={{
                         type: "spring",
                         bounce: 0.2,
@@ -109,7 +105,7 @@ const MainLayout: React.FC = () => {
               <Button
                 variant="ghost"
                 asChild
-                className="text-ink-soft hover:text-mars-dark hover:bg-mars-tint border border-transparent hover:border-mars/30 transition-all duration-300"
+                className="text-ink-soft hover:text-gold-dark hover:bg-gold-tint border border-transparent hover:border-gold/30 transition-all duration-300"
               >
                 <Link to="/portfolio" className="flex items-center gap-2">
                   <Zap className="w-4 h-4" />
@@ -118,7 +114,7 @@ const MainLayout: React.FC = () => {
               </Button>
               <Button
                 asChild
-                className="bg-mars text-paper hover:bg-[oklch(62%_0.15_35)] hover:text-paper transition-all duration-300"
+                className="bg-gold text-paper hover:bg-[oklch(66%_0.13_80)] hover:text-paper transition-all duration-300"
               >
                 <Link to="/contact" className="flex items-center gap-2">
                   شروع پروژه
@@ -129,7 +125,7 @@ const MainLayout: React.FC = () => {
 
             {/* Mobile menu button */}
             <button
-              className="md:hidden p-2 rounded-xl hover:bg-mars-tint transition-all duration-300"
+              className="md:hidden p-2 rounded-xl hover:bg-gold-tint transition-all duration-300"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
               {isMenuOpen ? (
@@ -163,8 +159,8 @@ const MainLayout: React.FC = () => {
                         className={cn(
                           "flex items-center justify-between px-4 py-3 text-sm font-medium transition-all duration-300 rounded-xl",
                           isActive(item.href)
-                            ? "text-mars-dark bg-mars-tint"
-                            : "text-ink-soft hover:text-mars-dark hover:bg-mars-tint"
+                            ? "text-gold-dark bg-gold-tint"
+                            : "text-ink-soft hover:text-gold-dark hover:bg-gold-tint"
                         )}
                         onClick={() => setIsMenuOpen(false)}
                       >
@@ -173,7 +169,7 @@ const MainLayout: React.FC = () => {
                           {item.name}
                         </div>
                         {item.badge && (
-                          <span className="bg-mars text-paper text-xs px-2 py-0.5 rounded-full font-medium">
+                          <span className="bg-gold text-paper text-xs px-2 py-0.5 rounded-full font-medium">
                             {item.badge}
                           </span>
                         )}
@@ -184,7 +180,7 @@ const MainLayout: React.FC = () => {
                     <Button
                       variant="ghost"
                       asChild
-                      className="justify-start text-ink-soft hover:text-mars-dark hover:bg-mars-tint"
+                      className="justify-start text-ink-soft hover:text-gold-dark hover:bg-gold-tint"
                     >
                       <Link
                         to="/portfolio"
@@ -195,7 +191,7 @@ const MainLayout: React.FC = () => {
                         نمونه‌کارها
                       </Link>
                     </Button>
-                    <Button asChild className="bg-mars text-paper">
+                    <Button asChild className="bg-gold text-paper">
                       <Link
                         to="/contact"
                         onClick={() => setIsMenuOpen(false)}
@@ -225,13 +221,9 @@ const MainLayout: React.FC = () => {
             {/* Company Info */}
             <div className="md:col-span-2">
               <div className="flex items-center space-x-3 mb-6">
-                <img
-                  src={publicAsset("logo.png")}
-                  alt="مریخ"
-                  className="w-9 h-9"
-                />
+                <CircleMark variant="full" size={36} />
                 <div className="flex flex-col">
-                  <span className="text-xl font-bold text-ink">مریخ</span>
+                  <span className="text-xl font-bold text-ink">دایره</span>
                   <span className="text-xs text-ink-faint">
                     وب، نرم‌افزار و هوش مصنوعی
                   </span>
@@ -259,9 +251,9 @@ const MainLayout: React.FC = () => {
                   <li key={index}>
                     <Link
                       to={item.href}
-                      className="text-ink-soft hover:text-mars-dark transition-colors flex items-center gap-2 group"
+                      className="text-ink-soft hover:text-gold-dark transition-colors flex items-center gap-2 group"
                     >
-                      <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform text-mars" />
+                      <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform text-gold" />
                       {item.name}
                     </Link>
                   </li>
@@ -276,12 +268,12 @@ const MainLayout: React.FC = () => {
               </h4>
               <ul className="space-y-3">
                 <li className="flex items-center gap-2 text-ink-soft pt-2">
-                  <Phone className="w-4 h-4 text-mars" />
+                  <Phone className="w-4 h-4 text-gold" />
                   <span className="text-sm">۰۲۱-۱۲۳۴۵۶۷۸</span>
                 </li>
                 <li className="flex items-center gap-2 text-ink-soft">
-                  <Mail className="w-4 h-4 text-mars" />
-                  <span className="text-sm">info@merikh.co</span>
+                  <Mail className="w-4 h-4 text-gold" />
+                  <span className="text-sm">info@circlegroup.ir</span>
                 </li>
               </ul>
             </div>
@@ -291,7 +283,7 @@ const MainLayout: React.FC = () => {
           <div className="border-t border-line-soft mt-12 pt-8">
             <div className="flex flex-col md:flex-row justify-between items-center">
               <div className="text-ink-faint text-sm mb-4 md:mb-0">
-                © ۱۴۰۳ مریخ. تمامی حقوق محفوظ است.
+                © ۱۴۰۵ دایره. تمامی حقوق محفوظ است.
               </div>
               <div className="flex space-x-6 space-x-reverse text-sm">
                 <Link
@@ -320,7 +312,7 @@ const MainLayout: React.FC = () => {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
             onClick={scrollToTop}
-            className="fixed bottom-8 right-8 w-12 h-12 bg-mars text-paper rounded-xl shadow-lg hover:scale-110 transition-all duration-300 z-40"
+            className="fixed bottom-8 right-8 w-12 h-12 bg-gold text-paper rounded-xl shadow-lg hover:scale-110 transition-all duration-300 z-40"
           >
             <ChevronUp className="w-5 h-5 mx-auto" />
           </motion.button>
