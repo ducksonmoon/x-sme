@@ -16,7 +16,7 @@ const FORMSPREE_FORM_ID = "xvkpjknp";
 
 const contactInfo = [
   { icon: Phone, label: "تلفن", value: "۰۲۱-۱۲۳۴۵۶۷۸" },
-  { icon: Mail, label: "ایمیل", value: "info@merikh.co" },
+  { icon: Mail, label: "ایمیل", value: "info@circlegroup.ir" },
   { icon: MapPin, label: "آدرس", value: "تهران، ایران" },
 ];
 
@@ -58,8 +58,8 @@ const Contact: React.FC = () => {
               {contactInfo.map((item) => (
                 <Card key={item.label} className="border-line">
                   <CardContent className="flex items-center gap-4 py-6">
-                    <div className="w-12 h-12 rounded-xl bg-mars-tint flex items-center justify-center shrink-0">
-                      <item.icon className="w-6 h-6 text-mars-dark" />
+                    <div className="w-12 h-12 rounded-xl bg-gold-tint flex items-center justify-center shrink-0">
+                      <item.icon className="w-6 h-6 text-gold-dark" />
                     </div>
                     <div>
                       <p className="text-sm text-ink-faint">{item.label}</p>
@@ -82,7 +82,7 @@ const Contact: React.FC = () => {
                 <CardContent>
                   {state.succeeded ? (
                     <div className="flex flex-col items-center justify-center py-12 text-center">
-                      <CheckCircle className="w-12 h-12 text-mars mb-4" />
+                      <CheckCircle className="w-12 h-12 text-gold mb-4" />
                       <p className="text-lg font-medium text-ink">
                         پیام شما با موفقیت ارسال شد.
                       </p>
@@ -151,7 +151,7 @@ const Contact: React.FC = () => {
                         type="submit"
                         size="lg"
                         disabled={state.submitting}
-                        className="bg-mars text-paper hover:bg-[oklch(62%_0.15_35)] hover:text-paper flex items-center gap-2"
+                        className="bg-gold text-paper hover:bg-[oklch(66%_0.13_80)] hover:text-paper flex items-center gap-2"
                       >
                         <Send className="w-4 h-4" />
                         {state.submitting ? "در حال ارسال..." : "ارسال پیام"}

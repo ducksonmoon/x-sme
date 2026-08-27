@@ -48,8 +48,8 @@ const NotFound: React.FC = () => {
           >
             <Card className="border-0 shadow-lg">
               <CardContent className="py-12 px-8">
-                <div className="w-16 h-16 bg-mars-tint rounded-full mx-auto mb-6 flex items-center justify-center">
-                  <AlertCircle className="w-8 h-8 text-mars-dark" />
+                <div className="w-16 h-16 bg-gold-tint rounded-full mx-auto mb-6 flex items-center justify-center">
+                  <AlertCircle className="w-8 h-8 text-gold-dark" />
                 </div>
                 <h1 className="text-3xl font-bold text-ink mb-4">
                   صفحه پیدا نشد
@@ -73,7 +73,7 @@ const NotFound: React.FC = () => {
               <Button
                 size="lg"
                 asChild
-                className="bg-mars text-paper hover:bg-[oklch(62%_0.15_35)] hover:text-paper"
+                className="bg-gold text-paper hover:bg-[oklch(66%_0.13_80)] hover:text-paper"
               >
                 <Link to="/" className="flex items-center gap-2">
                   <ArrowRight className="h-4 w-4" />
@@ -84,7 +84,7 @@ const NotFound: React.FC = () => {
                 variant="outline"
                 size="lg"
                 onClick={() => window.history.back()}
-                className="border-line text-ink hover:bg-mars-tint"
+                className="border-line text-ink hover:bg-gold-tint"
               >
                 برگشت به صفحه قبل
               </Button>
@@ -117,10 +117,10 @@ const NotFound: React.FC = () => {
                     >
                       <Link
                         to={suggestion.href}
-                        className="flex items-center gap-3 p-4 rounded-lg border border-line hover:border-mars/40 hover:bg-mars-tint transition-all group"
+                        className="flex items-center gap-3 p-4 rounded-lg border border-line hover:border-gold/40 hover:bg-gold-tint transition-all group"
                       >
-                        <suggestion.icon className="w-4 h-4 text-ink-faint group-hover:text-mars-dark" />
-                        <span className="text-sm font-medium text-ink-soft group-hover:text-mars-dark">
+                        <suggestion.icon className="w-4 h-4 text-ink-faint group-hover:text-gold-dark" />
+                        <span className="text-sm font-medium text-ink-soft group-hover:text-gold-dark">
                           {suggestion.text}
                         </span>
                       </Link>
@@ -142,7 +142,7 @@ const NotFound: React.FC = () => {
               اگر فکر می‌کنید این یک خطا است، لطفاً با{" "}
               <Link
                 to="/contact"
-                className="text-mars-dark hover:underline font-medium"
+                className="text-gold-dark hover:underline font-medium"
               >
                 تیم پشتیبانی
               </Link>{" "}

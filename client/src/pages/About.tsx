@@ -101,7 +101,7 @@ const About: React.FC = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="border border-line border-t-[3px] border-t-mars rounded-md p-7"
+                className="border border-line border-t-[3px] border-t-gold rounded-md p-7"
               >
                 <item.icon className="w-8 h-8 text-navy-700 mb-4" />
                 <h3 className="text-lg font-bold text-ink mb-2">
@@ -134,7 +134,7 @@ const About: React.FC = () => {
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 className="text-center bg-white rounded-md p-6 border border-line"
               >
-                <value.icon className="w-7 h-7 mx-auto text-mars-dark mb-4" />
+                <value.icon className="w-7 h-7 mx-auto text-gold-dark mb-4" />
                 <h3 className="font-semibold text-ink mb-2">{value.title}</h3>
                 <p className="text-sm text-ink-soft">{value.description}</p>
               </motion.div>
@@ -152,7 +152,7 @@ const About: React.FC = () => {
           <p className="text-ink-soft mb-8">
             درباره پروژه خود با ما صحبت کنید تا بهترین راهکار را پیشنهاد دهیم.
           </p>
-          <Button asChild size="lg" className="bg-mars text-paper hover:bg-[oklch(62%_0.15_35)] hover:text-paper">
+          <Button asChild size="lg" className="bg-gold text-paper hover:bg-[oklch(66%_0.13_80)] hover:text-paper">
             <Link to="/contact" className="flex items-center gap-2">
               تماس با ما
               <ArrowLeft className="w-4 h-4" />

@@ -1,7 +1,5 @@
-// "Circle" (دایره) rebrand concept -- logo mark, hero background treatment,
-// and color tokens from the artistic design direction. Not wired into any
-// live page yet; import from here once the site is ready to switch over
-// from the current مریخ brand.
+// "Circle" (دایره) brand: logo mark, hero background treatment, and color
+// tokens, used across the site's header, footer, and hero.
 import "./circle.css";
 
 export { default as CircleMark } from "./CircleMark";

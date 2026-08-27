@@ -19,7 +19,7 @@ const Services: React.FC = () => {
               خدمات سفارشی
             </h1>
             <p className="text-lg text-ink-soft leading-relaxed">
-              فراتر از محصولات آماده، پروژه اختصاصی خودتان را با تیم مریخ
+              فراتر از محصولات آماده، پروژه اختصاصی خودتان را با تیم دایره
               بسازید — از وب‌سایت تا نرم‌افزار، اپلیکیشن و هوش مصنوعی.
             </p>
           </motion.div>
@@ -38,8 +38,8 @@ const Services: React.FC = () => {
                 transition={{ duration: 0.5, delay: index * 0.05 }}
                 className="border border-line rounded-md p-8"
               >
-                <div className="w-11 h-11 rounded-lg bg-mars-tint flex items-center justify-center mb-5">
-                  <service.icon className="w-5 h-5 text-mars-dark" />
+                <div className="w-11 h-11 rounded-lg bg-gold-tint flex items-center justify-center mb-5">
+                  <service.icon className="w-5 h-5 text-gold-dark" />
                 </div>
                 <h2 className="text-lg font-bold text-ink mb-2.5">
                   {service.title}
@@ -50,7 +50,7 @@ const Services: React.FC = () => {
                 <div className="flex flex-col gap-2.5">
                   {service.details.map((detail) => (
                     <div key={detail} className="flex items-start gap-2">
-                      <CheckCircle className="w-3.5 h-3.5 text-mars-dark mt-0.5 shrink-0" />
+                      <CheckCircle className="w-3.5 h-3.5 text-gold-dark mt-0.5 shrink-0" />
                       <span className="text-sm text-ink-soft">{detail}</span>
                     </div>
                   ))}
@@ -72,7 +72,7 @@ const Services: React.FC = () => {
           <Button
             asChild
             size="lg"
-            className="bg-mars text-paper hover:bg-[oklch(62%_0.15_35)] hover:text-paper"
+            className="bg-gold text-paper hover:bg-[oklch(66%_0.13_80)] hover:text-paper"
           >
             <Link to="/contact" className="flex items-center gap-2">
               تماس با ما

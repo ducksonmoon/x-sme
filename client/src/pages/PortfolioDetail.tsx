@@ -20,7 +20,7 @@ const PortfolioDetail: React.FC = () => {
         <div className="container mx-auto px-4 max-w-3xl">
           <Link
             to="/portfolio"
-            className="inline-flex items-center gap-2 text-sm font-medium text-ink-soft hover:text-mars-dark transition-colors mb-8"
+            className="inline-flex items-center gap-2 text-sm font-medium text-ink-soft hover:text-gold-dark transition-colors mb-8"
           >
             <ArrowRight className="w-4 h-4" />
             بازگشت به نمونه‌کارها
@@ -34,7 +34,7 @@ const PortfolioDetail: React.FC = () => {
               {item.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="text-xs font-medium text-mars-dark bg-mars-tint px-2 py-1 rounded-full"
+                  className="text-xs font-medium text-gold-dark bg-gold-tint px-2 py-1 rounded-full"
                 >
                   {tag}
                 </span>
@@ -46,7 +46,7 @@ const PortfolioDetail: React.FC = () => {
             <p className="text-lg text-ink-soft leading-relaxed mb-8">
               {item.about}
             </p>
-            <Button asChild size="lg" className="bg-mars text-paper hover:bg-[oklch(62%_0.15_35)] hover:text-paper">
+            <Button asChild size="lg" className="bg-gold text-paper hover:bg-[oklch(66%_0.13_80)] hover:text-paper">
               <a href={item.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
                 <ExternalLink className="w-4 h-4" />
                 بازدید از سایت

@@ -37,11 +37,11 @@ const Portfolio: React.FC = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.05 }}
-                className="group flex flex-col gap-4 border border-line rounded-md p-6 hover:border-mars/40 hover:bg-mars-tint/20 transition-colors"
+                className="group flex flex-col gap-4 border border-line rounded-md p-6 hover:border-gold/40 hover:bg-gold-tint/20 transition-colors"
               >
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-lg font-bold text-ink">{item.name}</span>
-                  <ArrowLeft className="w-4 h-4 text-mars-dark shrink-0 transition-transform group-hover:-translate-x-1" />
+                  <ArrowLeft className="w-4 h-4 text-gold-dark shrink-0 transition-transform group-hover:-translate-x-1" />
                 </div>
                 <p className="text-sm text-ink-soft leading-relaxed flex-1">
                   {item.description}
@@ -50,7 +50,7 @@ const Portfolio: React.FC = () => {
                   {item.tags.map((tag) => (
                     <span
                       key={tag}
-                      className="text-xs font-medium text-mars-dark bg-mars-tint px-2 py-1 rounded-full"
+                      className="text-xs font-medium text-gold-dark bg-gold-tint px-2 py-1 rounded-full"
                     >
                       {tag}
                     </span>
