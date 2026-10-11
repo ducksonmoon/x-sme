@@ -1,8 +1,13 @@
-# circlegroup.ir
+# دایره · circlegroup.ir
 
 Source for [circlegroup.ir](https://circlegroup.ir) — the website of **دایره (Circle)**: web, software and AI solutions for businesses.
 
 A static, Persian (RTL) single-page app built with React 19, TypeScript, Vite and Tailwind CSS, hosted on GitHub Pages.
+
+## Website and brand identity
+
+- [Website design, routes and deployment](docs/circle-website.md)
+- [Reusable logo, palette, components and product signatures](client/src/brand/circle/README.md)
 
 ## Development
 

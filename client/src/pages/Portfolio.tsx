@@ -1,68 +1,63 @@
-import React from "react";
-import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
-import { ArrowLeft } from "lucide-react";
+import React, { useState } from "react";
 import { portfolio } from "@/data/site";
+import { PageMeta, PageIntro, ProjectCard } from "@/components/site/Elements";
 
-const MotionLink = motion(Link);
-
-const Portfolio: React.FC = () => {
+const filters = ["همهٔ کارها", "وب‌سایت", "نرم‌افزار", "اپلیکیشن"];
+export default function Portfolio() {
+  const [filter, setFilter] = useState(filters[0]);
+  const items =
+    filter === filters[0]
+      ? portfolio
+      : portfolio.filter((item) => item.tags.includes(filter));
   return (
-    <div className="overflow-hidden">
-      <section className="py-20 md:py-28 bg-paper">
-        <div className="container mx-auto px-4 max-w-4xl text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
+    <>
+      <PageMeta
+        title="کارهای دایره"
+        description="پروژه‌های طراحی و توسعهٔ دایره برای زرندوز، نیپو، تابش‌رعد، جمع‌نویسی و فولاد بهمن؛ وب‌سایت، اپلیکیشن، API و نرم‌افزار اختصاصی."
+      />
+      <PageIntro
+        label="کارهای دایره"
+        english="SELECTED WORKS"
+        title={
+          <>
+            مسئله‌های متفاوت.
+            <br />
+            یک امضای مشترک.
+          </>
+        }
+        description="بخشی از چیزهایی که همراه کسب‌وکارها ساخته‌ایم؛ هر پروژه، پاسخی به نیاز همان مجموعه."
+      />
+      <section className="site-container site-portfolio">
+        <div className="site-filter-row">
+          <div
+            className="site-filters"
+            role="group"
+            aria-label="فیلتر پروژه‌ها"
           >
-            <h1 className="text-4xl md:text-5xl font-bold text-ink mb-6">
-              نمونه‌کارها
-            </h1>
-            <p className="text-lg text-ink-soft leading-relaxed">
-              پروژه‌هایی که برای کسب‌وکارهای واقعی ساخته‌ایم.
-            </p>
-          </motion.div>
-        </div>
-      </section>
-
-      <section className="py-20 bg-white border-t border-line-soft">
-        <div className="container mx-auto px-4 max-w-6xl">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {portfolio.map((item, index) => (
-              <MotionLink
-                key={item.slug}
-                to={`/portfolio/${item.slug}`}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.05 }}
-                className="group flex flex-col gap-4 border border-line rounded-md p-6 hover:border-gold/40 hover:bg-gold-tint/20 transition-colors"
+            {filters.map((item) => (
+              <button
+                type="button"
+                key={item}
+                aria-pressed={filter === item}
+                onClick={() => setFilter(item)}
               >
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-lg font-bold text-ink">{item.name}</span>
-                  <ArrowLeft className="w-4 h-4 text-gold-dark shrink-0 transition-transform group-hover:-translate-x-1" />
-                </div>
-                <p className="text-sm text-ink-soft leading-relaxed flex-1">
-                  {item.description}
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {item.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="text-xs font-medium text-gold-dark bg-gold-tint px-2 py-1 rounded-full"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </MotionLink>
+                {item}
+              </button>
             ))}
           </div>
+          <span className="site-filter-count" role="status">
+            {items.length.toLocaleString("fa-IR")} پروژه
+          </span>
         </div>
+        <div className="site-portfolio-grid">
+          {items.map((item) => (
+            <ProjectCard key={item.slug} item={item} />
+          ))}
+        </div>
+        <p className="site-art-caption">
+          تصویرها نمایش مفهومی حوزهٔ پروژه‌اند و اسکرین‌شات محصول نهایی نیستند.
+        </p>
       </section>
-    </div>
+    </>
   );
-};
-
-export default Portfolio;
+}

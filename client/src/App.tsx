@@ -1,6 +1,5 @@
 import React, { Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
-import { Helmet } from "react-helmet-async";
 
 import LoadingSpinner from "@components/LoadingSpinner";
 import MainLayout from "@layouts/MainLayout";
@@ -22,15 +21,13 @@ const ServerError = React.lazy(() => import("@pages/ServerError"));
 function App() {
   return (
     <>
-      <Helmet>
-        <title>دایره - طراحی وب، نرم‌افزار و راهکارهای هوش مصنوعی</title>
-        <meta
-          name="description"
-          content="طراحی و توسعه وب‌سایت، نرم‌افزار، API و راهکارهای هوش مصنوعی برای کسب‌وکارها"
-        />
-      </Helmet>
-
-      <Suspense fallback={<LoadingSpinner />}>
+      <Suspense
+        fallback={
+          <div className="circle-site site-route-loading">
+            <LoadingSpinner size="xl" />
+          </div>
+        }
+      >
         <Routes>
           <Route path="/" element={<MainLayout />}>
             <Route index element={<Home />} />
@@ -41,11 +38,9 @@ function App() {
             <Route path="portfolio/:slug" element={<PortfolioDetail />} />
             <Route path="privacy" element={<Privacy />} />
             <Route path="terms" element={<Terms />} />
+            <Route path="500" element={<ServerError />} />
+            <Route path="*" element={<NotFound />} />
           </Route>
-
-          {/* Error routes */}
-          <Route path="/500" element={<ServerError />} />
-          <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
     </>

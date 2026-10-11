@@ -2,52 +2,34 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Design-system tokens for shadcn-style primitives (Button, Card, Input).
-   Mapped to the navy/gold/paper palette in tailwind.config.js so every
-   component -- not just hand-styled pages -- renders in brand colors with
-   working border-radius (rounded-md/lg/sm all read var(--radius)). Kept
-   under their own --accent/--primary names (not --gold) since these feed
-   shadcn's own "accent"/"primary" semantic color slots in the Tailwind
-   config, which are a separate, unrelated key from the "gold" brand token. */
+/* Semantic controls follow Circle palette, including readable CTA text. */
 :root {
-  --radius: 0.5rem;
-
-  --background: 30 25% 98%;
-  --foreground: 230 20% 14%;
-
+  --radius: 0.625rem;
+  --background: 45 35.29% 93.33%;
+  --foreground: 181.4 54.43% 15.49%;
   --card: 0 0% 100%;
-  --card-foreground: 230 20% 14%;
-
+  --card-foreground: 181.4 54.43% 15.49%;
   --popover: 0 0% 100%;
-  --popover-foreground: 230 20% 14%;
-
-  --primary: 38 60% 55%;
-  --primary-foreground: 230 20% 14%;
-
-  --secondary: 230 12% 93%;
-  --secondary-foreground: 230 20% 14%;
-
-  --muted: 230 10% 93%;
-  --muted-foreground: 230 8% 42%;
-
-  --accent: 45 60% 94%;
-  --accent-foreground: 32 55% 32%;
-
-  --destructive: 0 72% 51%;
+  --popover-foreground: 181.4 54.43% 15.49%;
+  --primary: 181.4 54.43% 15.49%;
+  --primary-foreground: 45 35.29% 93.33%;
+  --secondary: 127.5 18.18% 91.37%;
+  --secondary-foreground: 181.4 54.43% 15.49%;
+  --muted: 81.82 17.46% 87.65%;
+  --muted-foreground: 168.57 11.35% 36.27%;
+  --accent: 127.5 18.18% 91.37%;
+  --accent-foreground: 181.4 54.43% 15.49%;
+  --destructive: 0 54.19% 44.51%;
   --destructive-foreground: 0 0% 100%;
-
-  --success: 142 71% 40%;
+  --success: 147.2 50.34% 29.22%;
   --success-foreground: 0 0% 100%;
-
-  --warning: 38 92% 50%;
-  --warning-foreground: 30 25% 10%;
-
-  --error: 0 72% 51%;
+  --warning: 42.3 72.91% 49.22%;
+  --warning-foreground: 181.4 54.43% 15.49%;
+  --error: 0 54.19% 44.51%;
   --error-foreground: 0 0% 100%;
-
-  --border: 230 10% 88%;
-  --input: 230 10% 88%;
-  --ring: 38 60% 55%;
+  --border: 120 11.36% 82.75%;
+  --input: 162.5 9.84% 52.16%;
+  --ring: 181.4 54.43% 15.49%;
 }
 
 /* RTL Support for Farsi */
@@ -58,19 +40,19 @@ html[dir="rtl"] {
 /* Farsi Font Configuration */
 @layer base {
   html {
-    font-family: 'Vazirmatn', 'Tahoma', 'Arial', sans-serif;
+    font-family: "Vazirmatn", "Tahoma", "Arial", sans-serif;
   }
-  
+
   /* RTL specific adjustments */
   html[dir="rtl"] {
     text-align: right;
   }
-  
+
   html[dir="rtl"] .ltr {
     direction: ltr;
     text-align: left;
   }
-  
+
   /* Number formatting for Farsi */
   html[dir="rtl"] .persian-numbers {
     font-feature-settings: "ss01";
@@ -136,8 +118,12 @@ html[dir="rtl"] ::-webkit-scrollbar-thumb:hover {
   animation-play-state: paused;
 }
 @keyframes marquee {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
 }
 
 /* Scroll reveal, progressively enhanced */
@@ -150,6 +136,12 @@ html[dir="rtl"] ::-webkit-scrollbar-thumb:hover {
   }
 }
 @keyframes fade-up {
-  from { opacity: 0; transform: translateY(22px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

@@ -9,6 +9,7 @@ import { ThemeProvider } from "@providers/ThemeProvider";
 import ErrorFallback from "@components/ErrorFallback";
 
 import "./styles/index.css";
+import "./styles/site.css";
 import { basename } from "@utils/publicPath";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
@@ -27,5 +28,5 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         </BrowserRouter>
       </HelmetProvider>
     </ErrorBoundary>
-  </React.StrictMode>
+  </React.StrictMode>,
 );

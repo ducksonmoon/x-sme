@@ -1,171 +1,240 @@
-import React, { useState } from "react";
-import { motion } from "framer-motion";
-import { useForm, ValidationError } from "@formspree/react";
-import { Phone, Mail, MapPin, Send, CheckCircle } from "lucide-react";
-import { Button } from "@components/ui/button";
-import { Input } from "@components/ui/input";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@components/ui/card";
+import React, { useEffect } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { useForm } from "@formspree/react";
+import { ArrowUpLeft, Check, Mail, ArrowLeft } from "lucide-react";
+import { PageIntro, PageMeta, Eyebrow } from "@/components/site/Elements";
+import { CircleMark } from "@/brand/circle";
 
-const FORMSPREE_FORM_ID = "xvkpjknp";
-
-const contactInfo = [
-  { icon: Phone, label: "تلفن", value: "۰۲۱-۱۲۳۴۵۶۷۸" },
-  { icon: Mail, label: "ایمیل", value: "info@circlegroup.ir" },
-  { icon: MapPin, label: "آدرس", value: "تهران، ایران" },
+const topics = [
+  ["", "انتخاب کنید"],
+  ["website", "وب‌سایت"],
+  ["software-api", "نرم‌افزار و API"],
+  ["ai", "هوش مصنوعی"],
+  ["app", "اپلیکیشن"],
+  ["inventory", "دموی مدیریت انبار"],
+  ["quality", "دموی کنترل کیفیت"],
+  ["other", "هنوز دقیق نمی‌دانم"],
 ];
 
-const Contact: React.FC = () => {
-  const [form, setForm] = useState({ name: "", email: "", message: "" });
-  const [state, handleSubmit] = useForm(FORMSPREE_FORM_ID);
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+export default function Contact() {
+  const [params] = useSearchParams();
+  const requested = params.get("service") || "";
+  const initialTopic = topics.some(([value]) => value === requested)
+    ? requested
+    : "";
+  const [state, handleSubmit] = useForm("xvkpjknp");
+  const fieldMessage = (field: string) => {
+    const error = state.errors?.getFieldErrors(field)[0];
+    if (!error) return null;
+    if (error.code === "TYPE_EMAIL") return "یک نشانی ایمیل معتبر وارد کنید.";
+    if (
+      error.code === "REQUIRED_FIELD_EMPTY" ||
+      error.code === "REQUIRED_FIELD_MISSING"
+    )
+      return "این فیلد را تکمیل کنید.";
+    return "اطلاعات این فیلد را بررسی کنید.";
   };
-
+  useEffect(() => {
+    if (!state.errors) return;
+    const field = ["name", "email", "message"].find(
+      (name) => state.errors.getFieldErrors(name).length > 0,
+    );
+    if (field) document.getElementById(`contact-${field}`)?.focus();
+  }, [state.errors]);
   return (
-    <div className="overflow-hidden">
-      <section className="py-20 md:py-28 bg-paper">
-        <div className="container mx-auto px-4 max-w-4xl text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
+    <>
+      <PageMeta
+        title="شروع یک گفت‌وگو"
+        description="دربارهٔ پروژهٔ نرم‌افزار، وب‌سایت یا ایدهٔ خود برای دایره بنویسید؛ اولین قدم، شناخت مسئلهٔ کسب‌وکار شماست."
+      />
+      <PageIntro
+        label="ارتباط با دایره"
+        english="LET’S MAKE IT CONNECT"
+        title={
+          <>
+            از یک گفت‌وگو،
+            <br />
+            شروع کنیم.
+          </>
+        }
+        description="یک ایده، یک مسئله یا کاری که وقت تیم شما را می‌گیرد. برایمان بنویسید؛ لازم نیست از همین ابتدا تمام جزئیات را بدانید."
+      />
+      <section className="site-container site-contact">
+        <aside className="site-contact__aside">
+          <Eyebrow>یک خط ارتباط مستقیم</Eyebrow>
+          <a
+            href="mailto:info@circlegroup.ir"
+            className="site-contact__email"
+            dir="ltr"
           >
-            <h1 className="text-4xl md:text-5xl font-bold text-ink mb-6">
-              تماس با ما
-            </h1>
-            <p className="text-lg text-ink-soft leading-relaxed">
-              درباره پروژه وب‌سایت، نرم‌افزار یا راهکار هوش مصنوعی خود با ما
-              صحبت کنید.
-            </p>
-          </motion.div>
-        </div>
-      </section>
-
-      <section className="py-20 bg-white border-t border-line-soft">
-        <div className="container mx-auto px-4 max-w-6xl">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-            {/* Contact info */}
-            <div className="space-y-6">
-              {contactInfo.map((item) => (
-                <Card key={item.label} className="border-line">
-                  <CardContent className="flex items-center gap-4 py-6">
-                    <div className="w-12 h-12 rounded-xl bg-gold-tint flex items-center justify-center shrink-0">
-                      <item.icon className="w-6 h-6 text-gold-dark" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-ink-faint">{item.label}</p>
-                      <p className="font-medium text-ink">{item.value}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-
-            {/* Contact form */}
-            <div className="lg:col-span-2">
-              <Card className="border-line">
-                <CardHeader>
-                  <CardTitle>ارسال پیام</CardTitle>
-                  <CardDescription>
-                    فرم زیر را پر کنید، در اسرع وقت با شما تماس می‌گیریم.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {state.succeeded ? (
-                    <div className="flex flex-col items-center justify-center py-12 text-center">
-                      <CheckCircle className="w-12 h-12 text-gold mb-4" />
-                      <p className="text-lg font-medium text-ink">
-                        پیام شما با موفقیت ارسال شد.
-                      </p>
-                      <p className="text-ink-soft mt-2">
-                        به زودی با شما تماس خواهیم گرفت.
-                      </p>
-                    </div>
-                  ) : (
-                    <form onSubmit={handleSubmit} className="space-y-5">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                        <div>
-                          <label className="block text-sm font-medium text-ink-soft mb-1.5">
-                            نام و نام خانوادگی
-                          </label>
-                          <Input
-                            name="name"
-                            required
-                            value={form.name}
-                            onChange={handleChange}
-                            placeholder="نام شما"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-ink-soft mb-1.5">
-                            ایمیل
-                          </label>
-                          <Input
-                            type="email"
-                            name="email"
-                            required
-                            value={form.email}
-                            onChange={handleChange}
-                            placeholder="you@company.com"
-                          />
-                          <ValidationError
-                            field="email"
-                            errors={state.errors}
-                            className="text-xs text-error mt-1.5 block"
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-ink-soft mb-1.5">
-                          پیام شما
-                        </label>
-                        <textarea
-                          name="message"
-                          required
-                          rows={5}
-                          value={form.message}
-                          onChange={handleChange}
-                          placeholder="درباره پروژه خود بنویسید..."
-                          className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                        />
-                        <ValidationError
-                          field="message"
-                          errors={state.errors}
-                          className="text-xs text-error mt-1.5 block"
-                        />
-                      </div>
-                      <ValidationError
-                        errors={state.errors}
-                        className="text-sm text-error"
-                      />
-                      <Button
-                        type="submit"
-                        size="lg"
-                        disabled={state.submitting}
-                        className="bg-gold text-paper hover:bg-[oklch(66%_0.13_80)] hover:text-paper flex items-center gap-2"
-                      >
-                        <Send className="w-4 h-4" />
-                        {state.submitting ? "در حال ارسال..." : "ارسال پیام"}
-                      </Button>
-                    </form>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
+            info@circlegroup.ir
+            <Mail size={20} />
+          </a>
+          <p>
+            ترجیح می‌دهید ایمیل بزنید؟
+            <br />
+            همین نشانی، شروع ارتباط ماست.
+          </p>
+          <div className="site-contact__steps">
+            <span>پس از پیام شما</span>
+            <ol>
+              <li>
+                <b>۰۱</b>
+                <span>درخواست شما را می‌خوانیم.</span>
+              </li>
+              <li>
+                <b>۰۲</b>
+                <span>برای روشن‌شدن نیاز با شما ارتباط می‌گیریم.</span>
+              </li>
+              <li>
+                <b>۰۳</b>
+                <span>مسیر و محدودهٔ همکاری را مشخص می‌کنیم.</span>
+              </li>
+            </ol>
           </div>
+          <CircleMark size={66} />
+          <span className="site-latin" dir="ltr">
+            A CONVERSATION. A BEGINNING.
+          </span>
+        </aside>
+        <div className="site-contact__form">
+          {state.succeeded ? (
+            <div className="site-form-success" role="status">
+              <span className="site-form-success__icon">
+                <Check size={38} />
+              </span>
+              <h2>پیام شما به دایره رسید.</h2>
+              <p>
+                ممنون که از پروژه‌تان گفتید. برای ادامهٔ گفت‌وگو، از طریق ایمیلی
+                که ثبت کردید با شما در ارتباط خواهیم بود.
+              </p>
+              <Link className="site-button" to="/portfolio">
+                تا آن موقع، کارهای ما را ببینید
+                <ArrowLeft size={18} />
+              </Link>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} aria-label="فرم درخواست پروژه">
+              <div className="site-form-heading">
+                <span className="site-section-number">شروع همکاری</span>
+                <h2>چه چیزی در ذهن دارید؟</h2>
+                <p>فیلدهای دارای * را تکمیل کنید.</p>
+              </div>
+              <div className="site-form-row">
+                <div className="site-field">
+                  <label htmlFor="contact-name">
+                    نام شما <span>*</span>
+                  </label>
+                  <input
+                    id="contact-name"
+                    name="name"
+                    autoComplete="name"
+                    placeholder="نام و نام خانوادگی"
+                    required
+                    maxLength={150}
+                    aria-describedby="contact-name-error"
+                    aria-invalid={Boolean(
+                      state.errors?.getFieldErrors("name").length,
+                    )}
+                  />
+                  <div id="contact-name-error">{fieldMessage("name")}</div>
+                </div>
+                <div className="site-field">
+                  <label htmlFor="contact-email">
+                    ایمیل <span>*</span>
+                  </label>
+                  <input
+                    id="contact-email"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    dir="ltr"
+                    placeholder="you@company.com"
+                    required
+                    maxLength={254}
+                    aria-describedby="contact-email-error"
+                    aria-invalid={Boolean(
+                      state.errors?.getFieldErrors("email").length,
+                    )}
+                  />
+                  <div id="contact-email-error">{fieldMessage("email")}</div>
+                </div>
+              </div>
+              <div className="site-form-row">
+                <div className="site-field">
+                  <label htmlFor="contact-company">
+                    نام کسب‌وکار <small>اختیاری</small>
+                  </label>
+                  <input
+                    id="contact-company"
+                    name="company"
+                    autoComplete="organization"
+                    placeholder="کسب‌وکار یا تیم شما"
+                    maxLength={150}
+                  />
+                </div>
+                <div className="site-field">
+                  <label htmlFor="contact-service">
+                    موضوع گفت‌وگو <small>اختیاری</small>
+                  </label>
+                  <select
+                    id="contact-service"
+                    name="service"
+                    defaultValue={initialTopic}
+                  >
+                    {topics.map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="site-field">
+                <label htmlFor="contact-message">
+                  دربارهٔ نیازتان بنویسید <span>*</span>
+                </label>
+                <textarea
+                  id="contact-message"
+                  name="message"
+                  rows={5}
+                  required
+                  maxLength={10000}
+                  placeholder="چه چیزی می‌خواهید بسازید یا کدام بخش از کارتان را بهتر کنید؟"
+                  aria-describedby="contact-message-error"
+                  aria-invalid={Boolean(
+                    state.errors?.getFieldErrors("message").length,
+                  )}
+                />
+                <div id="contact-message-error">{fieldMessage("message")}</div>
+              </div>
+              <p className="site-form-privacy">
+                اطلاعات این فرم برای پیگیری درخواست شما استفاده می‌شود.{" "}
+                <Link to="/privacy">حریم خصوصی</Link>
+              </p>
+              {state.errors && (
+                <div className="site-form-error" role="alert">
+                  <p>
+                    ارسال پیام انجام نشد. اطلاعات فرم را بررسی کنید یا دوباره
+                    تلاش کنید؛ می‌توانید از نشانی ایمیل هم با ما در ارتباط
+                    باشید.
+                  </p>
+                </div>
+              )}
+              <button
+                className="site-button"
+                type="submit"
+                disabled={state.submitting}
+              >
+                {state.submitting
+                  ? "در حال ارسال پیام…"
+                  : "ارسال پیام به دایره"}
+                <ArrowUpLeft size={19} />
+              </button>
+            </form>
+          )}
         </div>
       </section>
-    </div>
+    </>
   );
-};
-
-export default Contact;
+}

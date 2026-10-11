@@ -1,96 +1,95 @@
 import React from "react";
-import CircleMark from "./CircleMark";
-import { circleHeroBackground } from "./tokens";
+import CircleLogo from "./CircleLogo";
+import CircleMark, { type CircleMarkTheme } from "./CircleMark";
+import "./circle.css";
 
-interface SplashScreenProps {
-  /** Shows three fading dots below the wordmark -- only when the app's own
-   * boot actually takes noticeable time. */
+export interface SplashScreenProps {
   showLoadingDots?: boolean;
   className?: string;
 }
 
-/** Full-bleed app boot/splash screen: animated mark + دایره wordmark on navy. */
+/** Optional signature for software that actually needs a loading view. */
 export const SplashScreen: React.FC<SplashScreenProps> = ({
   showLoadingDots = false,
   className = "",
-}) => {
-  return (
-    <div
-      className={`flex flex-col items-center justify-center gap-4 ${className}`}
-      style={{ background: circleHeroBackground }}
-    >
-      <CircleMark variant="full" theme="dark" animated size={72} />
-      <p
-        className="text-2xl text-white"
-        style={{ fontFamily: "'Lalezar', 'Vazirmatn', Tahoma, sans-serif" }}
+}) => (
+  <div className={`circle-software circle-splash ${className}`}>
+    <CircleLogo theme="dark" size="lg" orientation="stacked" />
+    {showLoadingDots && (
+      <span
+        className="circle-loading"
+        role="status"
+        aria-label="در حال بارگذاری"
       >
-        دایره
-      </p>
-      {showLoadingDots && (
-        <div className="mt-1.5 flex gap-1.5">
-          <span className="h-1.5 w-1.5 rounded-full bg-[oklch(80%_0.14_85_/_90%)]" />
-          <span className="h-1.5 w-1.5 rounded-full bg-[oklch(80%_0.14_85_/_55%)]" />
-          <span className="h-1.5 w-1.5 rounded-full bg-[oklch(80%_0.14_85_/_25%)]" />
-        </div>
-      )}
-    </div>
-  );
-};
+        <span />
+        <span />
+        <span />
+      </span>
+    )}
+  </div>
+);
 
-interface AboutCreditProps {
-  /** e.g. "1.4.0" -- shown as-is next to a version label. */
+export interface AboutCreditProps {
   version?: string;
   href?: string;
+  theme?: CircleMarkTheme;
   className?: string;
 }
 
-/** "Built by دایره" card for an app's About screen or settings footer. */
+/** Software About/settings signature; omit version when unavailable. */
 export const AboutCredit: React.FC<AboutCreditProps> = ({
   version,
   href = "https://circlegroup.ir",
+  theme = "light",
   className = "",
-}) => {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className={`flex items-center gap-4 rounded-xl border border-line bg-white p-6 transition-colors hover:border-gold/40 ${className}`}
-    >
-      <CircleMark variant="full" size={40} className="shrink-0" />
-      <div>
-        <p className="text-sm font-semibold text-ink">
-          این نرم‌افزار توسط دایره طراحی و توسعه یافته است.
-        </p>
-        <p className="text-xs text-ink-faint">
-          {version ? `نسخه ${version}` : "نسخه [شماره نسخه]"}
-          {" · "}
-          <span className="text-gold-dark">circlegroup.ir</span>
-        </p>
-      </div>
-    </a>
-  );
-};
+}) => (
+  <a
+    href={href}
+    target="_blank"
+    rel="noopener noreferrer"
+    dir="rtl"
+    lang="fa"
+    className={`circle-software circle-about circle-about--${theme} ${className}`}
+  >
+    <CircleMark theme={theme} size={44} />
+    <span>
+      <strong className="circle-about__title">طراحی و توسعه توسط دایره</strong>
+      <span className="circle-about__details">
+        {version && (
+          <span>
+            نسخه <bdi>{version}</bdi>
+            <span aria-hidden="true"> · </span>
+          </span>
+        )}
+        <span dir="ltr">circlegroup.ir</span>
+      </span>
+    </span>
+  </a>
+);
 
-interface SidebarCreditProps {
+export interface SidebarCreditProps {
   href?: string;
+  theme?: CircleMarkTheme;
   className?: string;
 }
 
-/** Compact credit row for the bottom of a dashboard's dark sidebar. */
+/** Compact signature; match the theme to the host sidebar surface. */
 export const SidebarCredit: React.FC<SidebarCreditProps> = ({
   href = "https://circlegroup.ir",
+  theme = "dark",
   className = "",
-}) => {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className={`flex items-center gap-1.5 px-4 py-3.5 text-[11.5px] text-navy-100/60 transition-colors hover:text-[oklch(80%_0.14_85)] ${className}`}
-    >
-      <CircleMark variant="simple" theme="dark" size={14} />
-      <span>دایره ساخته است</span>
-    </a>
-  );
-};
+}) => (
+  <a
+    href={href}
+    target="_blank"
+    rel="noopener noreferrer"
+    dir="rtl"
+    lang="fa"
+    className={`circle-software circle-sidebar circle-sidebar--${theme} ${className}`}
+  >
+    <CircleMark variant="simple" theme={theme} size={20} />
+    <span>
+      ساخته‌شده با <strong>دایره</strong>
+    </span>
+  </a>
+);
