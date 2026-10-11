@@ -176,6 +176,7 @@ import {
 python3 -m venv /tmp/circle-brand-export
 /tmp/circle-brand-export/bin/pip install -r scripts/brand-assets-requirements.txt
 /tmp/circle-brand-export/bin/python scripts/export-brand.py
+/tmp/circle-brand-export/bin/python scripts/export-favicon.py
 
 # ساخت راهنمای بصری، جدا از مسیرهای سایت عمومی
 ./node_modules/.bin/vite build --config vite.config.brand.ts

@@ -135,7 +135,7 @@ def main():
             f'<rect width="{sign_width}" height="76" rx="12" fill="{bg}"/>' + mark_markup(color, sign_width - 64, 16, 44)
             + f'<g fill="{color}" transform="translate(16 0)">{paths_markup(caption)}{paths_markup(url)}</g>')
     svg("app-icon.svg", 256, 256, "آیکون دایره", f'<rect width="256" height="256" fill="{p}"/>' + mark_markup(paper, 51, 51, 154))
-    svg("favicon.svg", 64, 64, "دایره", f'<rect width="64" height="64" rx="14" fill="{p}"/>' + mark_markup(paper, 10, 10, 44))
+    svg("favicon.svg", 64, 64, "دایره", f'<rect width="64" height="64" rx="14" fill="{p}"/>' + mark_markup(paper, 6, 6, 52))
     description, _, description_width = outline("وب، نرم‌افزار و هوش مصنوعی", 28, 425, weight=500)
     svg("social-card.svg", 1200, 630, "دایره — وب، نرم‌افزار و هوش مصنوعی",
         f'<rect width="1200" height="630" fill="{p}"/>' + mark_markup(paper, 78, 152, 310)
