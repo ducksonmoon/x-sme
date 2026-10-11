@@ -1,9 +1,14 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, ArrowUpLeft, Check } from "lucide-react";
+import { ArrowUpLeft, Check } from "lucide-react";
 import { CircleMark } from "@/brand/circle";
 import { portfolio, services } from "@/data/site";
-import { products, process, serviceNotes } from "@/data/identity";
+import { products } from "@/data/identity";
+import {
+  homepageCapabilities,
+  engineeringPrinciples,
+  deliveryStages,
+} from "@/data/homepage";
 import {
   Eyebrow,
   SectionHeading,
@@ -12,40 +17,47 @@ import {
   PageMeta,
 } from "@/components/site/Elements";
 import SystemOrbit from "@/components/site/SystemOrbit";
+import OperationalApplications from "@/components/site/OperationalApplications";
+import "@/styles/home.css";
+
+const selectedProjects = ["fbc", "zarandooz", "nipou"].flatMap((slug) =>
+  portfolio.filter((project) => project.slug === slug),
+);
 
 export default function Home() {
   return (
     <>
       <PageMeta
-        title="اجزا را به یک سیستم تبدیل می‌کنیم"
-        description="دایره، شرکت طراحی و توسعهٔ نرم‌افزار، وب‌سایت، اپلیکیشن و راهکارهای هوش مصنوعی؛ یک مسیر منسجم از شناخت مسئله تا ساخت محصول."
+        title="نرم‌افزار برای عملیات امروز، رشد فردا"
+        description="دایره؛ طراحی و توسعهٔ نرم‌افزار سازمانی، API، وب‌سایت و محصول دیجیتال. از شناخت فرآیندهای کسب‌وکار تا توسعه، آزمون و استقرار."
       />
-      <section className="site-container site-hero">
+      <section className="site-container site-hero home-hero">
         <div className="site-hero__copy">
           <Eyebrow english="CIRCLE SOFTWARE COMPANY">
             شرکت نرم‌افزاری دایره
           </Eyebrow>
           <h1>
-            اجزا را به یک
+            نرم‌افزار برای
             <br />
-            <span className="site-hero__emphasis">سیستم</span> تبدیل
+            <span className="site-hero__emphasis">عملیات</span> امروز،
             <br />
-            می‌کنیم.
+            رشد فردا.
           </h1>
           <p className="site-lead">
-            کسب‌وکار شما مجموعه‌ای از آدم‌ها، داده‌ها و ایده‌هاست. ما نرم‌افزاری
-            می‌سازیم که این اجزا را به هم وصل کند.
+            از نرم‌افزارهای سازمانی و اتصال سیستم‌ها تا وب‌سایت و محصول دیجیتال؛
+            راهکارهایی متناسب با فرآیندهای واقعی کسب‌وکار شما طراحی و توسعه
+            می‌دهیم.
           </p>
           <div className="site-actions">
             <Link className="site-button" to="/contact">
-              از پروژه‌تان بگویید
+              بررسی نیاز کسب‌وکار
               <ArrowUpLeft size={19} aria-hidden="true" />
             </Link>
-            <TextLink to="/portfolio">کارهای دایره</TextLink>
+            <TextLink to="/portfolio">مشاهدهٔ پروژه‌ها</TextLink>
           </div>
           <div className="site-hero__note">
-            <span className="site-tiny-ring" />
-            از شناخت مسئله تا ساخت و همراهی
+            <span className="site-tiny-ring" aria-hidden="true" />
+            اجزا را به یک سیستم تبدیل می‌کنیم.
           </div>
         </div>
         <SystemOrbit />
@@ -54,7 +66,7 @@ export default function Home() {
         className="site-trust site-container"
         aria-label="پروژه‌های دایره"
       >
-        <span>بخشی از دایرهٔ همکاری ما</span>
+        <span>تجربهٔ همکاری با</span>
         <div>
           {portfolio.map((item) => (
             <Link key={item.slug} to={`/portfolio/${item.slug}`} dir="ltr">
@@ -63,138 +75,165 @@ export default function Home() {
           ))}
         </div>
       </section>
-      <section className="site-section site-container" id="work">
+      <nav
+        className="site-container home-section-nav"
+        aria-label="بخش‌های صفحهٔ اصلی"
+      >
+        {[
+          ["services", "توانمندی‌ها"],
+          ["applications", "حوزه‌های کاربرد"],
+          ["products", "محصولات"],
+          ["work", "پروژه‌ها"],
+          ["delivery", "روش همکاری"],
+        ].map(([id, name], index) => (
+          <Link key={id} to={`/#${id}`}>
+            <span>
+              {(index + 1).toLocaleString("fa-IR", { minimumIntegerDigits: 2 })}
+            </span>
+            {name}
+            <ArrowUpLeft size={15} aria-hidden="true" />
+          </Link>
+        ))}
+      </nav>
+      <section
+        className="site-capabilities home-capabilities"
+        id="services"
+        tabIndex={-1}
+      >
+        <div className="site-container">
+          <SectionHeading
+            number="۰۱"
+            title="طراحی و توسعهٔ راهکارهای نرم‌افزاری"
+            description="انتخاب ابزار از شناخت مسئله شروع می‌شود؛ نرم‌افزار اختصاصی، اتصال سیستم‌ها یا یک محصول دیجیتال جدید."
+          >
+            <TextLink to="/services" light>
+              جزئیات خدمات
+            </TextLink>
+          </SectionHeading>
+          <div className="site-service-list">
+            {homepageCapabilities.map((capability, index) => {
+              const Icon = services.find(
+                (service) => service.slug === capability.slug,
+              )!.icon;
+              return (
+                <Link
+                  to={`/services#${capability.slug}`}
+                  className="site-service-line"
+                  key={capability.slug}
+                >
+                  <span className="site-service-line__number">
+                    {(index + 1).toLocaleString("fa-IR", {
+                      minimumIntegerDigits: 2,
+                    })}
+                  </span>
+                  <div className="site-service-line__title">
+                    <Icon size={24} aria-hidden="true" />
+                    <h3>{capability.title}</h3>
+                    <span dir="ltr">{capability.english}</span>
+                  </div>
+                  <p>{capability.text}</p>
+                  <span className="site-arrow-circle">
+                    <ArrowUpLeft size={25} aria-hidden="true" />
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+      <section
+        className="site-section site-container"
+        id="applications"
+        tabIndex={-1}
+      >
         <SectionHeading
-          number="۰۱"
-          title={
-            <>
-              هر مسئله،
-              <br />
-              یک دایرهٔ تازه.
-            </>
-          }
-          description="پروژه‌های متفاوت، با یک نگاه مشترک: ساختن چیزی که در عمل کار کند."
+          number="۰۲"
+          title="نرم‌افزار، در متن عملیات شما"
+          description="حوزه‌های کاربرد در تولید، توزیع و خدمات؛ فرآیند هر کسب‌وکار، نقطهٔ شروع طراحی راهکار است."
+        />
+        <OperationalApplications />
+      </section>
+      <section className="home-products-section" id="products" tabIndex={-1}>
+        <div className="site-section site-container">
+          <SectionHeading
+            number="۰۳"
+            title="محصولات برای فرآیندهای تکرارشونده"
+            description="اگر نیاز شما با یک محصول آماده پاسخ می‌گیرد، از همان‌جا شروع می‌کنیم. امکان استفاده و محدودهٔ اتصال به سیستم‌های شما در گفت‌وگوی اولیه بررسی می‌شود."
+          />
+          <div className="site-products">
+            {products.map((product) => (
+              <article
+                className={`site-product site-product--${product.id}`}
+                key={product.id}
+              >
+                <div className="site-product__top">
+                  <span dir="ltr">{product.english}</span>
+                  <span>{product.number}</span>
+                </div>
+                <div className="site-product__symbol" aria-hidden="true">
+                  {product.id === "inventory" ? (
+                    <>
+                      <i />
+                      <i />
+                      <i />
+                    </>
+                  ) : (
+                    <>
+                      <span />
+                      <Check size={48} />
+                    </>
+                  )}
+                </div>
+                <h3>{product.name}</h3>
+                <p>{product.description}</p>
+                <ul>
+                  {product.features.map((feature) => (
+                    <li key={feature}>
+                      <Check size={15} aria-hidden="true" />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  className="site-text-link"
+                  to={`/contact?service=${product.id}`}
+                >
+                  درخواست دمو
+                  <ArrowUpLeft size={19} aria-hidden="true" />
+                </Link>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+      <section className="site-section site-container" id="work" tabIndex={-1}>
+        <SectionHeading
+          number="۰۴"
+          title="تجربهٔ اجرا؛ از صنعت تا محصول دیجیتال"
+          description="نرم‌افزار اختصاصی فولاد بهمن، اپلیکیشن و API زرندوز و وب‌سایت شرکتی نیپو؛ نمونه‌هایی از محدودهٔ کار دایره."
         >
-          <TextLink to="/portfolio">همهٔ کارهای ما</TextLink>
+          <TextLink to="/portfolio">همهٔ پروژه‌ها</TextLink>
         </SectionHeading>
-        <div className="site-selected-work">
-          <ProjectCard item={portfolio[0]} featured />
-          <ProjectCard item={portfolio[4]} />
-          <ProjectCard item={portfolio[1]} />
+        <div className="home-projects">
+          {selectedProjects.map((item) => (
+            <ProjectCard key={item.slug} item={item} />
+          ))}
         </div>
         <p className="site-art-caption">
           تصویرها، نمایش مفهومی حوزهٔ هر پروژه‌اند.
         </p>
       </section>
-      <section className="site-capabilities" id="services">
+      <section className="site-method site-section" id="delivery" tabIndex={-1}>
         <div className="site-container">
           <SectionHeading
-            number="۰۲"
-            title={
-              <>
-                یک نگاه منسجم.
-                <br />
-                چند راه برای ساختن.
-              </>
-            }
-            description="گاهی یک وب‌سایت کافی است؛ گاهی باید ابزارهای پراکندهٔ یک کسب‌وکار به هم متصل شوند."
+            number="۰۵"
+            title="از تحلیل نیاز تا استقرار"
+            description="مراحل مشخص، خروجی قابل بررسی و محدودهٔ روشن برای تحویل و پشتیبانی؛ مسیر همکاری را پیش از شروع ساخت با شما تعریف می‌کنیم."
           >
-            <TextLink to="/services" light>
-              راهکارهای دایره
-            </TextLink>
+            <TextLink to="/contact">شروع بررسی پروژه</TextLink>
           </SectionHeading>
-          <div className="site-service-list">
-            {services.map((service, index) => (
-              <Link
-                to={`/services#${service.slug}`}
-                className="site-service-line"
-                key={service.slug}
-              >
-                <span className="site-service-line__number">
-                  {(index + 1).toLocaleString("fa-IR", {
-                    minimumIntegerDigits: 2,
-                  })}
-                </span>
-                <div className="site-service-line__title">
-                  <service.icon size={24} aria-hidden="true" />
-                  <h3>{service.title}</h3>
-                  <span dir="ltr">{serviceNotes[service.slug].english}</span>
-                </div>
-                <p>{serviceNotes[service.slug].outcome}</p>
-                <span className="site-arrow-circle">
-                  <ArrowUpLeft size={25} />
-                </span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-      <section className="site-section site-container" id="products">
-        <SectionHeading
-          number="۰۳"
-          title="برای کارهای هر روز."
-          description="محصولات آمادهٔ دایره برای نظم‌دادن به جریان‌های تکرارشوندهٔ کسب‌وکار."
-        />
-        <div className="site-products">
-          {products.map((product) => (
-            <article
-              className={`site-product site-product--${product.id}`}
-              key={product.id}
-            >
-              <div className="site-product__top">
-                <span dir="ltr">{product.english}</span>
-                <span>{product.number}</span>
-              </div>
-              <div className="site-product__symbol" aria-hidden="true">
-                {product.id === "inventory" ? (
-                  <>
-                    <i />
-                    <i />
-                    <i />
-                  </>
-                ) : (
-                  <>
-                    <span />
-                    <Check size={48} />
-                  </>
-                )}
-              </div>
-              <h3>{product.name}</h3>
-              <p>{product.description}</p>
-              <ul>
-                {product.features.map((feature) => (
-                  <li key={feature}>
-                    <Check size={15} />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-              <Link
-                className="site-text-link"
-                to={`/contact?service=${product.id}`}
-              >
-                درخواست دمو
-                <ArrowUpLeft size={19} />
-              </Link>
-            </article>
-          ))}
-        </div>
-      </section>
-      <section className="site-method site-section">
-        <div className="site-container">
-          <SectionHeading
-            number="۰۴"
-            title={
-              <>
-                کار خوب،
-                <br />
-                از ارتباط خوب شروع می‌شود.
-              </>
-            }
-            description="فرآیندی روشن، تصمیم‌هایی قابل بررسی و ارتباطی که در طول ساخت ادامه دارد."
-          />
           <div className="site-process">
-            {process.map((step) => (
+            {deliveryStages.map((step) => (
               <article key={step.number}>
                 <span className="site-process__number">{step.number}</span>
                 <h3>{step.title}</h3>
@@ -203,26 +242,37 @@ export default function Home() {
               </article>
             ))}
           </div>
+          <div className="home-engineering">
+            <div className="home-engineering__heading">
+              <span className="site-tiny-ring" aria-hidden="true" />
+              <h3>مبنای فنی همکاری</h3>
+            </div>
+            <div className="home-engineering__grid">
+              {engineeringPrinciples.map((principle) => (
+                <article key={principle.title}>
+                  <principle.icon size={24} aria-hidden="true" />
+                  <h4>{principle.title}</h4>
+                  <p>{principle.text}</p>
+                </article>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
-      <section className="site-container site-brand-story">
+      <section className="site-container site-brand-story home-brand-story">
         <div className="site-brand-story__mark">
-          <CircleMark size={160} />
-          <span dir="ltr">ONE CIRCLE. MANY POSSIBILITIES.</span>
+          <CircleMark size={140} />
+          <span dir="ltr">CONNECTED BY DESIGN.</span>
         </div>
         <div>
-          <Eyebrow>چرا دایره؟</Eyebrow>
-          <h2>
-            جهان، از ارتباط
-            <br />
-            اجزایش معنا می‌گیرد.
-          </h2>
+          <Eyebrow>نگاه دایره به مهندسی نرم‌افزار</Eyebrow>
+          <h2>یکپارچگی، از طراحی شروع می‌شود.</h2>
           <p>
-            نام دایره از علاقه به فرم‌های گرد آمده؛ از زمین تا چرخه‌هایی که
-            زندگی را می‌سازند. در کار ما هم همین نگاه جاری است: نرم‌افزار خوب،
-            اجزای یک کسب‌وکار را به یک کلِ قابل‌فهم تبدیل می‌کند.
+            نام دایره از علاقه به فرم‌های گرد و جهانِ به‌هم‌پیوسته آمده است. این
+            نگاه در کار ما به یک اصل تبدیل می‌شود: آدم‌ها، فرآیندها و داده‌ها را
+            کنار هم می‌بینیم تا اجزای نرم‌افزار از یک منطق مشترک پیروی کنند.
           </p>
-          <TextLink to="/about">با دایره آشنا شوید</TextLink>
+          <TextLink to="/about">دربارهٔ دایره</TextLink>
         </div>
       </section>
     </>
