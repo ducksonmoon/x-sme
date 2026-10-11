@@ -1,14 +1,9 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import {
-  Package,
-  ShieldCheck,
-  ArrowLeft,
-  CheckCircle,
-} from "lucide-react";
+import { Package, ShieldCheck, ArrowLeft, CheckCircle } from "lucide-react";
 import { Button } from "@components/ui/button";
-import { CircleMark, HeroGlow, circleGradient } from "@/brand/circle";
+import { CircleMark, HeroGlow } from "@/brand/circle";
 import { services, portfolio } from "@/data/site";
 
 interface Product {
@@ -48,10 +43,22 @@ const products: Product[] = [
 ];
 
 const process = [
-  { title: "شناخت نیاز", description: "بررسی اهداف کسب‌وکار شما و تدوین راهکار مناسب." },
-  { title: "طراحی", description: "طراحی تجربه کاربری و معماری فنی متناسب با پروژه." },
-  { title: "توسعه", description: "پیاده‌سازی با تمرکز بر کیفیت، سرعت و مقیاس‌پذیری." },
-  { title: "پشتیبانی", description: "تحویل، آموزش و پشتیبانی مستمر پس از راه‌اندازی." },
+  {
+    title: "شناخت نیاز",
+    description: "بررسی اهداف کسب‌وکار شما و تدوین راهکار مناسب.",
+  },
+  {
+    title: "طراحی",
+    description: "طراحی تجربه کاربری و معماری فنی متناسب با پروژه.",
+  },
+  {
+    title: "توسعه",
+    description: "پیاده‌سازی با تمرکز بر کیفیت، سرعت و مقیاس‌پذیری.",
+  },
+  {
+    title: "پشتیبانی",
+    description: "تحویل، آموزش و پشتیبانی مستمر پس از راه‌اندازی.",
+  },
 ];
 
 const trustNames = ["Tabeshraad", "Nipou", "Zarandooz", "FBC", "Jamnevisi"];
@@ -63,24 +70,12 @@ const Home: React.FC = () => {
       <HeroGlow className="relative">
         <div className="container mx-auto px-4 max-w-7xl flex flex-col md:flex-row items-center gap-12 py-24 md:py-28">
           <div className="flex-1 flex flex-col items-start gap-5 min-w-0">
-            <span className="text-sm font-bold tracking-wide text-gold uppercase">
+            <span className="text-sm font-bold tracking-wide text-paper uppercase">
               بازوی فنی کسب‌وکار شما
             </span>
-            <h1
-              className="text-4xl md:text-5xl font-normal text-white leading-[1.55]"
-              style={{ fontFamily: "'Lalezar', 'Vazirmatn', Tahoma, sans-serif" }}
-            >
+            <h1 className="text-4xl md:text-5xl font-bold text-white leading-[1.55]">
               راهکار نرم‌افزاری برای{" "}
-              <span
-                style={{
-                  background: circleGradient,
-                  WebkitBackgroundClip: "text",
-                  backgroundClip: "text",
-                  color: "transparent",
-                }}
-              >
-                خودکارسازی
-              </span>
+              <span className="text-paper">خودکارسازی</span>
               ، مدیریت
               <br />و بهینه‌سازی کسب‌وکار شما
             </h1>
@@ -89,13 +84,22 @@ const Home: React.FC = () => {
               مناسب‌ترین راهکار را برایتان ارائه می‌دهیم.
             </p>
             <div className="flex flex-col sm:flex-row items-center gap-4 mt-2">
-              <Button asChild size="lg" className="bg-gold text-navy-950 hover:bg-[oklch(80%_0.14_85)]">
+              <Button
+                asChild
+                size="lg"
+                className="bg-paper text-petrol hover:bg-petrol-tint"
+              >
                 <a href="#products" className="flex items-center gap-2">
                   مشاهده محصولات
                   <ArrowLeft className="w-4 h-4" />
                 </a>
               </Button>
-              <Button variant="outline" size="lg" asChild className="bg-transparent border-white/25 text-white hover:bg-white/10 hover:text-white">
+              <Button
+                variant="outline"
+                size="lg"
+                asChild
+                className="bg-transparent border-white/25 text-white hover:bg-white/10 hover:text-white"
+              >
                 <a href="#services" className="flex items-center gap-2">
                   خدمات سفارشی
                   <ArrowLeft className="w-4 h-4" />
@@ -104,7 +108,7 @@ const Home: React.FC = () => {
             </div>
           </div>
           <div className="flex-shrink-0 w-[280px] h-[280px] md:w-[340px] md:h-[340px] flex items-center justify-center">
-            <CircleMark variant="full" theme="dark" animated size={300} />
+            <CircleMark variant="full" theme="dark" size={300} />
           </div>
         </div>
       </HeroGlow>
@@ -126,10 +130,7 @@ const Home: React.FC = () => {
           >
             <div className="marquee-track">
               {[...trustNames, ...trustNames].map((name, i) => (
-                <span
-                  key={i}
-                  className="font-bold text-base text-ink-soft"
-                >
+                <span key={i} className="font-bold text-base text-ink-soft">
                   {name}
                 </span>
               ))}
@@ -139,18 +140,21 @@ const Home: React.FC = () => {
       </section>
 
       {/* Products */}
-      <section id="products" className="py-24 bg-white border-b border-line-soft">
+      <section
+        id="products"
+        className="py-24 bg-white border-b border-line-soft"
+      >
         <div className="container mx-auto px-4 max-w-7xl">
           <div className="flex flex-col gap-3 max-w-xl mb-12">
-            <span className="text-xs font-bold tracking-wider text-gold-dark uppercase">
+            <span className="text-xs font-bold tracking-wider text-petrol uppercase">
               محصولات دایره
             </span>
             <h2 className="text-3xl font-bold text-ink">
               نرم‌افزارهای آماده برای کسب‌وکار شما
             </h2>
             <p className="text-ink-soft leading-relaxed">
-              جدا از پروژه‌های سفارشی، دایره نرم‌افزارهایی آماده و
-              مقرون‌به‌صرفه برای کسب‌وکارهای کوچک و متوسط ارائه می‌دهد.
+              جدا از پروژه‌های سفارشی، دایره نرم‌افزارهایی آماده و مقرون‌به‌صرفه
+              برای کسب‌وکارهای کوچک و متوسط ارائه می‌دهد.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -161,9 +165,9 @@ const Home: React.FC = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="border border-line border-t-[3px] border-t-gold rounded-md p-8"
+                className="border border-line border-t-[3px] border-t-copper rounded-md p-8"
               >
-                <div className="w-9 h-9 flex items-center justify-center text-navy-700 mb-5">
+                <div className="w-9 h-9 flex items-center justify-center text-petrol-700 mb-5">
                   <product.icon className="w-8 h-8" />
                 </div>
                 <h3 className="text-lg font-bold text-ink mb-2.5">
@@ -175,12 +179,16 @@ const Home: React.FC = () => {
                 <div className="flex flex-col gap-2.5 mb-6">
                   {product.features.map((feature) => (
                     <div key={feature} className="flex items-start gap-2">
-                      <CheckCircle className="w-3.5 h-3.5 text-gold-dark mt-0.5 shrink-0" />
+                      <CheckCircle className="w-3.5 h-3.5 text-petrol mt-0.5 shrink-0" />
                       <span className="text-sm text-ink-soft">{feature}</span>
                     </div>
                   ))}
                 </div>
-                <Button variant="outline" asChild className="border-line text-ink hover:border-navy-700 h-11 text-sm">
+                <Button
+                  variant="outline"
+                  asChild
+                  className="border-line text-ink hover:border-petrol-700 h-11 text-sm"
+                >
                   <Link to="/contact">درخواست دمو</Link>
                 </Button>
               </motion.div>
@@ -194,7 +202,7 @@ const Home: React.FC = () => {
         <div className="container mx-auto px-4 max-w-7xl">
           <div className="flex flex-wrap items-end justify-between gap-4 mb-6">
             <div className="flex flex-col gap-3 max-w-xl">
-              <span className="text-xs font-bold tracking-wider text-gold-dark uppercase">
+              <span className="text-xs font-bold tracking-wider text-petrol uppercase">
                 خدمات سفارشی
               </span>
               <h2 className="text-3xl font-bold text-ink">
@@ -203,7 +211,7 @@ const Home: React.FC = () => {
             </div>
             <Link
               to="/services"
-              className="flex items-center gap-2 text-sm font-bold text-gold-dark hover:underline shrink-0"
+              className="flex items-center gap-2 text-sm font-bold text-petrol hover:underline shrink-0"
             >
               مشاهده همه خدمات
               <ArrowLeft className="w-4 h-4" />
@@ -217,10 +225,10 @@ const Home: React.FC = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.05 }}
-                className="group border border-line rounded-md p-7 hover:border-gold/40 hover:bg-gold-tint/30 transition-colors"
+                className="group border border-line rounded-md p-7 hover:border-petrol/40 hover:bg-petrol-tint/30 transition-colors"
               >
-                <div className="w-11 h-11 rounded-lg bg-gold-tint flex items-center justify-center mb-5 transition-transform group-hover:-rotate-6 group-hover:scale-110">
-                  <service.icon className="w-5 h-5 text-gold-dark" />
+                <div className="w-11 h-11 rounded-lg bg-petrol-tint flex items-center justify-center mb-5 transition-transform group-hover:-rotate-6 group-hover:scale-110">
+                  <service.icon className="w-5 h-5 text-petrol" />
                 </div>
                 <h3 className="text-lg font-bold text-ink mb-2">
                   {service.title}
@@ -235,11 +243,14 @@ const Home: React.FC = () => {
       </section>
 
       {/* Portfolio */}
-      <section id="portfolio" className="py-24 bg-white border-y border-line-soft">
+      <section
+        id="portfolio"
+        className="py-24 bg-white border-y border-line-soft"
+      >
         <div className="container mx-auto px-4 max-w-7xl">
           <div className="flex flex-wrap items-end justify-between gap-4 mb-6">
             <div className="flex flex-col gap-3 max-w-xl">
-              <span className="text-xs font-bold tracking-wider text-gold-dark uppercase">
+              <span className="text-xs font-bold tracking-wider text-petrol uppercase">
                 نمونه‌کارها
               </span>
               <h2 className="text-3xl font-bold text-ink">
@@ -248,7 +259,7 @@ const Home: React.FC = () => {
             </div>
             <Link
               to="/portfolio"
-              className="flex items-center gap-2 text-sm font-bold text-gold-dark hover:underline shrink-0"
+              className="flex items-center gap-2 text-sm font-bold text-petrol hover:underline shrink-0"
             >
               مشاهده همه نمونه‌کارها
               <ArrowLeft className="w-4 h-4" />
@@ -263,11 +274,13 @@ const Home: React.FC = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.05 }}
-                className="group flex flex-col gap-4 border border-line rounded-md p-6 hover:border-gold/40 hover:bg-gold-tint/20 transition-colors"
+                className="group flex flex-col gap-4 border border-line rounded-md p-6 hover:border-petrol/40 hover:bg-petrol-tint/20 transition-colors"
               >
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-lg font-bold text-ink">{item.name}</span>
-                  <ArrowLeft className="w-4 h-4 text-gold-dark shrink-0 transition-transform group-hover:-translate-x-1" />
+                  <span className="text-lg font-bold text-ink">
+                    {item.name}
+                  </span>
+                  <ArrowLeft className="w-4 h-4 text-petrol shrink-0 transition-transform group-hover:-translate-x-1" />
                 </div>
                 <p className="text-sm text-ink-soft leading-relaxed flex-1">
                   {item.description}
@@ -276,7 +289,7 @@ const Home: React.FC = () => {
                   {item.tags.map((tag) => (
                     <span
                       key={tag}
-                      className="text-xs font-medium text-gold-dark bg-gold-tint px-2 py-1 rounded-full"
+                      className="text-xs font-medium text-petrol bg-petrol-tint px-2 py-1 rounded-full"
                     >
                       {tag}
                     </span>
@@ -292,7 +305,7 @@ const Home: React.FC = () => {
       <section className="py-24 bg-white">
         <div className="container mx-auto px-4 max-w-7xl">
           <div className="flex flex-col gap-3 max-w-xl mb-16">
-            <span className="text-xs font-bold tracking-wider text-gold-dark uppercase">
+            <span className="text-xs font-bold tracking-wider text-petrol uppercase">
               فرآیند
             </span>
             <h2 className="text-3xl font-bold text-ink">از ایده تا اجرا</h2>
@@ -308,7 +321,7 @@ const Home: React.FC = () => {
                 className="flex flex-col gap-4"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 shrink-0 rounded-full bg-gold text-paper flex items-center justify-center font-extrabold text-sm">
+                  <div className="w-10 h-10 shrink-0 rounded-full bg-petrol text-paper flex items-center justify-center font-extrabold text-sm">
                     {index + 1}
                   </div>
                   {index !== process.length - 1 && (
@@ -328,12 +341,11 @@ const Home: React.FC = () => {
       </section>
 
       {/* CTA (the one bold moment) */}
-      <section className="relative overflow-hidden bg-navy-950">
+      <section className="relative overflow-hidden bg-petrol-950">
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            backgroundImage:
-              "radial-gradient(600px 300px at 50% -20%, oklch(62% 0.16 38 / 16%), transparent 65%)",
+            backgroundImage: "none",
           }}
         />
         <div className="relative container mx-auto px-4 max-w-4xl py-24 text-center flex flex-col items-center gap-5">
@@ -345,7 +357,11 @@ const Home: React.FC = () => {
             چه دنبال نرم‌افزار آماده باشید، چه یک وب‌سایت یا پروژه سفارشی —
             برایمان بنویسید چه چیزی می‌سازیم.
           </p>
-          <Button asChild size="lg" className="bg-gold text-paper hover:bg-[oklch(66%_0.13_80)] hover:text-paper mt-2">
+          <Button
+            asChild
+            size="lg"
+            className="bg-paper text-petrol hover:bg-petrol-tint hover:text-petrol mt-2"
+          >
             <Link to="/contact" className="flex items-center gap-2">
               تماس با ما
               <ArrowLeft className="w-4 h-4" />

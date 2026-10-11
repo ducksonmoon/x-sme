@@ -1,24 +1,382 @@
-@keyframes circle-mark-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+/* Vazirmatn 33.003, OFL-1.1; bundled for reliable Persian and Latin rendering. */
+@font-face {
+  font-family: "Vazirmatn";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("./fonts/vazirmatn-arabic.woff2") format("woff2");
+  unicode-range:
+    U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891, U+0897-08E1,
+    U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF,
+    U+FE70-FE74, U+FE76-FEFC;
+}
+@font-face {
+  font-family: "Vazirmatn";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("./fonts/vazirmatn-latin.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+02DD, U+02EE, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
-@keyframes circle-mark-spin-reverse {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(-360deg); }
+/* Scoped styles: logo and signatures also work on sites without Tailwind. */
+:where(
+  .circle-system,
+  .circle-logo,
+  .circle-credit,
+  .circle-software,
+  .circle-hero
+) {
+  --circle-petrol: #123c3d;
+  --circle-paper: #f4f1e8;
+  --circle-accent: #b65b3b;
+  --circle-petrol-hover: #1b4d4c;
+  --circle-muted: #526763;
+  --circle-line: #ced8ce;
+  font-family: "Vazirmatn", Tahoma, Arial, sans-serif;
+}
+.circle-mark {
+  display: inline-block;
+  flex: none;
+  vertical-align: middle;
+}
+.circle-mark--enter {
+  animation: circle-enter 320ms ease-out both;
+}
+.circle-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  line-height: 1.2;
+}
+.circle-logo--light {
+  color: var(--circle-petrol);
+}
+.circle-logo--dark {
+  color: var(--circle-paper);
+}
+.circle-logo__wordmark {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.circle-logo__name {
+  font-size: 26px;
+  font-weight: 800;
+}
+.circle-logo__lettering {
+  display: block;
+  width: 112px;
+  height: auto;
+}
+.circle-logo--light .circle-logo__dots {
+  fill: var(--circle-accent);
+}
+.circle-logo--sm .circle-logo__lettering {
+  width: 88px;
+}
+.circle-logo--lg .circle-logo__lettering {
+  width: 164px;
+}
+.circle-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.circle-logo__english {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+}
+.circle-logo__tagline {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.6;
+}
+.circle-logo--sm {
+  gap: 8px;
+}
+.circle-logo--sm .circle-logo__name {
+  font-size: 20px;
+}
+.circle-logo--sm .circle-logo__english {
+  font-size: 8px;
+}
+.circle-logo--lg {
+  gap: 16px;
+}
+.circle-logo--lg .circle-logo__name {
+  font-size: 40px;
+}
+.circle-logo--lg .circle-logo__english {
+  font-size: 11px;
+}
+.circle-logo--stacked {
+  flex-direction: column;
+  text-align: center;
+}
+.circle-hero {
+  position: relative;
+  overflow: hidden;
+  background: var(--circle-petrol);
+  color: var(--circle-paper);
+}
+.circle-hero__content {
+  position: relative;
+}
+.circle-credit,
+.circle-sidebar {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.circle-credit,
+.circle-about,
+.circle-sidebar {
+  text-decoration: none;
+  transition:
+    color 160ms ease-out,
+    border-color 160ms ease-out;
+}
+.circle-credit {
+  font-size: 12px;
+  line-height: 1.6;
+}
+.circle-credit--footer-light {
+  color: var(--circle-muted);
+}
+.circle-credit--footer-light .circle-credit__signature {
+  color: var(--circle-petrol);
+}
+.circle-credit--footer-dark {
+  color: var(--circle-paper);
+}
+.circle-credit__signature {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.circle-credit strong {
+  font-weight: 800;
+}
+.circle-credit:hover strong,
+.circle-sidebar:hover strong {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.circle-credit--floating {
+  background: var(--circle-petrol);
+  color: var(--circle-paper);
+  border-radius: 999px;
+  padding: 10px 16px;
+}
+.circle-credit--floating .circle-credit__caption {
+  font-size: 11px;
+}
+.circle-credit:focus-visible,
+.circle-about:focus-visible,
+.circle-sidebar:focus-visible {
+  outline: 2px solid var(--circle-petrol);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+.circle-credit--footer-dark:focus-visible,
+.circle-credit--floating:focus-visible,
+.circle-about--dark:focus-visible,
+.circle-sidebar--dark:focus-visible {
+  outline-color: var(--circle-paper);
+}
+.circle-splash {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  min-height: 280px;
+  padding: 48px 24px;
+  background: var(--circle-petrol);
+  box-sizing: border-box;
+}
+.circle-loading {
+  display: flex;
+  gap: 8px;
+}
+.circle-loading > span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--circle-paper);
+  animation: circle-loading 1200ms ease-in-out infinite;
+}
+.circle-loading > span:nth-child(2) {
+  animation-delay: 150ms;
+}
+.circle-loading > span:nth-child(3) {
+  animation-delay: 300ms;
+}
+.circle-about {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 24px;
+  border: 1px solid var(--circle-line);
+  border-radius: 16px;
+  box-sizing: border-box;
+}
+.circle-about--light {
+  background: var(--circle-paper);
+  color: var(--circle-petrol);
+}
+.circle-about--dark {
+  background: var(--circle-petrol);
+  color: var(--circle-paper);
+  border-color: #426464;
+}
+.circle-about__title {
+  display: block;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.circle-about__details {
+  display: block;
+  font-size: 12px;
+  line-height: 1.7;
+  margin-top: 4px;
+}
+.circle-about:hover {
+  border-color: var(--circle-petrol);
+}
+.circle-about--dark:hover {
+  border-color: var(--circle-paper);
+}
+.circle-sidebar {
+  padding: 12px 16px;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.circle-sidebar--dark {
+  color: var(--circle-paper);
+}
+.circle-sidebar--light {
+  color: var(--circle-petrol);
 }
 
-@keyframes circle-blob-drift-1 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(-18px, 14px) scale(1.06); }
+/* Optional plain HTML primitives. Wrap them in .circle-system. */
+.circle-system {
+  background: var(--circle-paper);
+  color: var(--circle-petrol);
+  line-height: 1.8;
 }
-
-@keyframes circle-blob-drift-2 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(16px, -20px) scale(1.08); }
+:is(.circle-system .circle-button, .circle-system.circle-button) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 24px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: var(--circle-petrol);
+  color: var(--circle-paper);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 160ms ease-out;
 }
-
-@keyframes circle-dot-glow {
-  0%, 100% { opacity: 0.9; }
-  50% { opacity: 0.55; }
+:is(.circle-system .circle-button, .circle-system.circle-button):hover {
+  background: var(--circle-petrol-hover);
+}
+:is(.circle-system .circle-button--secondary, .circle-system.circle-button--secondary) {
+  border-color: var(--circle-petrol);
+  background: transparent;
+  color: var(--circle-petrol);
+}
+:is(.circle-system .circle-button--secondary, .circle-system.circle-button--secondary):hover {
+  background: #e5ede6;
+}
+:is(.circle-system .circle-button, .circle-system.circle-button):focus-visible,
+:is(.circle-system .circle-input, .circle-system.circle-input):focus-visible {
+  outline: 2px solid var(--circle-petrol);
+  outline-offset: 3px;
+}
+:is(.circle-system .circle-button, .circle-system.circle-button):disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+:is(.circle-system .circle-card, .circle-system.circle-card) {
+  padding: 24px;
+  border: 1px solid var(--circle-line);
+  border-radius: 16px;
+  background: white;
+}
+:is(.circle-system .circle-input, .circle-system.circle-input) {
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid #79918a;
+  border-radius: 8px;
+  background: white;
+  color: var(--circle-petrol);
+  font: inherit;
+  box-sizing: border-box;
+}
+:is(.circle-system .circle-input, .circle-system.circle-input)::placeholder {
+  color: var(--circle-muted);
+}
+:is(
+  .circle-system .circle-input,
+  .circle-system.circle-input
+)[aria-invalid="true"] {
+  border-color: #af3434;
+}
+:is(.circle-system .circle-badge, .circle-system.circle-badge) {
+  display: inline-flex;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: #e5ede6;
+  color: var(--circle-petrol);
+  font-size: 12px;
+  font-weight: 600;
+}
+@keyframes circle-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes circle-loading {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .circle-mark--enter,
+  .circle-loading > span {
+    animation: none;
+  }
+  .circle-credit,
+  .circle-about,
+  .circle-sidebar,
+  :is(.circle-system .circle-button, .circle-system.circle-button) {
+    transition: none;
+  }
 }

@@ -44,12 +44,14 @@ const expertise = [
   {
     icon: Globe,
     title: "وب‌سایت",
-    description: "وب‌سایت‌های شرکتی، فروشگاهی و اختصاصی برای کسب‌وکارهای B2B و B2C.",
+    description:
+      "وب‌سایت‌های شرکتی، فروشگاهی و اختصاصی برای کسب‌وکارهای B2B و B2C.",
   },
   {
     icon: Code2,
     title: "نرم‌افزار و API",
-    description: "نرم‌افزار سفارشی، پنل‌های مدیریتی و سرویس‌های API مقیاس‌پذیر.",
+    description:
+      "نرم‌افزار سفارشی، پنل‌های مدیریتی و سرویس‌های API مقیاس‌پذیر.",
   },
   {
     icon: Brain,
@@ -89,8 +91,8 @@ const About: React.FC = () => {
               حوزه‌های تخصصی
             </h2>
             <p className="text-ink-soft max-w-2xl mx-auto">
-              سه ستون اصلی کاری ما که در کنار هم، یک راهکار کامل دیجیتال را
-              برای کسب‌وکار شما می‌سازند.
+              سه ستون اصلی کاری ما که در کنار هم، یک راهکار کامل دیجیتال را برای
+              کسب‌وکار شما می‌سازند.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -101,9 +103,9 @@ const About: React.FC = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="border border-line border-t-[3px] border-t-gold rounded-md p-7"
+                className="border border-line border-t-[3px] border-t-copper rounded-md p-7"
               >
-                <item.icon className="w-8 h-8 text-navy-700 mb-4" />
+                <item.icon className="w-8 h-8 text-petrol-700 mb-4" />
                 <h3 className="text-lg font-bold text-ink mb-2">
                   {item.title}
                 </h3>
@@ -134,7 +136,7 @@ const About: React.FC = () => {
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 className="text-center bg-white rounded-md p-6 border border-line"
               >
-                <value.icon className="w-7 h-7 mx-auto text-gold-dark mb-4" />
+                <value.icon className="w-7 h-7 mx-auto text-petrol mb-4" />
                 <h3 className="font-semibold text-ink mb-2">{value.title}</h3>
                 <p className="text-sm text-ink-soft">{value.description}</p>
               </motion.div>
@@ -152,7 +154,11 @@ const About: React.FC = () => {
           <p className="text-ink-soft mb-8">
             درباره پروژه خود با ما صحبت کنید تا بهترین راهکار را پیشنهاد دهیم.
           </p>
-          <Button asChild size="lg" className="bg-gold text-paper hover:bg-[oklch(66%_0.13_80)] hover:text-paper">
+          <Button
+            asChild
+            size="lg"
+            className="bg-petrol text-paper hover:bg-petrol-hover hover:text-paper"
+          >
             <Link to="/contact" className="flex items-center gap-2">
               تماس با ما
               <ArrowLeft className="w-4 h-4" />

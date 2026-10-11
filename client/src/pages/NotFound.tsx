@@ -34,7 +34,7 @@ const NotFound: React.FC = () => {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="mb-8"
           >
-            <div className="text-8xl lg:text-9xl font-bold text-navy-100 select-none">
+            <div className="text-8xl lg:text-9xl font-bold text-petrol-100 select-none">
               ۴۰۴
             </div>
           </motion.div>
@@ -48,8 +48,8 @@ const NotFound: React.FC = () => {
           >
             <Card className="border-0 shadow-lg">
               <CardContent className="py-12 px-8">
-                <div className="w-16 h-16 bg-gold-tint rounded-full mx-auto mb-6 flex items-center justify-center">
-                  <AlertCircle className="w-8 h-8 text-gold-dark" />
+                <div className="w-16 h-16 bg-petrol-tint rounded-full mx-auto mb-6 flex items-center justify-center">
+                  <AlertCircle className="w-8 h-8 text-petrol" />
                 </div>
                 <h1 className="text-3xl font-bold text-ink mb-4">
                   صفحه پیدا نشد
@@ -73,7 +73,7 @@ const NotFound: React.FC = () => {
               <Button
                 size="lg"
                 asChild
-                className="bg-gold text-paper hover:bg-[oklch(66%_0.13_80)] hover:text-paper"
+                className="bg-petrol text-paper hover:bg-petrol-hover hover:text-paper"
               >
                 <Link to="/" className="flex items-center gap-2">
                   <ArrowRight className="h-4 w-4" />
@@ -84,7 +84,7 @@ const NotFound: React.FC = () => {
                 variant="outline"
                 size="lg"
                 onClick={() => window.history.back()}
-                className="border-line text-ink hover:bg-gold-tint"
+                className="border-line text-ink hover:bg-petrol-tint"
               >
                 برگشت به صفحه قبل
               </Button>
@@ -117,10 +117,10 @@ const NotFound: React.FC = () => {
                     >
                       <Link
                         to={suggestion.href}
-                        className="flex items-center gap-3 p-4 rounded-lg border border-line hover:border-gold/40 hover:bg-gold-tint transition-all group"
+                        className="flex items-center gap-3 p-4 rounded-lg border border-line hover:border-petrol/40 hover:bg-petrol-tint transition-all group"
                       >
-                        <suggestion.icon className="w-4 h-4 text-ink-faint group-hover:text-gold-dark" />
-                        <span className="text-sm font-medium text-ink-soft group-hover:text-gold-dark">
+                        <suggestion.icon className="w-4 h-4 text-ink-faint group-hover:text-petrol" />
+                        <span className="text-sm font-medium text-ink-soft group-hover:text-petrol">
                           {suggestion.text}
                         </span>
                       </Link>
@@ -142,7 +142,7 @@ const NotFound: React.FC = () => {
               اگر فکر می‌کنید این یک خطا است، لطفاً با{" "}
               <Link
                 to="/contact"
-                className="text-gold-dark hover:underline font-medium"
+                className="text-petrol hover:underline font-medium"
               >
                 تیم پشتیبانی
               </Link>{" "}
