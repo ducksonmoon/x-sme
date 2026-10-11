@@ -9,6 +9,7 @@ export interface CircleLogoProps {
   size?: "sm" | "md" | "lg";
   orientation?: "horizontal" | "stacked";
   showEnglish?: boolean;
+  showMark?: boolean;
   tagline?: string;
   className?: string;
 }
@@ -19,6 +20,7 @@ const CircleLogo: React.FC<CircleLogoProps> = ({
   size = "md",
   orientation = "horizontal",
   showEnglish = true,
+  showMark = true,
   tagline,
   className = "",
 }) => (
@@ -26,7 +28,9 @@ const CircleLogo: React.FC<CircleLogoProps> = ({
     dir="rtl"
     className={`circle-logo circle-logo--${theme} circle-logo--${size} circle-logo--${orientation} ${className}`}
   >
-    <CircleMark theme={theme} size={{ sm: 28, md: 40, lg: 72 }[size]} />
+    {showMark && (
+      <CircleMark theme={theme} size={{ sm: 28, md: 40, lg: 72 }[size]} />
+    )}
     <span className="circle-logo__wordmark">
       <span className="circle-logo__name" lang="fa">
         <svg

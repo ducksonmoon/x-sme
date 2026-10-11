@@ -14,6 +14,7 @@ import ErrorFallback from "@components/ErrorFallback";
 import ToastProvider from "./components/ui/toast";
 
 import "./styles/index.css";
+import "./styles/site.css";
 import { basename } from "@utils/publicPath";
 
 // Create a client
@@ -87,5 +88,5 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         </QueryClientProvider>
       </HelmetProvider>
     </ErrorBoundary>
-  </React.StrictMode>
+  </React.StrictMode>,
 );

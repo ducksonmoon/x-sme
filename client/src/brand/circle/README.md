@@ -73,7 +73,7 @@ import {
 <CircleMark size={24} color="#000000" label="دایره" />
 ```
 
-`CircleLogo`: `theme`, `size`, `orientation`, `showEnglish`, `tagline`, `className`.
+`CircleLogo`: `theme`, `size`, `orientation`, `showEnglish`, `showMark`, `tagline`, `className`. با `showMark={false}` فقط نام فارسی با «ه» اختصاصی و نام انگلیسی نمایش داده می‌شود؛ مناسب سربرگ ساده.
 
 `CircleMark`: `theme`, `variant`, `size`, `color`, `label`, `animated`, `className`. کنار نام قابل مشاهده، `label` را ندهید تا نام تکراری برای screen reader ایجاد نشود.
 

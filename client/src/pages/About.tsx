@@ -1,173 +1,148 @@
 import React from "react";
-import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { CircleMark } from "@/brand/circle";
 import {
-  Target,
-  Users,
-  Award,
-  Rocket,
-  Code2,
-  Globe,
-  Brain,
-  ArrowLeft,
-} from "lucide-react";
-import { Button } from "@components/ui/button";
+  PageMeta,
+  PageIntro,
+  Eyebrow,
+  SectionHeading,
+  TextLink,
+} from "@/components/site/Elements";
+import { faNumber, projectNames } from "@/data/identity";
+import { portfolio } from "@/data/site";
 
 const values = [
   {
-    icon: Target,
-    title: "تمرکز بر نتیجه",
-    description:
-      "هر پروژه را با نگاه به هدف کسب‌وکار مشتری طراحی و اجرا می‌کنیم، نه فقط تحویل کد.",
+    title: "مسئله، پیش از ابزار.",
+    text: "پیش از انتخاب فناوری، نیاز کسب‌وکار را می‌فهمیم. راهکار خوب باید استفادهٔ روزمره را بهتر کند.",
   },
   {
-    icon: Users,
-    title: "همکاری نزدیک",
-    description:
-      "در طول پروژه در ارتباط مستقیم با تیم شما هستیم تا هیچ جزئیاتی از دست نرود.",
+    title: "طراحی و مهندسی، کنار هم.",
+    text: "تجربهٔ خوب از پیوند ظاهر، عملکرد و معماری ساخته می‌شود. این تصمیم‌ها را جدا از هم نمی‌گیریم.",
   },
   {
-    icon: Award,
-    title: "کیفیت فنی",
-    description:
-      "معماری تمیز، کد قابل نگهداری و توجه به امنیت و مقیاس‌پذیری در همه پروژه‌ها.",
+    title: "ارتباط روشن.",
+    text: "محدوده، مراحل و تصمیم‌های پروژه را با شما مرور می‌کنیم تا همیشه بدانید کجا هستیم و قدم بعدی چیست.",
   },
   {
-    icon: Rocket,
-    title: "رشد مستمر",
-    description:
-      "از وب و نرم‌افزار تا هوش مصنوعی، دائماً روی فناوری‌های جدید سرمایه‌گذاری می‌کنیم.",
+    title: "ساختن برای ادامه.",
+    text: "کد قابل نگهداری، تحویل روشن و توجه به مسیر رشد؛ نرم‌افزار باید بتواند با کسب‌وکار شما پیش برود.",
   },
 ];
 
-const expertise = [
-  {
-    icon: Globe,
-    title: "وب‌سایت",
-    description:
-      "وب‌سایت‌های شرکتی، فروشگاهی و اختصاصی برای کسب‌وکارهای B2B و B2C.",
-  },
-  {
-    icon: Code2,
-    title: "نرم‌افزار و API",
-    description:
-      "نرم‌افزار سفارشی، پنل‌های مدیریتی و سرویس‌های API مقیاس‌پذیر.",
-  },
-  {
-    icon: Brain,
-    title: "هوش مصنوعی",
-    description: "راهکارهای مبتنی بر هوش مصنوعی برای اتوماسیون و تحلیل داده.",
-  },
-];
-
-const About: React.FC = () => {
+export default function About() {
   return (
-    <div className="overflow-hidden">
-      {/* Hero */}
-      <section className="py-20 md:py-28 bg-paper">
-        <div className="container mx-auto px-4 max-w-4xl text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <h1 className="text-4xl md:text-5xl font-bold text-ink mb-6">
-              درباره ما
-            </h1>
-            <p className="text-lg text-ink-soft leading-relaxed">
-              یک تیم کوچک از توسعه‌دهنده و طراح هستیم که وب‌سایت، نرم‌افزار و
-              ابزارهای هوش مصنوعی می‌سازیم. تبش‌رعد، نیپو، زرندوز، جمع‌نویسی و
-              فولاد بهمن را همین تیم طراحی و توسعه داده.
-            </p>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Expertise */}
-      <section className="py-20 bg-white border-t border-line-soft">
-        <div className="container mx-auto px-4 max-w-7xl">
-          <div className="text-center mb-14">
-            <h2 className="text-3xl md:text-4xl font-bold text-ink mb-4">
-              حوزه‌های تخصصی
+    <>
+      <PageMeta
+        title="دربارهٔ دایره"
+        description="داستان نام دایره و نگاه ما به ساخت نرم‌افزار؛ یک تیم طراحی و توسعه با تمرکز بر ارتباط اجزای کسب‌وکار و ساخت یک سیستم منسجم."
+      />
+      <PageIntro
+        label="دربارهٔ دایره"
+        english="THE IDEA BEHIND CIRCLE"
+        title={
+          <>
+            همه‌چیز،
+            <br />
+            به هم مربوط است.
+          </>
+        }
+        description="ما یک تیم طراحی و توسعهٔ نرم‌افزاریم. وب‌سایت، محصول دیجیتال و ابزارهای هوشمند می‌سازیم؛ با این باور که هر جزء باید جای درستی در کل داشته باشد."
+      />
+      <section className="site-about-story">
+        <div className="site-container">
+          <div className="site-about-story__visual">
+            <div className="site-about-story__ring" />
+            <CircleMark theme="dark" size={240} />
+            <span dir="ltr">THE WORLD IS CONNECTED.</span>
+          </div>
+          <div className="site-about-story__copy">
+            <Eyebrow>از یک علاقهٔ شخصی، تا یک نگاه مشترک</Eyebrow>
+            <h2>
+              چرا اسم ما
+              <br />
+              دایره است؟
             </h2>
-            <p className="text-ink-soft max-w-2xl mx-auto">
-              سه ستون اصلی کاری ما که در کنار هم، یک راهکار کامل دیجیتال را برای
-              کسب‌وکار شما می‌سازند.
+            <p>
+              دایره از علاقه به فرم‌های گرد آمده است؛ فرم‌هایی که از زمین تا
+              بسیاری از چیزهای بنیادی پیرامون ما دیده می‌شوند. یک فرم ساده که حس
+              پیوستگی و کامل‌بودن را منتقل می‌کند.
+            </p>
+            <p>
+              این نگاه، برای ما به یک شیوهٔ کار تبدیل شده: دیدن ارتباط میان
+              اجزا. نرم‌افزار فقط مجموعه‌ای از صفحه‌ها و قابلیت‌ها نیست؛ باید
+              میان آدم‌ها، داده‌ها و فرآیندها نظم ایجاد کند.
+            </p>
+            <p className="site-about-story__statement">
+              اجزا را به یک سیستم تبدیل می‌کنیم.
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {expertise.map((item, index) => (
-              <motion.div
-                key={item.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="border border-line border-t-[3px] border-t-copper rounded-md p-7"
-              >
-                <item.icon className="w-8 h-8 text-petrol-700 mb-4" />
-                <h3 className="text-lg font-bold text-ink mb-2">
-                  {item.title}
-                </h3>
-                <p className="text-sm text-ink-soft leading-relaxed">
-                  {item.description}
-                </p>
-              </motion.div>
-            ))}
-          </div>
         </div>
       </section>
-
-      {/* Values */}
-      <section className="py-20 bg-paper border-t border-line-soft">
-        <div className="container mx-auto px-4 max-w-7xl">
-          <div className="text-center mb-14">
-            <h2 className="text-3xl md:text-4xl font-bold text-ink mb-4">
-              ارزش‌های ما
-            </h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {values.map((value, index) => (
-              <motion.div
-                key={value.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="text-center bg-white rounded-md p-6 border border-line"
-              >
-                <value.icon className="w-7 h-7 mx-auto text-petrol mb-4" />
-                <h3 className="font-semibold text-ink mb-2">{value.title}</h3>
-                <p className="text-sm text-ink-soft">{value.description}</p>
-              </motion.div>
-            ))}
-          </div>
+      <section className="site-container site-section">
+        <SectionHeading number="نگاه ما" title="چهار اصل، یک روش کار." />
+        <div className="site-values">
+          {values.map((value, i) => (
+            <article key={value.title}>
+              <span className="site-section-number">{faNumber(i + 1)}</span>
+              <h3>{value.title}</h3>
+              <p>{value.text}</p>
+            </article>
+          ))}
         </div>
       </section>
-
-      {/* CTA */}
-      <section className="py-20 bg-white border-t border-line-soft">
-        <div className="container mx-auto px-4 max-w-3xl text-center">
-          <h2 className="text-3xl font-bold text-ink mb-4">
-            می‌خواهید با ما همکاری کنید؟
+      <section className="site-container site-about-signature">
+        <div>
+          <Eyebrow>نشان دایره</Eyebrow>
+          <h2>
+            یک فرم گرد.
+            <br />
+            دو فضای درون.
+            <br />
+            یک هویت فارسی.
           </h2>
-          <p className="text-ink-soft mb-8">
-            درباره پروژه خود با ما صحبت کنید تا بهترین راهکار را پیشنهاد دهیم.
+        </div>
+        <div className="site-about-signature__drawing">
+          <CircleMark size={190} />
+          <div className="site-about-signature__rule" />
+          <span>ه</span>
+        </div>
+        <div>
+          <p>
+            نشان ما از حرف «ه» در نام دایره الهام می‌گیرد. ساختار درونی و فرم
+            بیرونی، دو وجه یک ایده‌اند: اجزایی متفاوت که در کنار هم یک هویت
+            منسجم می‌سازند.
           </p>
-          <Button
-            asChild
-            size="lg"
-            className="bg-petrol text-paper hover:bg-petrol-hover hover:text-paper"
-          >
-            <Link to="/contact" className="flex items-center gap-2">
-              تماس با ما
-              <ArrowLeft className="w-4 h-4" />
-            </Link>
-          </Button>
+          <p>
+            نام فارسی محور هویت ماست؛ نفتی، کاغذی گرم و مسی، لحن آرام و دقیق آن
+            را ادامه می‌دهند.
+          </p>
         </div>
       </section>
-    </div>
+      <section className="site-method site-section">
+        <div className="site-container site-about-work">
+          <div>
+            <Eyebrow english="BUILT TOGETHER">در عمل</Eyebrow>
+            <h2>
+              نگاهی که در
+              <br />
+              کارهایمان دیده می‌شود.
+            </h2>
+            <p>
+              از وب‌سایت شرکتی تا اپلیکیشن و نرم‌افزار اختصاصی؛ مسئله‌ها
+              متفاوت‌اند، همراهی و دقت مشترک است.
+            </p>
+            <TextLink to="/portfolio">کشف پروژه‌ها</TextLink>
+          </div>
+          <div>
+            {portfolio.map((item) => (
+              <div key={item.slug}>
+                <span>{projectNames[item.slug]}</span>
+                <span>{item.tags.join(" / ")}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    </>
   );
-};
-
-export default About;
+}

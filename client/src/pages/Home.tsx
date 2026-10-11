@@ -1,376 +1,230 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
-import { Package, ShieldCheck, ArrowLeft, CheckCircle } from "lucide-react";
-import { Button } from "@components/ui/button";
-import { CircleMark, HeroGlow } from "@/brand/circle";
-import { services, portfolio } from "@/data/site";
+import { ArrowLeft, ArrowUpLeft, Check } from "lucide-react";
+import { CircleMark } from "@/brand/circle";
+import { portfolio, services } from "@/data/site";
+import { products, process, serviceNotes } from "@/data/identity";
+import {
+  Eyebrow,
+  SectionHeading,
+  TextLink,
+  ProjectCard,
+  PageMeta,
+} from "@/components/site/Elements";
+import SystemOrbit from "@/components/site/SystemOrbit";
 
-interface Product {
-  icon: React.ElementType;
-  title: string;
-  description: string;
-  features: string[];
-}
-
-const MotionLink = motion(Link);
-
-const products: Product[] = [
-  {
-    icon: Package,
-    title: "مدیریت انبار",
-    description:
-      "کنترل موجودی، ورود و خروج کالا و گزارش‌گیری انبار در یک نرم‌افزار ساده و آماده استفاده.",
-    features: [
-      "رهگیری لحظه‌ای موجودی در چند انبار",
-      "اسکن بارکد و ثبت سریع تراکنش",
-      "هشدار کمبود موجودی و سفارش مجدد",
-      "داشبورد گزارش‌گیری و خروجی اکسل",
-    ],
-  },
-  {
-    icon: ShieldCheck,
-    title: "کنترل کیفیت (QA)",
-    description:
-      "مدیریت تست، ثبت مغایرت‌ها و پیگیری کیفیت محصول یا خط تولید، برای تیم‌های کوچک و متوسط.",
-    features: [
-      "مدیریت چک‌لیست و سناریوهای تست",
-      "ثبت و پیگیری مغایرت تا رفع نهایی",
-      "گزارش کیفیت به تفکیک محصول/خط",
-      "همکاری تیمی و تاریخچه کامل تست‌ها",
-    ],
-  },
-];
-
-const process = [
-  {
-    title: "شناخت نیاز",
-    description: "بررسی اهداف کسب‌وکار شما و تدوین راهکار مناسب.",
-  },
-  {
-    title: "طراحی",
-    description: "طراحی تجربه کاربری و معماری فنی متناسب با پروژه.",
-  },
-  {
-    title: "توسعه",
-    description: "پیاده‌سازی با تمرکز بر کیفیت، سرعت و مقیاس‌پذیری.",
-  },
-  {
-    title: "پشتیبانی",
-    description: "تحویل، آموزش و پشتیبانی مستمر پس از راه‌اندازی.",
-  },
-];
-
-const trustNames = ["Tabeshraad", "Nipou", "Zarandooz", "FBC", "Jamnevisi"];
-
-const Home: React.FC = () => {
+export default function Home() {
   return (
-    <div className="overflow-hidden">
-      {/* Hero */}
-      <HeroGlow className="relative">
-        <div className="container mx-auto px-4 max-w-7xl flex flex-col md:flex-row items-center gap-12 py-24 md:py-28">
-          <div className="flex-1 flex flex-col items-start gap-5 min-w-0">
-            <span className="text-sm font-bold tracking-wide text-paper uppercase">
-              بازوی فنی کسب‌وکار شما
-            </span>
-            <h1 className="text-4xl md:text-5xl font-bold text-white leading-[1.55]">
-              راهکار نرم‌افزاری برای{" "}
-              <span className="text-paper">خودکارسازی</span>
-              ، مدیریت
-              <br />و بهینه‌سازی کسب‌وکار شما
-            </h1>
-            <p className="text-base md:text-lg text-white/70 leading-relaxed max-w-xl">
-              ما از نزدیک با کسب‌وکار شما همکاری می‌کنیم و با شخصی‌سازی کامل،
-              مناسب‌ترین راهکار را برایتان ارائه می‌دهیم.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center gap-4 mt-2">
-              <Button
-                asChild
-                size="lg"
-                className="bg-paper text-petrol hover:bg-petrol-tint"
-              >
-                <a href="#products" className="flex items-center gap-2">
-                  مشاهده محصولات
-                  <ArrowLeft className="w-4 h-4" />
-                </a>
-              </Button>
-              <Button
-                variant="outline"
-                size="lg"
-                asChild
-                className="bg-transparent border-white/25 text-white hover:bg-white/10 hover:text-white"
-              >
-                <a href="#services" className="flex items-center gap-2">
-                  خدمات سفارشی
-                  <ArrowLeft className="w-4 h-4" />
-                </a>
-              </Button>
-            </div>
-          </div>
-          <div className="flex-shrink-0 w-[280px] h-[280px] md:w-[340px] md:h-[340px] flex items-center justify-center">
-            <CircleMark variant="full" theme="dark" size={300} />
-          </div>
-        </div>
-      </HeroGlow>
-
-      {/* Trust strip (marquee) */}
-      <section className="marquee-wrap border-t border-b border-line-soft overflow-hidden">
-        <div className="container mx-auto px-4 max-w-7xl py-6 flex items-center gap-7">
-          <span className="text-sm font-semibold text-ink-faint whitespace-nowrap shrink-0">
-            با دایره ساخته‌اند
-          </span>
-          <div
-            className="overflow-hidden flex-1"
-            style={{
-              maskImage:
-                "linear-gradient(to left, transparent, black 8%, black 92%, transparent)",
-              WebkitMaskImage:
-                "linear-gradient(to left, transparent, black 8%, black 92%, transparent)",
-            }}
-          >
-            <div className="marquee-track">
-              {[...trustNames, ...trustNames].map((name, i) => (
-                <span key={i} className="font-bold text-base text-ink-soft">
-                  {name}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Products */}
-      <section
-        id="products"
-        className="py-24 bg-white border-b border-line-soft"
-      >
-        <div className="container mx-auto px-4 max-w-7xl">
-          <div className="flex flex-col gap-3 max-w-xl mb-12">
-            <span className="text-xs font-bold tracking-wider text-petrol uppercase">
-              محصولات دایره
-            </span>
-            <h2 className="text-3xl font-bold text-ink">
-              نرم‌افزارهای آماده برای کسب‌وکار شما
-            </h2>
-            <p className="text-ink-soft leading-relaxed">
-              جدا از پروژه‌های سفارشی، دایره نرم‌افزارهایی آماده و مقرون‌به‌صرفه
-              برای کسب‌وکارهای کوچک و متوسط ارائه می‌دهد.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {products.map((product, index) => (
-              <motion.div
-                key={product.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="border border-line border-t-[3px] border-t-copper rounded-md p-8"
-              >
-                <div className="w-9 h-9 flex items-center justify-center text-petrol-700 mb-5">
-                  <product.icon className="w-8 h-8" />
-                </div>
-                <h3 className="text-lg font-bold text-ink mb-2.5">
-                  {product.title}
-                </h3>
-                <p className="text-sm text-ink-soft leading-relaxed mb-5">
-                  {product.description}
-                </p>
-                <div className="flex flex-col gap-2.5 mb-6">
-                  {product.features.map((feature) => (
-                    <div key={feature} className="flex items-start gap-2">
-                      <CheckCircle className="w-3.5 h-3.5 text-petrol mt-0.5 shrink-0" />
-                      <span className="text-sm text-ink-soft">{feature}</span>
-                    </div>
-                  ))}
-                </div>
-                <Button
-                  variant="outline"
-                  asChild
-                  className="border-line text-ink hover:border-petrol-700 h-11 text-sm"
-                >
-                  <Link to="/contact">درخواست دمو</Link>
-                </Button>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Services */}
-      <section id="services" className="py-24 bg-white">
-        <div className="container mx-auto px-4 max-w-7xl">
-          <div className="flex flex-wrap items-end justify-between gap-4 mb-6">
-            <div className="flex flex-col gap-3 max-w-xl">
-              <span className="text-xs font-bold tracking-wider text-petrol uppercase">
-                خدمات سفارشی
-              </span>
-              <h2 className="text-3xl font-bold text-ink">
-                فراتر از محصولات آماده، پروژه اختصاصی خودتان را بسازید
-              </h2>
-            </div>
-            <Link
-              to="/services"
-              className="flex items-center gap-2 text-sm font-bold text-petrol hover:underline shrink-0"
-            >
-              مشاهده همه خدمات
-              <ArrowLeft className="w-4 h-4" />
-            </Link>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {services.map((service, index) => (
-              <motion.div
-                key={service.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.05 }}
-                className="group border border-line rounded-md p-7 hover:border-petrol/40 hover:bg-petrol-tint/30 transition-colors"
-              >
-                <div className="w-11 h-11 rounded-lg bg-petrol-tint flex items-center justify-center mb-5 transition-transform group-hover:-rotate-6 group-hover:scale-110">
-                  <service.icon className="w-5 h-5 text-petrol" />
-                </div>
-                <h3 className="text-lg font-bold text-ink mb-2">
-                  {service.title}
-                </h3>
-                <p className="text-sm text-ink-soft leading-relaxed">
-                  {service.description}
-                </p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Portfolio */}
-      <section
-        id="portfolio"
-        className="py-24 bg-white border-y border-line-soft"
-      >
-        <div className="container mx-auto px-4 max-w-7xl">
-          <div className="flex flex-wrap items-end justify-between gap-4 mb-6">
-            <div className="flex flex-col gap-3 max-w-xl">
-              <span className="text-xs font-bold tracking-wider text-petrol uppercase">
-                نمونه‌کارها
-              </span>
-              <h2 className="text-3xl font-bold text-ink">
-                پروژه‌هایی که ساخته‌ایم
-              </h2>
-            </div>
-            <Link
-              to="/portfolio"
-              className="flex items-center gap-2 text-sm font-bold text-petrol hover:underline shrink-0"
-            >
-              مشاهده همه نمونه‌کارها
-              <ArrowLeft className="w-4 h-4" />
-            </Link>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {portfolio.map((item, index) => (
-              <MotionLink
-                key={item.name}
-                to={`/portfolio/${item.slug}`}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.05 }}
-                className="group flex flex-col gap-4 border border-line rounded-md p-6 hover:border-petrol/40 hover:bg-petrol-tint/20 transition-colors"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-lg font-bold text-ink">
-                    {item.name}
-                  </span>
-                  <ArrowLeft className="w-4 h-4 text-petrol shrink-0 transition-transform group-hover:-translate-x-1" />
-                </div>
-                <p className="text-sm text-ink-soft leading-relaxed flex-1">
-                  {item.description}
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {item.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="text-xs font-medium text-petrol bg-petrol-tint px-2 py-1 rounded-full"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </MotionLink>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Process */}
-      <section className="py-24 bg-white">
-        <div className="container mx-auto px-4 max-w-7xl">
-          <div className="flex flex-col gap-3 max-w-xl mb-16">
-            <span className="text-xs font-bold tracking-wider text-petrol uppercase">
-              فرآیند
-            </span>
-            <h2 className="text-3xl font-bold text-ink">از ایده تا اجرا</h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-x-8 gap-y-12">
-            {process.map((step, index) => (
-              <motion.div
-                key={step.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="flex flex-col gap-4"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 shrink-0 rounded-full bg-petrol text-paper flex items-center justify-center font-extrabold text-sm">
-                    {index + 1}
-                  </div>
-                  {index !== process.length - 1 && (
-                    <div className="hidden md:block flex-1 h-px bg-line" />
-                  )}
-                </div>
-                <div>
-                  <h3 className="font-bold text-ink mb-1.5">{step.title}</h3>
-                  <p className="text-sm text-ink-soft leading-relaxed">
-                    {step.description}
-                  </p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA (the one bold moment) */}
-      <section className="relative overflow-hidden bg-petrol-950">
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            backgroundImage: "none",
-          }}
-        />
-        <div className="relative container mx-auto px-4 max-w-4xl py-24 text-center flex flex-col items-center gap-5">
-          <CircleMark variant="full" theme="dark" size={64} />
-          <h2 className="text-3xl font-bold text-white max-w-xl">
-            پروژه بعدی شما، اینجا شروع می‌شود
-          </h2>
-          <p className="text-white/60 max-w-xl leading-relaxed">
-            چه دنبال نرم‌افزار آماده باشید، چه یک وب‌سایت یا پروژه سفارشی —
-            برایمان بنویسید چه چیزی می‌سازیم.
+    <>
+      <PageMeta
+        title="اجزا را به یک سیستم تبدیل می‌کنیم"
+        description="دایره، شرکت طراحی و توسعهٔ نرم‌افزار، وب‌سایت، اپلیکیشن و راهکارهای هوش مصنوعی؛ یک مسیر منسجم از شناخت مسئله تا ساخت محصول."
+      />
+      <section className="site-container site-hero">
+        <div className="site-hero__copy">
+          <Eyebrow english="CIRCLE SOFTWARE COMPANY">
+            شرکت نرم‌افزاری دایره
+          </Eyebrow>
+          <h1>
+            اجزا را به یک
+            <br />
+            <span className="site-hero__emphasis">سیستم</span> تبدیل
+            <br />
+            می‌کنیم.
+          </h1>
+          <p className="site-lead">
+            کسب‌وکار شما مجموعه‌ای از آدم‌ها، داده‌ها و ایده‌هاست. ما نرم‌افزاری
+            می‌سازیم که این اجزا را به هم وصل کند.
           </p>
-          <Button
-            asChild
-            size="lg"
-            className="bg-paper text-petrol hover:bg-petrol-tint hover:text-petrol mt-2"
-          >
-            <Link to="/contact" className="flex items-center gap-2">
-              تماس با ما
-              <ArrowLeft className="w-4 h-4" />
+          <div className="site-actions">
+            <Link className="site-button" to="/contact">
+              از پروژه‌تان بگویید
+              <ArrowUpLeft size={19} aria-hidden="true" />
             </Link>
-          </Button>
+            <TextLink to="/portfolio">کارهای دایره</TextLink>
+          </div>
+          <div className="site-hero__note">
+            <span className="site-tiny-ring" />
+            از شناخت مسئله تا ساخت و همراهی
+          </div>
+        </div>
+        <SystemOrbit />
+      </section>
+      <section
+        className="site-trust site-container"
+        aria-label="پروژه‌های دایره"
+      >
+        <span>بخشی از دایرهٔ همکاری ما</span>
+        <div>
+          {portfolio.map((item) => (
+            <Link key={item.slug} to={`/portfolio/${item.slug}`} dir="ltr">
+              {item.name}
+            </Link>
+          ))}
         </div>
       </section>
-    </div>
+      <section className="site-section site-container" id="work">
+        <SectionHeading
+          number="۰۱"
+          title={
+            <>
+              هر مسئله،
+              <br />
+              یک دایرهٔ تازه.
+            </>
+          }
+          description="پروژه‌های متفاوت، با یک نگاه مشترک: ساختن چیزی که در عمل کار کند."
+        >
+          <TextLink to="/portfolio">همهٔ کارهای ما</TextLink>
+        </SectionHeading>
+        <div className="site-selected-work">
+          <ProjectCard item={portfolio[0]} featured />
+          <ProjectCard item={portfolio[4]} />
+          <ProjectCard item={portfolio[1]} />
+        </div>
+        <p className="site-art-caption">
+          تصویرها، نمایش مفهومی حوزهٔ هر پروژه‌اند.
+        </p>
+      </section>
+      <section className="site-capabilities" id="services">
+        <div className="site-container">
+          <SectionHeading
+            number="۰۲"
+            title={
+              <>
+                یک نگاه منسجم.
+                <br />
+                چند راه برای ساختن.
+              </>
+            }
+            description="گاهی یک وب‌سایت کافی است؛ گاهی باید ابزارهای پراکندهٔ یک کسب‌وکار به هم متصل شوند."
+          >
+            <TextLink to="/services" light>
+              راهکارهای دایره
+            </TextLink>
+          </SectionHeading>
+          <div className="site-service-list">
+            {services.map((service, index) => (
+              <Link
+                to={`/services#${service.slug}`}
+                className="site-service-line"
+                key={service.slug}
+              >
+                <span className="site-service-line__number">
+                  {(index + 1).toLocaleString("fa-IR", {
+                    minimumIntegerDigits: 2,
+                  })}
+                </span>
+                <div className="site-service-line__title">
+                  <service.icon size={24} aria-hidden="true" />
+                  <h3>{service.title}</h3>
+                  <span dir="ltr">{serviceNotes[service.slug].english}</span>
+                </div>
+                <p>{serviceNotes[service.slug].outcome}</p>
+                <span className="site-arrow-circle">
+                  <ArrowUpLeft size={25} />
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+      <section className="site-section site-container" id="products">
+        <SectionHeading
+          number="۰۳"
+          title="برای کارهای هر روز."
+          description="محصولات آمادهٔ دایره برای نظم‌دادن به جریان‌های تکرارشوندهٔ کسب‌وکار."
+        />
+        <div className="site-products">
+          {products.map((product) => (
+            <article
+              className={`site-product site-product--${product.id}`}
+              key={product.id}
+            >
+              <div className="site-product__top">
+                <span dir="ltr">{product.english}</span>
+                <span>{product.number}</span>
+              </div>
+              <div className="site-product__symbol" aria-hidden="true">
+                {product.id === "inventory" ? (
+                  <>
+                    <i />
+                    <i />
+                    <i />
+                  </>
+                ) : (
+                  <>
+                    <span />
+                    <Check size={48} />
+                  </>
+                )}
+              </div>
+              <h3>{product.name}</h3>
+              <p>{product.description}</p>
+              <ul>
+                {product.features.map((feature) => (
+                  <li key={feature}>
+                    <Check size={15} />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+              <Link
+                className="site-text-link"
+                to={`/contact?service=${product.id}`}
+              >
+                درخواست دمو
+                <ArrowUpLeft size={19} />
+              </Link>
+            </article>
+          ))}
+        </div>
+      </section>
+      <section className="site-method site-section">
+        <div className="site-container">
+          <SectionHeading
+            number="۰۴"
+            title={
+              <>
+                کار خوب،
+                <br />
+                از ارتباط خوب شروع می‌شود.
+              </>
+            }
+            description="فرآیندی روشن، تصمیم‌هایی قابل بررسی و ارتباطی که در طول ساخت ادامه دارد."
+          />
+          <div className="site-process">
+            {process.map((step) => (
+              <article key={step.number}>
+                <span className="site-process__number">{step.number}</span>
+                <h3>{step.title}</h3>
+                <p>{step.text}</p>
+                <span className="site-process__output">{step.output}</span>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+      <section className="site-container site-brand-story">
+        <div className="site-brand-story__mark">
+          <CircleMark size={160} />
+          <span dir="ltr">ONE CIRCLE. MANY POSSIBILITIES.</span>
+        </div>
+        <div>
+          <Eyebrow>چرا دایره؟</Eyebrow>
+          <h2>
+            جهان، از ارتباط
+            <br />
+            اجزایش معنا می‌گیرد.
+          </h2>
+          <p>
+            نام دایره از علاقه به فرم‌های گرد آمده؛ از زمین تا چرخه‌هایی که
+            زندگی را می‌سازند. در کار ما هم همین نگاه جاری است: نرم‌افزار خوب،
+            اجزای یک کسب‌وکار را به یک کلِ قابل‌فهم تبدیل می‌کند.
+          </p>
+          <TextLink to="/about">با دایره آشنا شوید</TextLink>
+        </div>
+      </section>
+    </>
   );
-};
-
-export default Home;
+}

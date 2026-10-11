@@ -1,3 +1,22 @@
+# دایره · circlegroup.ir
+
+وب‌سایت شرکت نرم‌افزاری دایره در `client/` قرار دارد: طراحی و توسعهٔ نرم‌افزار، وب‌سایت، اپلیکیشن و راهکارهای هوش مصنوعی.
+
+- [راهنمای وب‌سایت، طراحی و انتشار](docs/circle-website.md)
+- [کیت هویت، لوگو و کامپوننت‌های قابل استفاده](client/src/brand/circle/README.md)
+
+```bash
+cd client
+npm ci
+npm run dev
+# بررسی خروجی قابل انتشار
+npm run build
+```
+
+## مستندات پلتفرم موجود در مخزن
+
+مستندات زیر مربوط به پلتفرم رزرو در بخش server و widget مخزن هستند. برای اجرای وب‌سایت شرکت، راهنمای بالا را دنبال کنید.
+
 # X-SME - Booking Widget Platform
 
 A comprehensive booking and appointment management platform designed for small and medium enterprises (SMEs) in Iran, featuring a customizable widget that can be embedded on any website.

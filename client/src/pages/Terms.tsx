@@ -1,5 +1,5 @@
 import React from "react";
-import { motion } from "framer-motion";
+import { LegalPage } from "@/components/site/Elements";
 
 const sections = [
   {
@@ -28,51 +28,12 @@ const sections = [
   },
 ];
 
-const Terms: React.FC = () => {
+export default function Terms() {
   return (
-    <div className="overflow-hidden">
-      <section className="py-20 md:py-28 bg-paper">
-        <div className="container mx-auto px-4 max-w-3xl text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <h1 className="text-4xl md:text-5xl font-bold text-ink mb-6">
-              شرایط استفاده
-            </h1>
-            <p className="text-lg text-ink-soft leading-relaxed">
-              قوانین و شرایطی که همکاری شما با دایره بر اساس آن‌ها انجام
-              می‌شود.
-            </p>
-          </motion.div>
-        </div>
-      </section>
-
-      <section className="py-20 bg-white border-t border-line-soft">
-        <div className="container mx-auto px-4 max-w-3xl">
-          <div className="flex flex-col gap-10">
-            {sections.map((section, index) => (
-              <motion.div
-                key={section.title}
-                initial={{ opacity: 0, y: 15 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.05 }}
-              >
-                <h2 className="text-lg font-bold text-ink mb-2.5">
-                  {section.title}
-                </h2>
-                <p className="text-sm text-ink-soft leading-relaxed">
-                  {section.body}
-                </p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-    </div>
+    <LegalPage
+      title="شرایط استفاده"
+      intro="شرایطی که استفاده از وب‌سایت و همکاری با دایره بر اساس آن‌ها انجام می‌شود."
+      sections={sections}
+    />
   );
-};
-
-export default Terms;
+}

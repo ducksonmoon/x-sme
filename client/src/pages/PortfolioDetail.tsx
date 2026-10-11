@@ -1,93 +1,99 @@
 import React from "react";
 import { Link, useParams } from "react-router-dom";
-import { motion } from "framer-motion";
-import { ArrowLeft, ArrowRight, ExternalLink } from "lucide-react";
-import { Button } from "@components/ui/button";
+import { ArrowRight, ArrowUpLeft, ExternalLink } from "lucide-react";
 import { portfolio } from "@/data/site";
+import { projectNames, faNumber } from "@/data/identity";
+import {
+  PageMeta,
+  Eyebrow,
+  ProjectVisual,
+  ProjectCard,
+} from "@/components/site/Elements";
 import NotFound from "./NotFound";
 
-const PortfolioDetail: React.FC = () => {
+export default function PortfolioDetail() {
   const { slug } = useParams<{ slug: string }>();
-  const item = portfolio.find((p) => p.slug === slug);
-
-  if (!item) {
-    return <NotFound />;
-  }
-
+  const index = portfolio.findIndex((item) => item.slug === slug);
+  const item = portfolio[index];
+  if (!item) return <NotFound />;
+  const next = portfolio[(index + 1) % portfolio.length];
   return (
-    <div className="overflow-hidden">
-      <section className="py-20 md:py-28 bg-paper">
-        <div className="container mx-auto px-4 max-w-3xl">
-          <Link
-            to="/portfolio"
-            className="inline-flex items-center gap-2 text-sm font-medium text-ink-soft hover:text-petrol transition-colors mb-8"
-          >
-            <ArrowRight className="w-4 h-4" />
-            بازگشت به نمونه‌کارها
-          </Link>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <div className="flex flex-wrap gap-1.5 mb-5">
-              {item.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="text-xs font-medium text-petrol bg-petrol-tint px-2 py-1 rounded-full"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-            <h1 className="text-3xl md:text-4xl font-bold text-ink mb-5">
-              {item.name}
-            </h1>
-            <p className="text-lg text-ink-soft leading-relaxed mb-8">
-              {item.about}
-            </p>
-            <Button
-              asChild
-              size="lg"
-              className="bg-petrol text-paper hover:bg-petrol-hover hover:text-paper"
+    <>
+      <PageMeta
+        title={`پروژهٔ ${projectNames[item.slug]}`}
+        description={item.about}
+      />
+      <section className="site-container site-project-intro">
+        <Link className="site-back" to="/portfolio">
+          <ArrowRight size={18} />
+          همهٔ کارهای دایره
+        </Link>
+        <div className="site-project-intro__heading">
+          <div>
+            <Eyebrow
+              english={`CIRCLE WORKS / ${String(index + 1).padStart(2, "0")}`}
             >
-              <a
-                href={item.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2"
-              >
-                <ExternalLink className="w-4 h-4" />
-                بازدید از سایت
-              </a>
-            </Button>
-          </motion.div>
+              پروژهٔ {faNumber(index + 1)}
+            </Eyebrow>
+            <h1>
+              {projectNames[item.slug]}
+              <span dir="ltr">{item.name}</span>
+            </h1>
+          </div>
+          <div>
+            <p>{item.about}</p>
+            <a
+              className="site-text-link"
+              href={item.url}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              بازدید از وب‌سایت
+              <ExternalLink size={18} />
+            </a>
+          </div>
         </div>
+        <ProjectVisual slug={item.slug} large />
+        <p className="site-art-caption">نمای مفهومی حوزهٔ پروژه</p>
       </section>
-
-      <section className="py-20 bg-white border-t border-line-soft">
-        <div className="container mx-auto px-4 max-w-3xl text-center">
-          <h2 className="text-2xl font-bold text-ink mb-4">
-            پروژه مشابهی در ذهن دارید؟
+      <section className="site-container site-project-scope">
+        <div>
+          <span className="site-section-number">آنچه ساختیم</span>
+          <h2>
+            یک نیاز مشخص،
+            <br />
+            یک همراهی فنی.
           </h2>
-          <p className="text-ink-soft mb-8">
-            برایمان بنویسید چه نیاز دارید، بهترین راهکار را پیشنهاد می‌دهیم.
-          </p>
-          <Button
-            asChild
-            size="lg"
-            variant="outline"
-            className="border-line text-ink hover:border-petrol-700"
-          >
-            <Link to="/contact" className="flex items-center gap-2">
-              تماس با ما
-              <ArrowLeft className="w-4 h-4" />
-            </Link>
-          </Button>
+        </div>
+        <div>
+          <p>{item.about}</p>
+          <dl>
+            <div>
+              <dt>مجموعه</dt>
+              <dd>{projectNames[item.slug]}</dd>
+            </div>
+            <div>
+              <dt>حوزهٔ همکاری</dt>
+              <dd>{item.tags.join("، ")}</dd>
+            </div>
+            <div>
+              <dt>تیم طراحی و توسعه</dt>
+              <dd>دایره</dd>
+            </div>
+          </dl>
+          <Link className="site-button" to="/contact">
+            پروژهٔ مشابهی دارید؟
+            <ArrowUpLeft size={19} />
+          </Link>
         </div>
       </section>
-    </div>
+      <section className="site-container site-next-work">
+        <div>
+          <span className="site-section-number">دایرهٔ بعدی</span>
+          <h2>یک پروژهٔ دیگر.</h2>
+        </div>
+        <ProjectCard item={next} />
+      </section>
+    </>
   );
-};
-
-export default PortfolioDetail;
+}

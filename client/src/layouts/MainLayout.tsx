@@ -1,311 +1,184 @@
-import React, { useState, useEffect } from "react";
-import { Outlet, Link, useLocation } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Phone, Mail, ArrowLeft, ChevronUp, Zap } from "lucide-react";
-import { Button } from "@components/ui/button";
-import { cn } from "../utils/cn";
-import { CircleLogo } from "@/brand/circle";
+import React, { useEffect, useRef, useState } from "react";
+import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import { ArrowUpLeft, ArrowLeft, Menu, X, Mail } from "lucide-react";
+import { CircleLogo, CircleMark } from "@/brand/circle";
 
-interface NavigationItem {
-  name: string;
-  href: string;
-  badge?: string;
-}
+const navigation = [
+  { name: "خانه", href: "/" },
+  { name: "راهکارها", href: "/services" },
+  { name: "کارهای ما", href: "/portfolio" },
+  { name: "دربارهٔ دایره", href: "/about" },
+];
 
-const MainLayout: React.FC = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [showScrollTop, setShowScrollTop] = useState(false);
-  const location = useLocation();
-
-  const navigation: NavigationItem[] = [
-    { name: "خانه", href: "/" },
-    { name: "خدمات", href: "/services" },
-    { name: "نمونه‌کارها", href: "/portfolio" },
-    { name: "درباره ما", href: "/about" },
-    { name: "تماس با ما", href: "/contact" },
-  ];
-
-  const isActive = (path: string) => location.pathname === path;
-
-  // Scroll to top functionality
+export default function MainLayout() {
+  const [open, setOpen] = useState(false);
+  const { pathname, hash } = useLocation();
+  const menuButton = useRef<HTMLButtonElement>(null);
+  const main = useRef<HTMLElement>(null);
+  const previousPath = useRef(pathname);
   useEffect(() => {
-    const handleScroll = () => {
-      setShowScrollTop(window.scrollY > 400);
+    setOpen(false);
+    const target = hash ? document.getElementById(hash.slice(1)) : null;
+    if (target) {
+      target.scrollIntoView({ block: "start", behavior: "instant" });
+      target.focus({ preventScroll: true });
+    } else if (previousPath.current !== pathname) {
+      window.scrollTo({ top: 0, behavior: "instant" });
+      main.current?.focus({ preventScroll: true });
+      previousPath.current = pathname;
+    }
+  }, [pathname, hash]);
+  useEffect(() => {
+    if (!open) return;
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+        menuButton.current?.focus();
+      }
     };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
+    document.addEventListener("keydown", escape);
+    return () => document.removeEventListener("keydown", escape);
+  }, [open]);
   return (
-    <div className="min-h-screen flex flex-col bg-paper">
-      {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b border-line-soft bg-paper">
-        <div className="container mx-auto px-4 max-w-7xl">
-          <div className="flex h-16 items-center justify-between">
-            {/* Logo */}
-            <Link
-              to="/"
-              className="flex items-center group"
-              aria-label="دایره — صفحه اصلی"
-            >
-              <CircleLogo size="sm" />
-            </Link>
-
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center space-x-1">
-              {navigation.map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className={cn(
-                    "relative px-4 py-2 text-sm font-medium transition-all duration-300 rounded-lg flex items-center gap-2",
-                    isActive(item.href)
-                      ? "text-petrol bg-petrol-tint"
-                      : "text-ink-soft hover:text-petrol hover:bg-petrol-tint/50",
-                  )}
-                >
-                  {item.name}
-                  {item.badge && (
-                    <span className="bg-petrol text-paper text-xs px-2 py-0.5 rounded-full font-medium">
-                      {item.badge}
-                    </span>
-                  )}
-                  {isActive(item.href) && (
-                    <motion.div
-                      layoutId="activeTab"
-                      className="absolute inset-0 bg-petrol-tint rounded-lg -z-10"
-                      transition={{
-                        type: "spring",
-                        bounce: 0.2,
-                        duration: 0.6,
-                      }}
-                    />
-                  )}
-                </Link>
-              ))}
-            </nav>
-
-            {/* CTA Buttons */}
-            <div className="hidden md:flex items-center space-x-3">
-              <Button
-                variant="ghost"
-                asChild
-                className="text-ink-soft hover:text-petrol hover:bg-petrol-tint border border-transparent hover:border-petrol/30 transition-all duration-300"
+    <div className="circle-site">
+      <a className="site-skip" href="#main-content">
+        رفتن به محتوای صفحه
+      </a>
+      <header className="site-header">
+        <div className="site-container site-header__row">
+          <Link
+            to="/"
+            className="site-home-link"
+            aria-label="دایره، صفحهٔ اصلی"
+          >
+            <CircleLogo size="sm" showMark={false} />
+          </Link>
+          <nav className="site-desktop-nav" aria-label="ناوبری اصلی">
+            {navigation.map((item) => (
+              <NavLink
+                key={item.href}
+                to={item.href}
+                end={item.href === "/"}
+                className={({ isActive }) =>
+                  `site-nav-link${isActive ? " is-active" : ""}`
+                }
               >
-                <Link to="/portfolio" className="flex items-center gap-2">
-                  <Zap className="w-4 h-4" />
-                  نمونه‌کارها
-                </Link>
-              </Button>
-              <Button
-                asChild
-                className="bg-petrol text-paper hover:bg-petrol-hover hover:text-paper transition-all duration-300"
-              >
-                <Link to="/contact" className="flex items-center gap-2">
-                  شروع پروژه
-                  <ArrowLeft className="w-4 h-4" />
-                </Link>
-              </Button>
-            </div>
-
-            {/* Mobile menu button */}
-            <button
-              className="md:hidden min-h-11 min-w-11 p-2 rounded-xl hover:bg-petrol-tint transition-all duration-300"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              aria-label={isMenuOpen ? "بستن منو" : "باز کردن منو"}
-              aria-expanded={isMenuOpen}
-            >
-              {isMenuOpen ? (
-                <X className="h-6 w-6 text-ink-soft" />
-              ) : (
-                <Menu className="h-6 w-6 text-ink-soft" />
-              )}
-            </button>
-          </div>
-
-          {/* Mobile Navigation */}
-          <AnimatePresence>
-            {isMenuOpen && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.3, ease: "easeInOut" }}
-                className="md:hidden border-t border-line-soft py-4 bg-paper"
-              >
-                <nav className="flex flex-col space-y-2">
-                  {navigation.map((item, index) => (
-                    <motion.div
-                      key={item.name}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.3, delay: index * 0.1 }}
-                    >
-                      <Link
-                        to={item.href}
-                        className={cn(
-                          "flex items-center justify-between px-4 py-3 text-sm font-medium transition-all duration-300 rounded-xl",
-                          isActive(item.href)
-                            ? "text-petrol bg-petrol-tint"
-                            : "text-ink-soft hover:text-petrol hover:bg-petrol-tint",
-                        )}
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        <div className="flex items-center gap-3">
-                          <ArrowLeft className="w-4 h-4" />
-                          {item.name}
-                        </div>
-                        {item.badge && (
-                          <span className="bg-petrol text-paper text-xs px-2 py-0.5 rounded-full font-medium">
-                            {item.badge}
-                          </span>
-                        )}
-                      </Link>
-                    </motion.div>
-                  ))}
-                  <div className="flex flex-col space-y-3 pt-4 border-t border-line-soft">
-                    <Button
-                      variant="ghost"
-                      asChild
-                      className="justify-start text-ink-soft hover:text-petrol hover:bg-petrol-tint"
-                    >
-                      <Link
-                        to="/portfolio"
-                        onClick={() => setIsMenuOpen(false)}
-                        className="flex items-center gap-3"
-                      >
-                        <Zap className="w-4 h-4" />
-                        نمونه‌کارها
-                      </Link>
-                    </Button>
-                    <Button asChild className="bg-petrol text-paper">
-                      <Link
-                        to="/contact"
-                        onClick={() => setIsMenuOpen(false)}
-                        className="flex items-center gap-3"
-                      >
-                        شروع پروژه
-                        <ArrowLeft className="w-4 h-4" />
-                      </Link>
-                    </Button>
-                  </div>
-                </nav>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                {item.name}
+              </NavLink>
+            ))}
+          </nav>
+          <Link className="site-button site-header__cta" to="/contact">
+            بیایید گفت‌وگو کنیم
+            <ArrowUpLeft size={17} aria-hidden="true" />
+          </Link>
+          <button
+            ref={menuButton}
+            className="site-menu-button"
+            type="button"
+            onClick={() => setOpen(!open)}
+            aria-label={open ? "بستن منو" : "باز کردن منو"}
+            aria-expanded={open}
+            aria-controls="mobile-navigation"
+          >
+            {open ? <X size={24} /> : <Menu size={24} />}
+          </button>
         </div>
+        {open && (
+          <nav
+            id="mobile-navigation"
+            className="site-mobile-nav site-container"
+            aria-label="ناوبری موبایل"
+          >
+            {navigation.map((item) => (
+              <NavLink
+                key={item.href}
+                end={item.href === "/"}
+                to={item.href}
+                onClick={() => setOpen(false)}
+              >
+                {item.name}
+                <ArrowLeft size={18} aria-hidden="true" />
+              </NavLink>
+            ))}
+            <Link to="/contact" onClick={() => setOpen(false)}>
+              شروع یک گفت‌وگو
+              <ArrowUpLeft size={18} />
+            </Link>
+          </nav>
+        )}
       </header>
-
-      {/* Main Content */}
-      <main className="flex-1">
+      <main id="main-content" ref={main} tabIndex={-1}>
         <Outlet />
       </main>
-
-      {/* Footer */}
-      <footer className="bg-paper border-t border-line-soft mt-auto">
-        <div className="container mx-auto px-4 max-w-7xl py-16">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            {/* Company Info */}
-            <div className="md:col-span-2">
-              <div className="mb-6">
-                <CircleLogo tagline="وب، نرم‌افزار و هوش مصنوعی" />
+      <footer className="site-footer">
+        <div className="site-container">
+          {pathname !== "/contact" && (
+            <div className="site-footer__invitation">
+              <div>
+                <span className="site-footer__eyebrow">
+                  دایرهٔ بعدی، از یک گفت‌وگو شروع می‌شود.
+                </span>
+                <h2>
+                  چه چیزی را
+                  <br />
+                  <span>با هم بسازیم؟</span>
+                </h2>
               </div>
-              <p className="text-ink-soft mb-6 leading-relaxed max-w-md">
-                طراحی و توسعه وب‌سایت، نرم‌افزار، API و راهکارهای هوش مصنوعی
-                برای کسب‌وکارها؛ شریک فنی شما از ایده تا اجرا.
+              <Link
+                to="/contact"
+                className="site-footer__circle"
+                aria-label="شروع گفت‌وگو دربارهٔ پروژه"
+              >
+                <ArrowUpLeft size={48} />
+                <span>شروع گفت‌وگو</span>
+              </Link>
+            </div>
+          )}
+          <div className="site-footer__grid">
+            <div className="site-footer__brand">
+              <CircleLogo theme="dark" showMark={false} />
+              <p>
+                اجزا را به یک سیستم تبدیل می‌کنیم.
+                <br />
+                وب، نرم‌افزار و راهکارهای هوشمند.
               </p>
             </div>
-
-            {/* Quick Links */}
             <div>
-              <h4 className="text-sm font-semibold mb-6 text-ink">
-                دسترسی سریع
-              </h4>
-              <ul className="space-y-3">
-                {[
-                  { name: "صفحه اصلی", href: "/" },
-                  { name: "خدمات", href: "/services" },
-                  { name: "نمونه‌کارها", href: "/portfolio" },
-                  { name: "درباره ما", href: "/about" },
-                  { name: "تماس با ما", href: "/contact" },
-                ].map((item, index) => (
-                  <li key={index}>
-                    <Link
-                      to={item.href}
-                      className="text-ink-soft hover:text-petrol transition-colors flex items-center gap-2 group"
-                    >
-                      <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform text-petrol" />
-                      {item.name}
-                    </Link>
-                  </li>
+              <span className="site-footer__label">در دایره</span>
+              <nav aria-label="پیوندهای فوتر">
+                {navigation.slice(1).map((item) => (
+                  <Link key={item.href} to={item.href}>
+                    {item.name}
+                  </Link>
                 ))}
-              </ul>
+                <Link to="/contact">ارتباط با ما</Link>
+              </nav>
             </div>
-
-            {/* Support & Contact */}
-            <div>
-              <h4 className="text-sm font-semibold mb-6 text-ink">
-                ارتباط با ما
-              </h4>
-              <ul className="space-y-3">
-                <li className="flex items-center gap-2 text-ink-soft pt-2">
-                  <Phone className="w-4 h-4 text-petrol" />
-                  <span className="text-sm">۰۲۱-۱۲۳۴۵۶۷۸</span>
-                </li>
-                <li className="flex items-center gap-2 text-ink-soft">
-                  <Mail className="w-4 h-4 text-petrol" />
-                  <span className="text-sm">info@circlegroup.ir</span>
-                </li>
-              </ul>
+            <div className="site-footer__contact">
+              <span className="site-footer__label">یک خط ارتباط مستقیم</span>
+              <a href="mailto:info@circlegroup.ir" dir="ltr">
+                info@circlegroup.ir
+                <Mail size={18} />
+              </a>
+              <span className="site-footer__location">
+                تهران، ایران · برای کسب‌وکار شما
+              </span>
+              <CircleMark theme="dark" size={38} />
             </div>
           </div>
-
-          {/* Bottom Section */}
-          <div className="border-t border-line-soft mt-12 pt-8">
-            <div className="flex flex-col md:flex-row justify-between items-center">
-              <div className="text-ink-faint text-sm mb-4 md:mb-0">
-                © ۱۴۰۵ دایره. تمامی حقوق محفوظ است.
-              </div>
-              <div className="flex space-x-6 space-x-reverse text-sm">
-                <Link
-                  to="/privacy"
-                  className="text-ink-faint hover:text-ink transition-colors"
-                >
-                  حریم خصوصی
-                </Link>
-                <Link
-                  to="/terms"
-                  className="text-ink-faint hover:text-ink transition-colors"
-                >
-                  شرایط استفاده
-                </Link>
-              </div>
+          <div className="site-footer__bottom">
+            <span>
+              © {new Date().toLocaleDateString("fa-IR", { year: "numeric" })}{" "}
+              دایره
+            </span>
+            <div>
+              <Link to="/privacy">حریم خصوصی</Link>
+              <Link to="/terms">شرایط استفاده</Link>
             </div>
+            <span dir="ltr">CIRCLE / PARTS INTO A WHOLE</span>
           </div>
         </div>
       </footer>
-
-      {/* Scroll to top button */}
-      <AnimatePresence>
-        {showScrollTop && (
-          <motion.button
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            onClick={scrollToTop}
-            className="fixed bottom-8 right-8 w-12 h-12 bg-petrol text-paper rounded-xl shadow-lg hover:scale-110 transition-all duration-300 z-40"
-          >
-            <ChevronUp className="w-5 h-5 mx-auto" />
-          </motion.button>
-        )}
-      </AnimatePresence>
     </div>
   );
-};
-
-export default MainLayout;
+}
