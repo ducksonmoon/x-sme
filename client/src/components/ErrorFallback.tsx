@@ -6,16 +6,23 @@ import { publicAsset } from "@utils/publicPath";
 
 export default function ErrorFallback({
   error,
-  resetErrorBoundary,
-}: FallbackProps) {
+  embedded = false,
+}: FallbackProps & { embedded?: boolean }) {
   return (
-    <div className="circle-site site-recovery">
+    <div
+      className={`circle-site site-recovery${embedded ? " site-recovery--embedded" : ""}`}
+    >
       <CircleLogo orientation="stacked" size="lg" />
       <h1>نمایش صفحه با مشکل روبه‌رو شد.</h1>
       <p>می‌توانید دوباره تلاش کنید یا به صفحهٔ اصلی برگردید.</p>
       <div className="site-actions">
-        <button className="site-button" onClick={resetErrorBoundary}>
-          تلاش دوباره
+        {/* A failed dynamic import is cached by the browser and React.lazy.
+            Resetting the boundary alone cannot download that module again. */}
+        <button
+          className="site-button"
+          onClick={() => window.location.reload()}
+        >
+          بارگذاری دوباره
           <RefreshCw size={18} />
         </button>
         <a className="site-text-link" href={publicAsset("")}>

@@ -1,11 +1,11 @@
-import React, { Suspense } from "react";
+import React from "react";
 import { Routes, Route } from "react-router-dom";
 
-import LoadingSpinner from "@components/LoadingSpinner";
 import MainLayout from "@layouts/MainLayout";
+import Home from "@pages/Home";
 
-// Lazy load pages for better performance
-const Home = React.lazy(() => import("@pages/Home"));
+// The homepage ships with the app entry so a second page download cannot
+// strand the initial visit. Other pages load inside MainLayout's boundary.
 const About = React.lazy(() => import("@pages/About"));
 const Contact = React.lazy(() => import("@pages/Contact"));
 const Services = React.lazy(() => import("@pages/Services"));
@@ -20,30 +20,20 @@ const ServerError = React.lazy(() => import("@pages/ServerError"));
 
 function App() {
   return (
-    <>
-      <Suspense
-        fallback={
-          <div className="circle-site site-route-loading">
-            <LoadingSpinner size="xl" />
-          </div>
-        }
-      >
-        <Routes>
-          <Route path="/" element={<MainLayout />}>
-            <Route index element={<Home />} />
-            <Route path="about" element={<About />} />
-            <Route path="contact" element={<Contact />} />
-            <Route path="services" element={<Services />} />
-            <Route path="portfolio" element={<Portfolio />} />
-            <Route path="portfolio/:slug" element={<PortfolioDetail />} />
-            <Route path="privacy" element={<Privacy />} />
-            <Route path="terms" element={<Terms />} />
-            <Route path="500" element={<ServerError />} />
-            <Route path="*" element={<NotFound />} />
-          </Route>
-        </Routes>
-      </Suspense>
-    </>
+    <Routes>
+      <Route path="/" element={<MainLayout />}>
+        <Route index element={<Home />} />
+        <Route path="about" element={<About />} />
+        <Route path="contact" element={<Contact />} />
+        <Route path="services" element={<Services />} />
+        <Route path="portfolio" element={<Portfolio />} />
+        <Route path="portfolio/:slug" element={<PortfolioDetail />} />
+        <Route path="privacy" element={<Privacy />} />
+        <Route path="terms" element={<Terms />} />
+        <Route path="500" element={<ServerError />} />
+        <Route path="*" element={<NotFound />} />
+      </Route>
+    </Routes>
   );
 }
 

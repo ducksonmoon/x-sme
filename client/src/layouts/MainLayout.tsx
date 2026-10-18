@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import { Link, NavLink, useLocation } from "react-router-dom";
 import { ArrowUpLeft, ArrowLeft, Menu, X, Mail } from "lucide-react";
 import { CircleLogo, CircleMark } from "@/brand/circle";
+import RouteContent from "@components/RouteContent";
 
 const navigation = [
   { name: "خانه", href: "/" },
@@ -108,7 +109,7 @@ export default function MainLayout() {
         )}
       </header>
       <main id="main-content" ref={main} tabIndex={-1}>
-        <Outlet />
+        <RouteContent />
       </main>
       <footer className="site-footer">
         <div className="site-container">
